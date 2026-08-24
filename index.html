@@ -549,8 +549,8 @@ function loadData() {
     document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
     drawCharts();
     updateKPI(null);   // 聚合 summary 秒出
-    // 明细异步加载（7MB 级别，不阻塞首屏）
-    fetch('detail.json?v=' + Date.now()).then(r => r.json()).then(det => {
+    // 明细异步加载（7MB 级别，不阻塞首屏）；版本号缓存：内容不变秒开，更新自动取新
+    fetch('detail.json?v=' + (d.summary && d.summary.version ? d.summary.version : Date.now())).then(r => r.json()).then(det => {
       allDetail = det.map(r => {
         const c = Object.assign({}, r);
         SENS_FIELDS.forEach(k => { if (c[k]) c[k] = decSens(c[k]); });
