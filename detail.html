@@ -390,7 +390,9 @@ function render() {
         if (state.sortDir === 1) state.sortDir = -1;
         else { state.sortCol = null; state.sortDir = 1; }
       } else { state.sortCol = c; state.sortDir = 1; }
-      state.page = 1; render();
+      state.page = 1;
+      filtered.sort(comparator);   // 真正按当前排序列重排，箭头才反映实际效果
+      render();
     });
   });
 
