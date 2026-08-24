@@ -60,8 +60,12 @@ def main():
     for col in ["b端下载", "c端消费", "前台下载"]:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
+    # 发布天数 = now - 审核时间。0下载预警口径：发布(审核通过)≥15天 仍前台0下载
+    audit = pd.to_datetime(df["审核时间"], errors="coerce")
+    df["发布天数"] = (datetime.now() - audit).dt.days.fillna(-1).astype(int)
+
     total = len(df)
-    zero_df = df[df["前台下载"] == 0].copy()
+    zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] >= 15)].copy()
     zero_front = len(zero_df)
 
     data = {
@@ -72,7 +76,8 @@ def main():
             "zeroFront": int(zero_front),
             "zeroFrontRate": round(zero_front / total * 100, 2),
             "zeroB": int((df["b端下载"] == 0).sum()),
-            "zeroC": int((df["c端消费"] == 0).sum())
+            "zeroC": int((df["c端消费"] == 0).sum()),
+            "thresholdDays": 15
         },
         "byCourse": {
             "categories": group_rate(df, zero_df, "课程")["课程"].tolist(),
@@ -93,6 +98,11 @@ def main():
             "categories": group_rate(df, zero_df, "地区", 15)["地区"].tolist(),
             "zero": group_rate(df, zero_df, "地区", 15)["零下载数"].tolist(),
             "rate": group_rate(df, zero_df, "地区", 15)["占比"].tolist()
+        },
+        "byVersion": {
+            "categories": group_rate(df, zero_df, "版本", 15)["版本"].tolist(),
+            "zero": group_rate(df, zero_df, "版本", 15)["零下载数"].tolist(),
+            "rate": group_rate(df, zero_df, "版本", 15)["占比"].tolist()
         },
         "detail": zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").head(500).to_dict("records")
     }
