@@ -47,7 +47,6 @@
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 8px; }
   .tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; }
   .tag.clear-all { background: var(--red); cursor: pointer; }
-  .tag.clear-all.disabled { background: var(--separator); color: var(--muted); cursor: not-allowed; }
   .tag button { background: none; border: none; color: #fff; font-size: 14px; cursor: pointer; line-height: 1; padding: 0; }
   .table-wrap { background: var(--surface); border: 1px solid var(--separator); border-radius: 16px; box-shadow: var(--shadow-md); overflow: auto; max-height: 70vh; }
   table { border-collapse: separate; border-spacing: 0; font-size: 13px; width: 100%; min-width: 2000px; }
@@ -289,11 +288,13 @@ function renderTags() {
     span.querySelector('button').addEventListener('click', () => { t.clear(); state.page = 1; apply(); });
     box.appendChild(span);
   });
-  const all = document.createElement('span');
-  all.className = 'tag clear-all' + (tags.length ? '' : ' disabled');
-  all.innerHTML = '✕ 清除全部筛选';
-  all.addEventListener('click', () => { if (tags.length) clearAllFilters(); });
-  box.appendChild(all);
+  if (tags.length) {
+    const all = document.createElement('span');
+    all.className = 'tag clear-all';
+    all.innerHTML = '✕ 清除全部筛选';
+    all.addEventListener('click', clearAllFilters);
+    box.appendChild(all);
+  }
 }
 
 function render() {
