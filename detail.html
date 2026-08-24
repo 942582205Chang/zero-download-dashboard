@@ -166,11 +166,19 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
 const FILTER_COLS = ['课程','品牌','审核人','年级','版本','地区'];   // 下拉筛选列（品牌后接审核人；审核人按正序）
+const DAY_RANGES = [   // 发布天数分段下拉（数据范围 16~232 天，按分布切段）
+  { value: '', label: '发布天数：全部' },
+  { value: '16-30', label: '16-30 天' },
+  { value: '31-60', label: '31-60 天' },
+  { value: '61-90', label: '61-90 天' },
+  { value: '91-180', label: '91-180 天' },
+  { value: '181+', label: '181 天以上' }
+];
 const DISPLAY_COLS = COLS.filter(c => c !== '链接');   // 页面展示列：链接列移除，资源id变超链接（导出仍用 COLS 含链接）
 
 let allDetail = [], filtered = [];
 const state = {
-  search: '', filter: {}, daysMin: '', daysMax: '',
+  search: '', filter: {}, dayRange: '',
   sortCol: null, sortDir: 1,   // null = 默认多级排序
   page: 1, per: 50
 };
@@ -211,9 +219,11 @@ function matches(r) {
     const want = state.filter[col];
     if (want && String(r[col]||'') !== want) return false;
   }
-  const d = Number(r['发布天数'])||0;
-  if (state.daysMin !== '' && d < Number(state.daysMin)) return false;
-  if (state.daysMax !== '' && d > Number(state.daysMax)) return false;
+  if (state.dayRange) {
+    const d = Number(r['发布天数'])||0;
+    if (state.dayRange === '181+') { if (d < 181) return false; }
+    else { const b = state.dayRange.split('-').map(Number); if (d < b[0] || d > b[1]) return false; }
+  }
   return true;
 }
 
@@ -254,19 +264,16 @@ function buildFilterOptions() {
     sel.addEventListener('change', () => { state.filter[col] = sel.value; state.page = 1; apply(); });
     box.appendChild(sel);
   });
-  const dayBox = document.createElement('span');
-  dayBox.innerHTML = '<label>发布天数 <input type="number" id="daysMin" style="width:70px" placeholder="最小"><input type="number" id="daysMax" style="width:70px" placeholder="最大"></label>';
-  box.appendChild(dayBox);
-  document.getElementById('daysMin').addEventListener('input', e => { state.daysMin = e.target.value; state.page = 1; apply(); });
-  document.getElementById('daysMax').addEventListener('input', e => { state.daysMax = e.target.value; state.page = 1; apply(); });
+  const daySel = document.createElement('select');
+  DAY_RANGES.forEach(r => { const o = document.createElement('option'); o.value = r.value; o.textContent = r.label; daySel.appendChild(o); });
+  daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); });
+  box.appendChild(daySel);
 }
 
 function clearAllFilters() {
-  state.search = ''; state.filter = {}; state.daysMin = ''; state.daysMax = ''; state.page = 1;
+  state.search = ''; state.filter = {}; state.dayRange = ''; state.page = 1;
   document.getElementById('searchInput').value = '';
   document.querySelectorAll('#filters select').forEach(s => s.value = '');
-  document.getElementById('daysMin').value = '';
-  document.getElementById('daysMax').value = '';
   apply();
 }
 
@@ -278,9 +285,9 @@ function renderTags() {
   for (const col of FILTER_COLS) {
     if (state.filter[col]) tags.push({ label: col + '：' + state.filter[col], clear: () => { state.filter[col]=''; const el=[...document.querySelectorAll('#filters select')].find(s=>s.options[0].textContent.startsWith(col)); if(el) el.value=''; } });
   }
-  if (state.daysMin !== '' || state.daysMax !== '') {
-    const lbl = '发布天数：' + (state.daysMin===''?'':state.daysMin) + ' ~ ' + (state.daysMax===''?'':state.daysMax);
-    tags.push({ label: lbl, clear: () => { state.daysMin=''; state.daysMax=''; document.getElementById('daysMin').value=''; document.getElementById('daysMax').value=''; } });
+  if (state.dayRange) {
+    const rr = DAY_RANGES.find(r => r.value === state.dayRange);
+    tags.push({ label: '发布天数：' + (rr ? rr.label.replace(' 天以上','天以上') : state.dayRange), clear: () => { state.dayRange=''; const el=[...document.querySelectorAll('#filters select')].find(s=>s.options[0].textContent.startsWith('发布天数')); if(el) el.value=''; } });
   }
   tags.forEach(t => {
     const span = document.createElement('span'); span.className = 'tag';
