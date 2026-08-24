@@ -37,7 +37,8 @@
   .brand p { color: var(--muted); font-size: 14px; margin-top: 4px; }
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); color: var(--ink-2); font-size: 13px; font-weight: 600; }
-  .back { cursor: pointer; color: var(--blue); font-weight: 700; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); text-decoration: none; }
+  .back { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); text-decoration: none; }
+  .back:hover, .export-btn:hover { filter: brightness(0.95); }
   .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; }
   .search { flex: 1; min-width: 260px; padding: 10px 14px; font-size: 15px; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); color: var(--ink); outline: none; }
   .filters { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -90,7 +91,7 @@
     </div>
     <div class="meta">
       <span class="badge" id="timeBadge">更新：--</span>
-      <button class="ios-btn" id="exportBtn" style="display:none;">⬇ 导出 Excel</button>
+      <button class="badge export-btn" id="exportBtn" style="display:none;cursor:pointer;">⬇ 导出 Excel</button>
       <a class="back" href="index.html">← 返回看板</a>
       <span class="back" id="logoutBtn" style="display:none;cursor:pointer;">退出登录</span>
     </div>
