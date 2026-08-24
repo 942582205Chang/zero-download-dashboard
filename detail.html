@@ -208,7 +208,7 @@ function comparator(a, b) {
   return defaultCmp(a, b);
 }
 
-function matches(r) {
+function matches(r, skipDay) {
   const s = state.search.trim().toLowerCase();
   if (s) {
     const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本'], r['审核人']].map(x => String(x||'').toLowerCase()).join(' ');
@@ -219,7 +219,7 @@ function matches(r) {
     const want = state.filter[col];
     if (want && String(r[col]||'') !== want) return false;
   }
-  if (state.dayRange) {
+  if (!skipDay && state.dayRange) {
     const d = Number(r['发布天数'])||0;
     if (state.dayRange === '181+') { if (d < 181) return false; }
     else { const b = state.dayRange.split('-').map(Number); if (d < b[0] || d > b[1]) return false; }
@@ -229,6 +229,7 @@ function matches(r) {
 
 function apply() {
   filtered = allDetail.filter(matches).sort(comparator);
+  refreshDayOptions();
   renderTags();
   render();
 }
@@ -265,21 +266,26 @@ function buildFilterOptions() {
     box.appendChild(sel);
   });
   const daySel = document.createElement('select');
-  const totalN = allDetail.length;
-  DAY_RANGES.forEach(r => {
-    const o = document.createElement('option');
-    o.value = r.value;
-    if (r.value === '') {
-      o.textContent = r.label;
-    } else {
-      const b = r.value === '181+' ? [181, Infinity] : r.value.split('-').map(Number);
-      const n = allDetail.filter(x => { const d = Number(x['发布天数'])||0; return d >= b[0] && d <= b[1]; }).length;
-      o.textContent = r.label + '，' + n.toLocaleString('zh-CN') + '，' + (n / totalN * 100).toFixed(1) + '%';
-    }
-    daySel.appendChild(o);
-  });
+  daySel.id = 'dayFilter';
+  DAY_RANGES.forEach(r => { const o = document.createElement('option'); o.value = r.value; o.textContent = r.label; daySel.appendChild(o); });
   daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); });
   box.appendChild(daySel);
+}
+
+// 联动：按当前其它筛选（搜索/课程/品牌等，不含发布天数自身）重算发布天数各分段条数/占比
+function refreshDayOptions() {
+  const sel = document.getElementById('dayFilter');
+  if (!sel) return;
+  const base = allDetail.filter(r => matches(r, true));
+  const totalN = base.length;
+  DAY_RANGES.forEach((r, i) => {
+    const o = sel.options[i];
+    if (!o) return;
+    if (r.value === '') { o.textContent = r.label; return; }
+    const b = r.value === '181+' ? [181, Infinity] : r.value.split('-').map(Number);
+    const n = base.filter(x => { const d = Number(x['发布天数'])||0; return d >= b[0] && d <= b[1]; }).length;
+    o.textContent = r.label + '，' + n.toLocaleString('zh-CN') + '，' + (totalN ? (n / totalN * 100).toFixed(1) : '0.0') + '%';
+  });
 }
 
 function clearAllFilters() {
