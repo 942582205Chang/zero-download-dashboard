@@ -103,12 +103,16 @@ def main():
             "categories": group_rate(df, zero_df, "版本", 15)["版本"].tolist(),
             "zero": group_rate(df, zero_df, "版本", 15)["零下载数"].tolist(),
             "rate": group_rate(df, zero_df, "版本", 15)["占比"].tolist()
-        },
-        "detail": zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").to_dict("records")
+        }
     }
 
     with open(OUTPUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # 全量明细单独输出 detail.json（聚合 data.json 与明细分离，首屏只加载轻量聚合）
+    detail = zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").to_dict("records")
+    with open(os.path.join(BASE_DIR, "detail.json"), "w", encoding="utf-8") as f:
+        json.dump(detail, f, ensure_ascii=False)
 
     print(f"OK 已生成 data.json")
     print(f"数据源：{os.path.basename(csv_path)}")
