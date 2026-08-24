@@ -434,7 +434,8 @@ function applySticky() {
 function done() {
   document.getElementById('loading').style.display = 'none';
   const tbl = document.getElementById('detailTable'); tbl.style.display = '';
-  document.getElementById('exportBtn').style.display = '';
+  // 导出Excel按钮：暂停展示（备用，需要时放开此行即可恢复显示）
+  // document.getElementById('exportBtn').style.display = '';
   buildFilterOptions();
   apply();
 }
