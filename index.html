@@ -428,7 +428,7 @@ const THEME = {
   light: { surface: 'transparent', ink: '#1c1c1e', muted: '#8e8e93', grid: '#e5e5ea', blue: '#007aff', orange: '#ff9500', green: '#34c759', yellow: '#ffcc00', purple: '#af52de' },
   dark:  { surface: 'transparent', ink: '#ffffff', muted: '#8e8e93', grid: '#38383a', blue: '#0a84ff', orange: '#ff9f0a', green: '#30d158', yellow: '#ffd60a', purple: '#bf5af2' }
 };
-let charts = [], allData = null, filteredRows = [];
+let charts = [], allData = null, allDetail = [], filteredRows = [], detailLoaded = false;
 function isDark() { return matchMedia('(prefers-color-scheme: dark)').matches; }
 function T() { return THEME[isDark() && document.documentElement.getAttribute('data-theme') !== 'light' ? 'dark' : 'light']; }
 function fmt(n) { return n == null ? '--' : Number(n).toLocaleString('zh-CN'); }
@@ -500,6 +500,15 @@ function drawCharts() {
 }
 
 function updateKPI(rows) {
+  // 无 rows：用聚合 summary 显示全量真值（KPI 秒出）
+  if (!rows) {
+    const s = allData.summary;
+    document.getElementById('kpiTotal').textContent = fmt(s.total);
+    document.getElementById('kpiZeroFront').textContent = fmt(s.zeroFront);
+    document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
+    document.getElementById('kpiZeroBC').textContent = fmt(s.zeroB) + ' / ' + fmt(s.zeroC);
+    return;
+  }
   const total = rows.length;
   const zeroFront = rows.filter(r => Number(r['前台下载']) === 0).length;
   const rate = total ? (zeroFront / total * 100).toFixed(2) : '0.00';
@@ -513,8 +522,8 @@ function updateKPI(rows) {
 }
 
 function applyFilters() {
-  if (!allData) return;
-  filteredRows = allData.detail.filter(filterRow);
+  if (!detailLoaded) return;   // 明细未加载完，KPI 保持全量聚合值
+  filteredRows = allDetail.filter(filterRow);
   updateKPI(filteredRows);
   document.getElementById('detailCount').textContent = filteredRows.length;
 }
@@ -522,6 +531,7 @@ function applyFilters() {
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function exportExcel() {
+  if (!detailLoaded) return alert('明细还在加载中，请稍候再导出');
   if (!filteredRows.length) return alert('当前没有可导出的明细数据');
   const headers = Object.keys(filteredRows[0]);
   const ws = XLSX.utils.json_to_sheet(filteredRows, { header: headers });
@@ -535,10 +545,18 @@ function loadData() {
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
     allData = d;
     document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
-    initFilters(d.detail);
     drawCharts();
-    applyFilters();
+    updateKPI(null);   // 聚合 summary 秒出
     document.getElementById('downloadBtn').addEventListener('click', exportExcel);
+    // 明细异步加载（7MB 级别，不阻塞首屏）
+    fetch('detail.json?v=' + Date.now()).then(r => r.json()).then(det => {
+      allDetail = det;
+      detailLoaded = true;
+      initFilters(det);
+      applyFilters();
+    }).catch(() => {
+      document.getElementById('detailCount').textContent = '明细加载失败';
+    });
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
