@@ -46,6 +46,7 @@
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 8px; }
   .tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; }
   .tag.clear-all { background: var(--red); cursor: pointer; }
+  .tag.clear-all.disabled { background: var(--separator); color: var(--muted); cursor: not-allowed; }
   .tag button { background: none; border: none; color: #fff; font-size: 14px; cursor: pointer; line-height: 1; padding: 0; }
   .table-wrap { background: var(--surface); border: 1px solid var(--separator); border-radius: 16px; box-shadow: var(--shadow-md); overflow: auto; max-height: 70vh; }
   table { border-collapse: separate; border-spacing: 0; font-size: 13px; width: 100%; min-width: 2000px; }
@@ -157,7 +158,7 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if (e.ke
 // ===== 列定义（发布天数在审核人前）=====
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
-const FILTER_COLS = ['课程','版本','年级','地区','品牌'];   // 下拉筛选列
+const FILTER_COLS = ['课程','品牌','年级','版本','地区'];   // 下拉筛选列（品牌紧随课程，年级在版本前）
 const DISPLAY_COLS = COLS.filter(c => c !== '链接');   // 页面展示列：链接列移除，资源id变超链接（导出仍用 COLS 含链接）
 
 let allDetail = [], filtered = [];
@@ -279,13 +280,11 @@ function renderTags() {
     span.querySelector('button').addEventListener('click', () => { t.clear(); state.page = 1; apply(); });
     box.appendChild(span);
   });
-  if (tags.length) {
-    const all = document.createElement('span');
-    all.className = 'tag clear-all';
-    all.innerHTML = '✕ 清除全部筛选';
-    all.addEventListener('click', clearAllFilters);
-    box.appendChild(all);
-  }
+  const all = document.createElement('span');
+  all.className = 'tag clear-all' + (tags.length ? '' : ' disabled');
+  all.innerHTML = '✕ 清除全部筛选';
+  all.addEventListener('click', () => { if (tags.length) clearAllFilters(); });
+  box.appendChild(all);
 }
 
 function render() {
