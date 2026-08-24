@@ -74,14 +74,14 @@ def main():
     for col in ["b端下载", "c端消费", "前台下载"]:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-    # 发布天数 = now - 审核时间。0下载预警口径：发布(审核通过)≥15天 仍前台0下载
+    # 发布天数 = now - 审核时间。0下载预警口径：发布(审核通过)超过15天(严格>15) 仍前台0下载
     audit = pd.to_datetime(df["审核时间"], errors="coerce")
     df["发布天数"] = (datetime.now() - audit).dt.days.fillna(-1).astype(int)
 
     total = len(df)
-    zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] >= 15)].copy()
+    zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] > 15)].copy()
     zero_front = len(zero_df)
-    eligible = int((df["发布天数"] >= 15).sum())   # 已过15天观察期的资源
+    eligible = int((df["发布天数"] > 15).sum())   # 已超过15天观察期的资源
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
