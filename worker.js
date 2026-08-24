@@ -13,7 +13,13 @@ function decSens(s) {
   } catch (e) { return s; }
 }
 
-fetch('detail.json?v=' + Date.now())
+// 先取 data.json 拿版本号（内容不变则版本不变，命中浏览器缓存秒开；数据更新版本变化自动取新）
+fetch('data.json?v=' + Date.now())
+  .then(r => r.json())
+  .then(d => {
+    const ver = (d.summary && d.summary.version) ? d.summary.version : Date.now();
+    return fetch('detail.json?v=' + ver);
+  })
   .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
   .then(det => {
     const total = det.length;
