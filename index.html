@@ -245,7 +245,7 @@
   <aside class="sidebar">
     <div class="sidebar-card">
       <h2>筛选</h2>
-      <p class="tip">学段/年级/地区/品牌过滤会同步更新 KPI 与可下载的明细。</p>
+      <p class="tip">学段/年级/地区/品牌/版本过滤会同步更新 KPI 与可下载的明细。</p>
     </div>
 
     <div class="sidebar-card">
@@ -276,6 +276,10 @@
         <label>品牌</label>
         <input type="text" id="brandFilter" class="filter-input" placeholder="输入品牌关键字">
       </div>
+      <div class="filter-group" style="margin-top:14px;">
+        <label>版本</label>
+        <input type="text" id="versionFilter" class="filter-input" placeholder="输入版本关键字">
+      </div>
     </div>
   </aside>
 
@@ -284,7 +288,7 @@
       <header>
         <div class="brand">
           <h1>品牌0下载预警看板</h1>
-          <p>统计资源中"前台下载为 0"的资源数量与分布，用于 0 下载预警。</p>
+          <p>统计资源中"发布（审核通过）≥15天仍前台下载为 0"的资源数量与分布，用于 0 下载预警。</p>
         </div>
         <div class="meta">
           <span class="badge" id="timeBadge">更新：--</span>
@@ -299,14 +303,14 @@
           <div class="sub">本批次统计资源</div>
         </div>
         <div class="kpi">
-          <div class="kpi-head"><span class="label">前台 0 下载</span><span class="trend" id="frontTrend">需关注</span></div>
+          <div class="kpi-head"><span class="label">发布≥15天 0下载</span><span class="trend" id="frontTrend">需关注</span></div>
           <div class="value critical" id="kpiZeroFront">--</div>
           <div class="sub">重点预警资源</div>
         </div>
         <div class="kpi">
           <div class="kpi-head"><span class="label">0 下载率</span></div>
           <div class="value critical" id="kpiZeroRate">--%</div>
-          <div class="sub">前台0下载 / 资源总数</div>
+          <div class="sub">发布≥15天仍0下载 / 资源总数</div>
         </div>
         <div class="kpi">
           <div class="kpi-head"><span class="label">B端0下载 / C端0消费</span></div>
@@ -315,7 +319,7 @@
         </div>
       </div>
 
-      <div class="section"><h2>分布分析</h2><p>多维度拆解 0 下载资源的结构与占比（全局视图）</p></div>
+      <div class="section"><h2>分布分析</h2><p>多维度拆解"发布≥15天仍0下载"资源的结构与占比（全局视图）</p></div>
       <div class="chart-grid">
         <div class="card">
           <h3>按课程 · 0下载资源数</h3>
@@ -333,6 +337,11 @@
           <div class="chart" id="chartBrand"></div>
         </div>
         <div class="card">
+          <h3>按版本 · 0下载率 TOP15</h3>
+          <div class="card-sub">版本内零下载资源占比（预警重点）</div>
+          <div class="chart" id="chartVersion"></div>
+        </div>
+        <div class="card">
           <h3>按地区 · 0下载资源数 TOP15</h3>
           <div class="card-sub">各地区零下载资源数量</div>
           <div class="chart" id="chartRegion"></div>
@@ -342,7 +351,7 @@
       <div class="detail-card">
         <div class="head">
           <div>
-            <h3>0 下载资源明细</h3>
+            <h3>发布≥15天仍0下载 资源明细</h3>
             <div class="count">当前筛选共 <span id="detailCount">--</span> 条，可导出 Excel 查看完整明细</div>
           </div>
           <button class="ios-btn" id="downloadBtn">⬇ 导出 Excel</button>
@@ -382,7 +391,7 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if (e.ke
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
 // ===== Filters =====
-const state = { stage: 'all', grades: new Set(), region: '', brand: '' };
+const state = { stage: 'all', grades: new Set(), region: '', brand: '', version: '' };
 function getStage(course) {
   if (!course) return '其它';
   if (course.includes('小学')) return '小学';
@@ -403,19 +412,21 @@ function initFilters(rows) {
   });
   document.getElementById('regionFilter').addEventListener('input', e => { state.region = e.target.value.trim().toLowerCase(); applyFilters(); });
   document.getElementById('brandFilter').addEventListener('input', e => { state.brand = e.target.value.trim().toLowerCase(); applyFilters(); });
+  document.getElementById('versionFilter').addEventListener('input', e => { state.version = e.target.value.trim().toLowerCase(); applyFilters(); });
 }
 function filterRow(row) {
   if (state.stage !== 'all' && getStage(row['课程']) !== state.stage) return false;
   if (state.grades.size > 0 && !state.grades.has(String(row['年级']))) return false;
   if (state.region && !(row['地区'] || '').toLowerCase().includes(state.region)) return false;
   if (state.brand && !(row['品牌'] || '').toLowerCase().includes(state.brand)) return false;
+  if (state.version && !(row['版本'] || '').toLowerCase().includes(state.version)) return false;
   return true;
 }
 
 // ===== Charts & data =====
 const THEME = {
-  light: { surface: 'transparent', ink: '#1c1c1e', muted: '#8e8e93', grid: '#e5e5ea', blue: '#007aff', orange: '#ff9500', green: '#34c759', yellow: '#ffcc00' },
-  dark:  { surface: 'transparent', ink: '#ffffff', muted: '#8e8e93', grid: '#38383a', blue: '#0a84ff', orange: '#ff9f0a', green: '#30d158', yellow: '#ffd60a' }
+  light: { surface: 'transparent', ink: '#1c1c1e', muted: '#8e8e93', grid: '#e5e5ea', blue: '#007aff', orange: '#ff9500', green: '#34c759', yellow: '#ffcc00', purple: '#af52de' },
+  dark:  { surface: 'transparent', ink: '#ffffff', muted: '#8e8e93', grid: '#38383a', blue: '#0a84ff', orange: '#ff9f0a', green: '#30d158', yellow: '#ffd60a', purple: '#bf5af2' }
 };
 let charts = [], allData = null, filteredRows = [];
 function isDark() { return matchMedia('(prefers-color-scheme: dark)').matches; }
@@ -477,6 +488,12 @@ function drawCharts() {
   bOpt.yAxis.data = d.byBrand.categories;
   const b = echarts.init(document.getElementById('chartBrand')); b.setOption(bOpt); charts.push(b);
 
+  const vOpt = makeOption('horizontal', d.byVersion.rate, { color: t.purple, isRate: true });
+  vOpt.xAxis.max = Math.max(...d.byVersion.rate) * 1.12;
+  vOpt.xAxis.axisLabel.formatter = '{value}%';
+  vOpt.yAxis.data = d.byVersion.categories;
+  const v = echarts.init(document.getElementById('chartVersion')); v.setOption(vOpt); charts.push(v);
+
   const rOpt = makeOption('vertical', { categories: d.byRegion.categories, values: d.byRegion.zero }, { color: t.yellow });
   rOpt.yAxis.max = Math.max(...d.byRegion.zero) * 1.12;
   const r = echarts.init(document.getElementById('chartRegion')); r.setOption(rOpt); charts.push(r);
@@ -509,9 +526,9 @@ function exportExcel() {
   const headers = Object.keys(filteredRows[0]);
   const ws = XLSX.utils.json_to_sheet(filteredRows, { header: headers });
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '0下载明细');
+  XLSX.utils.book_append_sheet(wb, ws, '发布15天0下载明细');
   const date = allData ? allData.updateTime.split(' ')[0] : new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `0下载明细_${date}_${filteredRows.length}条.xlsx`);
+  XLSX.writeFile(wb, `发布15天0下载明细_${date}_${filteredRows.length}条.xlsx`);
 }
 
 function loadData() {
