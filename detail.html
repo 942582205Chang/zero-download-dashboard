@@ -174,6 +174,7 @@ const DAY_RANGES = [   // 发布天数分段下拉（数据范围 16~232 天，�
   { value: '91-180', label: '91-180 天' },
   { value: '181+', label: '181 天以上' }
 ];
+const FILTER_W = { '课程':'172px', '品牌':'160px', '审核人':'160px', '年级':'150px', '版本':'172px', '地区':'172px', '发布天数':'190px' };   // 筛选框固定宽：选项长度变化不再引起布局挪动
 const DISPLAY_COLS = COLS.filter(c => c !== '链接');   // 页面展示列：链接列移除，资源id变超链接（导出仍用 COLS 含链接）
 
 let allDetail = [], filtered = [];
@@ -265,19 +266,25 @@ function buildFilterOptions() {
   FILTER_COLS.forEach(col => {
     const sel = document.createElement('select');
     sel.id = 'flt-' + col;
+    sel.style.width = FILTER_W[col];
     sel.appendChild(createOpt('', col + '：全部'));
-    sel.addEventListener('change', () => { state.filter[col] = sel.value; state.page = 1; apply(); });
+    sel.addEventListener('change', () => { state.filter[col] = sel.value; state.page = 1; apply(); syncSelTitle(sel); });
     box.appendChild(sel);
   });
   const daySel = document.createElement('select');
   daySel.id = 'dayFilter';
+  daySel.style.width = FILTER_W['发布天数'];
   DAY_RANGES.forEach(r => { const o = createOpt(r.value, r.label); daySel.appendChild(o); });
-  daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); });
+  daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); syncSelTitle(daySel); });
   box.appendChild(daySel);
   refreshFilterOptions();
 }
 
 function createOpt(value, text) { const o = document.createElement('option'); o.value = value; o.textContent = text; return o; }
+function syncSelTitle(sel) {   // 框内文字可能被固定宽截断，悬停显示完整选中文本
+  if (sel.selectedOptions && sel.selectedOptions[0]) sel.title = sel.selectedOptions[0].textContent;
+  else sel.title = '';
+}
 
 // 联动刷新所有下拉：选项值列表随其它筛选收缩（如选初中数学后，年级/版本只列初中数学涉及的取值），并带条数/占比
 function refreshFilterOptions() {
@@ -298,6 +305,7 @@ function refreshFilterOptions() {
     vals.forEach(v => sel.appendChild(createOpt(v, v + '，' + seen.get(v).toLocaleString('zh-CN') + '，' + (totalN ? (seen.get(v) / totalN * 100).toFixed(1) : '0.0') + '%')));
     if (cur && vals.includes(cur)) sel.value = cur;   // 保留仍存在的选中
     else { sel.value = ''; if (cur) { state.filter[col] = ''; needReapply = true; } }   // 选中被收缩掉 → 重置并重算
+    syncSelTitle(sel);
   }
   // 发布天数（固定分段，只保留有数据的分段；0 条分段隐藏）
   const sel = document.getElementById('dayFilter');
@@ -316,6 +324,7 @@ function refreshFilterOptions() {
     shown.forEach(r => { if (r.n !== 0) sel.appendChild(createOpt(r.value, r.label)); });
     if (cur && shown.some(r => r.value === cur && r.n !== 0)) sel.value = cur;
     else { sel.value = ''; if (cur) { state.dayRange = ''; needReapply = true; } }   // 选中分段被隐藏 → 重置并重算
+    syncSelTitle(sel);
   }
   state._needReapply = needReapply;
 }
