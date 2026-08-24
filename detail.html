@@ -438,7 +438,11 @@ function loadData() {
 function fallbackLoad() {
   const loading = document.getElementById('loading');
   loading.textContent = '数据加载中…';
-  fetch('detail.json?v=' + Date.now()).then(r => r.json()).then(det => {
+  // 版本号缓存：内容不变秒开，更新自动取新（先取 data.json 拿版本号）
+  fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
+    const ver = (d.summary && d.summary.version) ? d.summary.version : Date.now();
+    return fetch('detail.json?v=' + ver);
+  }).then(r => r.json()).then(det => {
     allDetail = [];
     const step = 400;
     function batch(i) {
