@@ -104,7 +104,7 @@ def main():
             "zero": group_rate(df, zero_df, "版本", 15)["零下载数"].tolist(),
             "rate": group_rate(df, zero_df, "版本", 15)["占比"].tolist()
         },
-        "detail": zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").head(500).to_dict("records")
+        "detail": zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").to_dict("records")
     }
 
     with open(OUTPUT, "w", encoding="utf-8") as f:
