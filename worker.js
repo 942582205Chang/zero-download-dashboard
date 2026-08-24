@@ -17,6 +17,7 @@ function decSens(s) {
 fetch('data.json?v=' + Date.now())
   .then(r => r.json())
   .then(d => {
+    if (d.updateTime) self.postMessage({ type: 'time', updateTime: d.updateTime });   // 把更新时间传回主线程显示
     const ver = (d.summary && d.summary.version) ? d.summary.version : Date.now();
     return fetch('detail.json?v=' + ver);
   })
