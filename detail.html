@@ -208,28 +208,35 @@ function comparator(a, b) {
   return defaultCmp(a, b);
 }
 
-function matches(r, skipDay) {
+function searchOk(r) {   // 仅搜索条件
   const s = state.search.trim().toLowerCase();
-  if (s) {
-    const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本'], r['审核人']].map(x => String(x||'').toLowerCase()).join(' ');
-    const words = s.split(/[\s,，]+/).filter(Boolean);   // 多关键词模糊搜索：空格/逗号分隔，全部命中才匹配
-    if (!words.every(w => hay.includes(w))) return false;
-  }
+  if (!s) return true;
+  const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本'], r['审核人']].map(x => String(x||'').toLowerCase()).join(' ');
+  const words = s.split(/[\s,，]+/).filter(Boolean);   // 多关键词模糊搜索：空格/逗号分隔，全部命中才匹配
+  return words.every(w => hay.includes(w));
+}
+function restOk(r, skip) {   // 除搜索外的列筛选/发布天数；skip=跳过自身筛选的列（联动用）或 '发布天数'
   for (const col of FILTER_COLS) {
+    if (col === skip) continue;
     const want = state.filter[col];
     if (want && String(r[col]||'') !== want) return false;
   }
-  if (!skipDay && state.dayRange) {
+  if (skip !== '发布天数' && state.dayRange) {
     const d = Number(r['发布天数'])||0;
     if (state.dayRange === '181+') { if (d < 181) return false; }
     else { const b = state.dayRange.split('-').map(Number); if (d < b[0] || d > b[1]) return false; }
   }
   return true;
 }
+function matches(r) { return searchOk(r) && restOk(r); }
 
 function apply() {
   filtered = allDetail.filter(matches).sort(comparator);
-  refreshDayOptions();
+  refreshFilterOptions();
+  if (state._needReapply) {   // 联动中某列选中被收缩掉 → 用重置后的状态重算
+    state._needReapply = false;
+    filtered = allDetail.filter(matches).sort(comparator);
+  }
   renderTags();
   render();
 }
@@ -256,36 +263,57 @@ function buildFilterOptions() {
   const box = document.getElementById('filters');
   box.innerHTML = '';
   FILTER_COLS.forEach(col => {
-    const vals = [...new Set(allDetail.map(r => r[col]).filter(v => v !== '' && v != null))];
-    sortFilterOptions(col, vals);
     const sel = document.createElement('select');
-    const opt0 = document.createElement('option'); opt0.value = ''; opt0.textContent = col + '：全部';
-    sel.appendChild(opt0);
-    vals.forEach(v => { const o = document.createElement('option'); o.value = String(v); o.textContent = String(v); sel.appendChild(o); });
+    sel.id = 'flt-' + col;
+    sel.appendChild(createOpt('', col + '：全部'));
     sel.addEventListener('change', () => { state.filter[col] = sel.value; state.page = 1; apply(); });
     box.appendChild(sel);
   });
   const daySel = document.createElement('select');
   daySel.id = 'dayFilter';
-  DAY_RANGES.forEach(r => { const o = document.createElement('option'); o.value = r.value; o.textContent = r.label; daySel.appendChild(o); });
+  DAY_RANGES.forEach(r => { const o = createOpt(r.value, r.label); daySel.appendChild(o); });
   daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); });
   box.appendChild(daySel);
+  refreshFilterOptions();
 }
 
-// 联动：按当前其它筛选（搜索/课程/品牌等，不含发布天数自身）重算发布天数各分段条数/占比
-function refreshDayOptions() {
+function createOpt(value, text) { const o = document.createElement('option'); o.value = value; o.textContent = text; return o; }
+
+// 联动刷新所有下拉：选项值列表随其它筛选收缩（如选初中数学后，年级/版本只列初中数学涉及的取值），并带条数/占比
+function refreshFilterOptions() {
+  const searched = allDetail.filter(searchOk);
+  let needReapply = false;
+  for (const col of FILTER_COLS) {
+    const sel = document.getElementById('flt-' + col);
+    if (!sel) continue;
+    const base = searched.filter(r => restOk(r, col));   // 跳过自身列，其余筛选（含搜索/发布天数）生效
+    const totalN = base.length;
+    const seen = new Map();
+    base.forEach(r => { const v = String(r[col] || ''); if (v !== '') seen.set(v, (seen.get(v) || 0) + 1); });
+    const vals = [...seen.keys()];
+    sortFilterOptions(col, vals);
+    const cur = state.filter[col];
+    sel.innerHTML = '';
+    sel.appendChild(createOpt('', col + '：全部'));
+    vals.forEach(v => sel.appendChild(createOpt(v, v + '，' + seen.get(v).toLocaleString('zh-CN') + '，' + (totalN ? (seen.get(v) / totalN * 100).toFixed(1) : '0.0') + '%')));
+    if (cur && vals.includes(cur)) sel.value = cur;   // 保留仍存在的选中
+    else { sel.value = ''; if (cur) { state.filter[col] = ''; needReapply = true; } }   // 选中被收缩掉 → 重置并重算
+  }
+  // 发布天数（固定分段，只刷新条数/占比）
   const sel = document.getElementById('dayFilter');
-  if (!sel) return;
-  const base = allDetail.filter(r => matches(r, true));
-  const totalN = base.length;
-  DAY_RANGES.forEach((r, i) => {
-    const o = sel.options[i];
-    if (!o) return;
-    if (r.value === '') { o.textContent = r.label; return; }
-    const b = r.value === '181+' ? [181, Infinity] : r.value.split('-').map(Number);
-    const n = base.filter(x => { const d = Number(x['发布天数'])||0; return d >= b[0] && d <= b[1]; }).length;
-    o.textContent = r.label + '，' + n.toLocaleString('zh-CN') + '，' + (totalN ? (n / totalN * 100).toFixed(1) : '0.0') + '%';
-  });
+  if (sel && sel.options.length) {
+    const base = searched.filter(r => restOk(r, '发布天数'));
+    const totalN = base.length;
+    DAY_RANGES.forEach((r, i) => {
+      const o = sel.options[i];
+      if (!o) return;
+      if (r.value === '') { o.textContent = r.label; return; }
+      const b = r.value === '181+' ? [181, Infinity] : r.value.split('-').map(Number);
+      const n = base.filter(x => { const d = Number(x['发布天数'])||0; return d >= b[0] && d <= b[1]; }).length;
+      o.textContent = r.label + '，' + n.toLocaleString('zh-CN') + '，' + (totalN ? (n / totalN * 100).toFixed(1) : '0.0') + '%';
+    });
+  }
+  state._needReapply = needReapply;
 }
 
 function clearAllFilters() {
