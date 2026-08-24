@@ -157,6 +157,7 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if (e.ke
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
 const FILTER_COLS = ['课程','版本','年级','地区','品牌'];   // 下拉筛选列
+const DISPLAY_COLS = COLS.filter(c => c !== '链接');   // 页面展示列：链接列移除，资源id变超链接（导出仍用 COLS 含链接）
 
 let allDetail = [], filtered = [];
 const state = {
@@ -212,11 +213,30 @@ function apply() {
   render();
 }
 
+// 筛选下拉选项排序：课程 小学→初中→高中→其他，各学段内按 语文/数学/英语/物理/化学/生物/政治道法/历史/地理/科学，最后其它；年级 一年级…九年级→高一高二高三→未打标
+const GRADE_ORDER = ['一年级','二年级','三年级','四年级','五年级','六年级','七年级','八年级','九年级','高一','高二','高三','未打标'];
+const SUBJECT_GROUPS = [['语文'],['数学'],['英语'],['物理'],['化学'],['生物'],['政治','道法'],['历史'],['地理'],['科学']];
+function stageRank(c) { return c.startsWith('小学') ? 0 : c.startsWith('初中') ? 1 : c.startsWith('高中') ? 2 : 3; }
+function gradeIdx(g) { const i = GRADE_ORDER.indexOf(String(g)); return i < 0 ? GRADE_ORDER.length : i; }
+function subjectIdx(course) {
+  const sub = String(course).replace(/^(小学|初中|高中|中职|其他)/, '');
+  for (let i = 0; i < SUBJECT_GROUPS.length; i++) {
+    if (SUBJECT_GROUPS[i].some(s => sub.includes(s))) return i;
+  }
+  return SUBJECT_GROUPS.length;
+}
+function sortFilterOptions(col, vals) {
+  if (col === '课程') return vals.sort((a, b) => stageRank(String(a)) - stageRank(String(b)) || subjectIdx(String(a)) - subjectIdx(String(b)) || String(a).localeCompare(String(b), 'zh-CN'));
+  if (col === '年级') return vals.sort((a, b) => gradeIdx(a) - gradeIdx(b) || String(a).localeCompare(String(b), 'zh-CN'));
+  return vals.sort((a, b) => String(a).localeCompare(String(b), 'zh-CN'));
+}
+
 function buildFilterOptions() {
   const box = document.getElementById('filters');
   box.innerHTML = '';
   FILTER_COLS.forEach(col => {
-    const vals = [...new Set(allDetail.map(r => r[col]).filter(v => v !== '' && v != null))].sort((a,b)=>String(a).localeCompare(String(b),'zh-CN'));
+    const vals = [...new Set(allDetail.map(r => r[col]).filter(v => v !== '' && v != null))];
+    sortFilterOptions(col, vals);
     const sel = document.createElement('select');
     const opt0 = document.createElement('option'); opt0.value = ''; opt0.textContent = col + '：全部';
     sel.appendChild(opt0);
@@ -264,7 +284,7 @@ function render() {
   document.getElementById('nextBtn').disabled = state.page >= pages;
 
   const thead = document.getElementById('thead');
-  thead.innerHTML = '<tr>' + COLS.map(c => {
+  thead.innerHTML = '<tr>' + DISPLAY_COLS.map(c => {
     let arr = '';
     if (state.sortCol === c) arr = state.sortDir === 1 ? '↑' : '↓';
     else if (!state.sortCol && c === '课程') arr = '↑';
@@ -282,8 +302,12 @@ function render() {
   });
 
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = rows.map(r => '<tr>' + COLS.map(c => {
+  tbody.innerHTML = rows.map(r => '<tr>' + DISPLAY_COLS.map(c => {
     const v = r[c];
+    if (c === '资源id') {
+      const href = r['链接'] || '';
+      return '<td class="num"><a href="' + esc(href) + '" target="_blank" rel="noopener" style="color:var(--blue)">' + esc(v) + '</a></td>';
+    }
     const cls = NUM_COLS.has(c) ? 'num' : '';
     const text = (v === '' || v == null) ? '' : esc(v);
     return '<td class="' + cls + '">' + text + '</td>';
