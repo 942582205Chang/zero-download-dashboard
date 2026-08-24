@@ -63,6 +63,12 @@
   tbody tr:hover td.fz { background: linear-gradient(rgba(0,122,255,0.04), rgba(0,122,255,0.04)), var(--surface-solid); }
   tbody tr.band:hover td.fz { background: linear-gradient(rgba(0,122,255,0.10), rgba(0,122,255,0.10)), var(--surface-solid); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
+  thead th[data-col="品牌"] { width: 152px; }   /* 品牌列固定：约容10个汉字 */
+  thead th[data-col="版本"] { width: 126px; }   /* 版本列固定：约容8个汉字 */
+  thead th[data-col="所属专辑"] { width: 142px; }   /* 所属专辑固定：约容16个数字 */
+  tbody td.w152 { max-width: 152px; }
+  tbody td.w126 { max-width: 126px; }
+  tbody td.w142 { max-width: 142px; }
   .pager { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
   .pager .info { color: var(--muted); font-size: 14px; }
   .pager button, .ios-btn { padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; background: var(--blue); color: #fff; }
@@ -408,7 +414,10 @@ function render() {
       const idv = esc(v);
       return '<td class="num" title="' + idv + '"><a href="' + esc(href) + '" target="_blank" rel="noopener" style="color:var(--blue)">' + idv + '</a></td>';
     }
-    const cls = NUM_COLS.has(c) ? 'num' : '';
+    let cls = NUM_COLS.has(c) ? 'num' : '';
+    if (c === '品牌') cls = (cls ? cls + ' ' : '') + 'w152';
+    else if (c === '版本') cls = (cls ? cls + ' ' : '') + 'w126';
+    else if (c === '所属专辑') cls = (cls ? cls + ' ' : '') + 'w142';
     const text = (v === '' || v == null) ? '' : esc(v);
     return '<td class="' + cls + '"' + (text ? ' title="' + text + '"' : '') + '>' + text + '</td>';
   }).join('') + '</tr>').join('');
