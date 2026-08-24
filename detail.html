@@ -92,6 +92,7 @@
       <span class="badge" id="timeBadge">更新：--</span>
       <button class="ios-btn" id="exportBtn" style="display:none;">⬇ 导出 Excel</button>
       <a class="back" href="index.html">← 返回看板</a>
+      <span class="back" id="logoutBtn" style="display:none;cursor:pointer;">退出登录</span>
     </div>
   </header>
 
@@ -141,7 +142,12 @@ function decSens(s) {
   } catch (e) { return s; }
 }
 function lock() { document.getElementById('loginOverlay').style.display = 'flex'; }
-function unlock() { document.getElementById('loginOverlay').style.display = 'none'; loadData(); }
+function logout() { localStorage.removeItem(AUTH_KEY); lock(); }
+function unlock() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'inline-flex';
+  loadData();
+}
 async function handleLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
@@ -154,6 +160,7 @@ async function handleLogin() {
 if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
 document.getElementById('loginBtn').addEventListener('click', handleLogin);
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('logoutBtn').addEventListener('click', logout);
 
 // ===== 列定义（发布天数在审核人前）=====
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
