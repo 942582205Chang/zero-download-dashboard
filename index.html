@@ -99,9 +99,47 @@
   .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--surface-2); margin-right: 4px; }
 
   footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 20px; }
+
+  /* 登录门 */
+  .overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--page);
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 32px 36px; width: 320px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  }
+  .login-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  .login-box label { display: block; font-size: 13px; color: var(--ink-2); margin: 12px 0 4px; }
+  .login-box input {
+    width: 100%; padding: 9px 12px; font-size: 14px;
+    border: 1px solid var(--grid); border-radius: 8px;
+    background: var(--surface-2); color: var(--ink);
+  }
+  .login-box button {
+    width: 100%; margin-top: 18px; padding: 10px; font-size: 14px; font-weight: 600;
+    border: none; border-radius: 8px; background: var(--series-1); color: #fff; cursor: pointer;
+  }
+  .login-box button:hover { filter: brightness(1.05); }
+  .login-box .err { color: var(--critical); font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .logout { cursor: pointer; color: var(--series-1); margin-left: 14px; font-size: 12px; text-decoration: underline; }
 </style>
 </head>
 <body>
+<div class="overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🔒 品牌0下载预警看板</h2>
+    <p>请输入账号密码查看数据</p>
+    <label for="loginUser">账号</label>
+    <input id="loginUser" type="text" autocomplete="username" placeholder="账号">
+    <label for="loginPass">密码</label>
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="密码">
+    <button id="loginBtn">登 录</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
 <div class="container">
   <header>
     <h1>📊 品牌0下载预警看板</h1>
@@ -109,6 +147,7 @@
       数据更新时间：<span id="updateTime">--</span> &nbsp;|&nbsp;
       数据源：<span id="source">--</span> &nbsp;|&nbsp;
       <span class="badge" id="totalBadge" style="background:var(--surface-2);">--</span>
+      <span class="logout" id="logoutBtn" style="display:none;">退出</span>
     </div>
   </header>
 
@@ -174,7 +213,7 @@
         <thead>
           <tr>
             <th>课程</th><th>资源ID</th><th>标题</th><th>品牌</th><th>年级</th><th>地区</th>
-            <th>B端下载</th><th>C端消费</th><th>前台下载</th><th>审核时间</th><th>链接</th>
+            <th>B端下载</th><th>C端消费</th><th>前台下载</th><th>链接</th>
           </tr>
         </thead>
         <tbody id="detailBody"></tbody>
@@ -323,7 +362,6 @@ function renderDetail(rows) {
       <td class="num">${row['b端下载']}</td>
       <td class="num">${row['c端消费']}</td>
       <td class="num">${row['前台下载']}</td>
-      <td>${esc(row['审核时间'])}</td>
       <td>${row['链接'] ? '<a href="' + esc(row['链接']) + '" target="_blank">查看</a>' : ''}</td>
     </tr>`).join('');
 }
@@ -334,14 +372,71 @@ function esc(s) {
   ));
 }
 
-// 加载数据 + 主题切换
-fetch('data.json').then(r => r.json()).then(d => {
-  window.DASH = d;
-  draw();
-}).catch(e => {
-  document.getElementById('kpiTotal').textContent = '加载失败';
-  console.error(e);
-});
+// ===== 登录门（账号 bob，密码经 SHA-256 哈希比对，明文不进源码） =====
+const AUTH_KEY = 'dash_auth_2026';
+const PWD_HASH = '0bbb34c02cd52aef24f5bf48ac09b384178586555a3ea52f19c8b853d180454b';
+
+async function sha256hex(str) {
+  if (!(window.crypto && window.crypto.subtle)) throw new Error('当前环境不支持安全登录，请用 HTTPS 打开');
+  const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function lock() {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('logoutBtn').style.display = 'none';
+}
+
+function unlock() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('logoutBtn').style.display = 'inline';
+  loadData();
+}
+
+async function handleLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if (!u || !p) { errEl.textContent = '请输入账号和密码'; return; }
+  try {
+    if (await sha256hex(u + ':' + p) === PWD_HASH) {
+      localStorage.setItem(AUTH_KEY, '1');
+      unlock();
+    } else {
+      errEl.textContent = '账号或密码错误';
+    }
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  lock();
+}
+
+// 加载数据（带防缓存参数，每次打开都是最新）
+function loadData() {
+  fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
+    window.DASH = d;
+    draw();
+  }).catch(e => {
+    document.getElementById('kpiTotal').textContent = '加载失败';
+    console.error(e);
+  });
+}
+
+// 初始：已登录直接加载，否则显示登录门
+if (localStorage.getItem(AUTH_KEY) === '1') {
+  unlock();
+} else {
+  lock();
+}
+
+document.getElementById('loginBtn').addEventListener('click', handleLogin);
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('logoutBtn').addEventListener('click', logout);
 
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
 window.addEventListener('resize', () => charts.forEach(c => c.resize()));
