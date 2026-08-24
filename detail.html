@@ -165,7 +165,7 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 // ===== 列定义（发布天数在审核人前）=====
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
-const FILTER_COLS = ['课程','品牌','年级','版本','地区'];   // 下拉筛选列（品牌紧随课程，年级在版本前）
+const FILTER_COLS = ['课程','品牌','审核人','年级','版本','地区'];   // 下拉筛选列（品牌后接审核人；审核人按正序）
 const DISPLAY_COLS = COLS.filter(c => c !== '链接');   // 页面展示列：链接列移除，资源id变超链接（导出仍用 COLS 含链接）
 
 let allDetail = [], filtered = [];
