@@ -40,9 +40,9 @@
   .back { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); text-decoration: none; }
   .back:hover, .export-btn:hover { filter: brightness(0.95); }
   .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; }
-  .search { flex: 1; min-width: 260px; padding: 10px 14px; font-size: 15px; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); color: var(--ink); outline: none; }
-  .filters { display: flex; flex-wrap: wrap; gap: 10px; }
-  .filters select, .filters input[type=number] { padding: 9px 10px; font-size: 14px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
+  .search { flex: 1; min-width: 220px; padding: 10px 14px; font-size: 15px; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); color: var(--ink); outline: none; }
+  .filters { display: flex; flex-wrap: nowrap; gap: 8px; }
+  .filters select, .filters input[type=number] { width: 134px; padding: 9px 10px; font-size: 14px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   .filters label { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 8px; }
   .tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; }
@@ -97,7 +97,7 @@
   </header>
 
   <div class="toolbar">
-    <input class="search" id="searchInput" placeholder="🔍 模糊搜索标题 / 资源id / 链接 / 专辑 / 审核人（多个词用空格分隔）">
+    <input class="search" id="searchInput" placeholder="🔍 模糊搜索标题 / 品牌 / 场景 / 类型 / 版本 等（多个词用空格分隔）">
     <div class="filters" id="filters"></div>
   </div>
   <div class="tags" id="filterTags"></div>
@@ -165,7 +165,7 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 // ===== 列定义（发布天数在审核人前）=====
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
-const FILTER_COLS = ['课程','品牌','审核人','年级','版本','地区'];   // 下拉筛选列（品牌后接审核人；审核人按正序）
+const FILTER_COLS = ['课程','品牌','场景','类型','审核人','年级','版本','地区'];   // 下拉筛选列（品牌后接场景/类型；审核人按正序）；全部参与联动
 const DAY_RANGES = [   // 发布天数分段下拉（数据范围 16~232 天，按分布切段）
   { value: '', label: '发布天数：全部' },
   { value: '16-30', label: '16-30 天' },
@@ -174,7 +174,6 @@ const DAY_RANGES = [   // 发布天数分段下拉（数据范围 16~232 天，�
   { value: '91-180', label: '91-180 天' },
   { value: '181+', label: '181 天以上' }
 ];
-const FILTER_W = { '课程':'172px', '品牌':'160px', '审核人':'160px', '年级':'150px', '版本':'172px', '地区':'172px', '发布天数':'190px' };   // 筛选框固定宽：选项长度变化不再引起布局挪动
 const DISPLAY_COLS = COLS.filter(c => c !== '链接');   // 页面展示列：链接列移除，资源id变超链接（导出仍用 COLS 含链接）
 
 let allDetail = [], filtered = [];
@@ -212,7 +211,7 @@ function comparator(a, b) {
 function searchOk(r) {   // 仅搜索条件
   const s = state.search.trim().toLowerCase();
   if (!s) return true;
-  const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本'], r['审核人']].map(x => String(x||'').toLowerCase()).join(' ');
+  const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本'], r['审核人'], r['场景'], r['类型']].map(x => String(x||'').toLowerCase()).join(' ');
   const words = s.split(/[\s,，]+/).filter(Boolean);   // 多关键词模糊搜索：空格/逗号分隔，全部命中才匹配
   return words.every(w => hay.includes(w));
 }
@@ -266,14 +265,12 @@ function buildFilterOptions() {
   FILTER_COLS.forEach(col => {
     const sel = document.createElement('select');
     sel.id = 'flt-' + col;
-    sel.style.width = FILTER_W[col];
     sel.appendChild(createOpt('', col + '：全部'));
     sel.addEventListener('change', () => { state.filter[col] = sel.value; state.page = 1; apply(); syncSelTitle(sel); });
     box.appendChild(sel);
   });
   const daySel = document.createElement('select');
   daySel.id = 'dayFilter';
-  daySel.style.width = FILTER_W['发布天数'];
   DAY_RANGES.forEach(r => { const o = createOpt(r.value, r.label); daySel.appendChild(o); });
   daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); syncSelTitle(daySel); });
   box.appendChild(daySel);
