@@ -16,6 +16,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_DIR = os.path.join(BASE_DIR, "csv")
 OUTPUT = os.path.join(BASE_DIR, "data.json")
 
+# 明细中不对外暴露的敏感字段（看板公开 + CSV 仅留本地的场景下剔除）
+SENSITIVE_COLS = ["审核人", "审核时间", "用户名", "作者id", "提成比例", "定价", "店铺"]
+
 
 def find_latest_csv():
     """从 csv/ 目录找最新的 CSV 文件"""
@@ -91,7 +94,7 @@ def main():
             "zero": group_rate(df, zero_df, "地区", 15)["零下载数"].tolist(),
             "rate": group_rate(df, zero_df, "地区", 15)["占比"].tolist()
         },
-        "detail": zero_df.fillna("").head(500).to_dict("records")
+        "detail": zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").head(500).to_dict("records")
     }
 
     with open(OUTPUT, "w", encoding="utf-8") as f:
