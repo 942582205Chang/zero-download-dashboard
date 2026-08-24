@@ -55,6 +55,9 @@
   thead th .arr { color: var(--blue); margin-left: 3px; }
   tbody td { padding: 2px 10px; border-bottom: 1px solid var(--separator); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
   tbody tr.band td { background: rgba(0,122,255,0.06); }   /* 每5行浅蓝填充，便于横向对读 */
+  thead th.fz { z-index: 4; }   /* 固定列表头：盖过可滚动表头 */
+  tbody td.fz { position: sticky; z-index: 1; background: var(--surface-solid); }   /* 固定列：不透明底盖住横向滚动内容 */
+  tbody tr.band td.fz { background: color-mix(in srgb, var(--blue) 6%, var(--surface-solid)); }   /* band 行的固定列底与行色一致 */
   tbody tr:hover td { background: rgba(0,122,255,0.04); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .pager { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
@@ -402,6 +405,24 @@ function render() {
     const text = (v === '' || v == null) ? '' : esc(v);
     return '<td class="' + cls + '">' + text + '</td>';
   }).join('') + '</tr>').join('');
+  applySticky();
+}
+
+// 固定前 3 列（课程/资源id/标题）：按实际列宽设置 sticky left，横向滚动时保持不动
+function applySticky() {
+  const FROZEN = 3;
+  const ths = document.querySelectorAll('#thead th');
+  const first = document.querySelector('#tbody tr');
+  if (!first || ths.length < FROZEN) return;
+  const firstTds = first.querySelectorAll('td');
+  const lefts = [];
+  let acc = 0;
+  for (let i = 0; i < FROZEN && i < firstTds.length; i++) { lefts.push(acc); acc += firstTds[i].offsetWidth; }
+  for (let i = 0; i < FROZEN; i++) { ths[i].classList.add('fz'); ths[i].style.left = lefts[i] + 'px'; }
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    const cs = tr.querySelectorAll('td');
+    for (let i = 0; i < FROZEN && i < cs.length; i++) { cs[i].classList.add('fz'); cs[i].style.left = lefts[i] + 'px'; }
+  });
 }
 
 function done() {
