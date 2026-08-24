@@ -299,19 +299,23 @@ function refreshFilterOptions() {
     if (cur && vals.includes(cur)) sel.value = cur;   // 保留仍存在的选中
     else { sel.value = ''; if (cur) { state.filter[col] = ''; needReapply = true; } }   // 选中被收缩掉 → 重置并重算
   }
-  // 发布天数（固定分段，只刷新条数/占比）
+  // 发布天数（固定分段，只保留有数据的分段；0 条分段隐藏）
   const sel = document.getElementById('dayFilter');
-  if (sel && sel.options.length) {
+  if (sel) {
     const base = searched.filter(r => restOk(r, '发布天数'));
     const totalN = base.length;
-    DAY_RANGES.forEach((r, i) => {
-      const o = sel.options[i];
-      if (!o) return;
-      if (r.value === '') { o.textContent = r.label; return; }
+    const cur = state.dayRange;
+    const shown = [];
+    DAY_RANGES.forEach(r => {
+      if (r.value === '') { shown.push({ value: '', label: r.label, n: -1 }); return; }
       const b = r.value === '181+' ? [181, Infinity] : r.value.split('-').map(Number);
       const n = base.filter(x => { const d = Number(x['发布天数'])||0; return d >= b[0] && d <= b[1]; }).length;
-      o.textContent = r.label + '，' + n.toLocaleString('zh-CN') + '，' + (totalN ? (n / totalN * 100).toFixed(1) : '0.0') + '%';
+      shown.push({ value: r.value, label: r.label + '，' + n.toLocaleString('zh-CN') + '，' + (totalN ? (n / totalN * 100).toFixed(1) : '0.0') + '%', n: n });
     });
+    sel.innerHTML = '';
+    shown.forEach(r => { if (r.n !== 0) sel.appendChild(createOpt(r.value, r.label)); });
+    if (cur && shown.some(r => r.value === cur && r.n !== 0)) sel.value = cur;
+    else { sel.value = ''; if (cur) { state.dayRange = ''; needReapply = true; } }   // 选中分段被隐藏 → 重置并重算
   }
   state._needReapply = needReapply;
 }
