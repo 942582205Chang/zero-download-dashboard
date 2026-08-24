@@ -441,7 +441,9 @@ function loadData() {
       const w = new Worker('worker.js');
       w.onmessage = e => {
         const m = e.data;
-        if (m.type === 'progress') {
+        if (m.type === 'time') {
+          document.getElementById('timeBadge').textContent = '更新：' + m.updateTime;
+        } else if (m.type === 'progress') {
           loading.textContent = '数据解密中 ' + Math.round(m.done / m.total * 100) + '%…';
         } else if (m.type === 'batch') {
           allDetail.push.apply(allDetail, m.data);
@@ -464,6 +466,7 @@ function fallbackLoad() {
   loading.textContent = '数据加载中…';
   // 版本号缓存：内容不变秒开，更新自动取新（先取 data.json 拿版本号）
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
+    if (d.updateTime) document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
     const ver = (d.summary && d.summary.version) ? d.summary.version : Date.now();
     return fetch('detail.json?v=' + ver);
   }).then(r => r.json()).then(det => {
