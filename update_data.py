@@ -10,14 +10,28 @@ import pandas as pd
 import json
 import os
 import glob
+import base64
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_DIR = os.path.join(BASE_DIR, "csv")
 OUTPUT = os.path.join(BASE_DIR, "data.json")
 
-# 明细中不对外暴露的敏感字段（看板公开 + CSV 仅留本地的场景下剔除）
+# 敏感字段：不再剔除，改为加密后写入 detail.json（公开仓库不明文暴露，登录后前端解码展示）
 SENSITIVE_COLS = ["审核人", "审核时间", "用户名", "作者id", "提成比例", "定价", "店铺"]
+
+# 混淆密钥（与 index.html 的 SENS_KEY 保持一致；配合登录门，防公开仓库明文 + 防未登录抓取）
+SENS_KEY = "xkw-0dl-2026"
+
+
+def _enc_value(v):
+    """简单可逆混淆：按密钥逐字节 XOR + base64。空值原样保留。"""
+    if v is None or v == "":
+        return v
+    data = str(v).encode("utf-8")
+    key = SENS_KEY.encode("utf-8")
+    out = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+    return base64.b64encode(out).decode("ascii")
 
 
 def find_latest_csv():
@@ -67,14 +81,16 @@ def main():
     total = len(df)
     zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] >= 15)].copy()
     zero_front = len(zero_df)
+    eligible = int((df["发布天数"] >= 15).sum())   # 已过15天观察期的资源
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "source": os.path.basename(csv_path),
         "summary": {
             "total": int(total),
+            "eligible": eligible,
             "zeroFront": int(zero_front),
-            "zeroFrontRate": round(zero_front / total * 100, 2),
+            "zeroFrontRate": round(zero_front / eligible * 100, 2),
             "zeroB": int((df["b端下载"] == 0).sum()),
             "zeroC": int((df["c端消费"] == 0).sum()),
             "thresholdDays": 15
@@ -109,8 +125,12 @@ def main():
     with open(OUTPUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    # 全量明细单独输出 detail.json（聚合 data.json 与明细分离，首屏只加载轻量聚合）
-    detail = zero_df.drop(columns=[c for c in SENSITIVE_COLS if c in zero_df.columns]).fillna("").to_dict("records")
+    # 全量明细单独输出 detail.json（敏感字段加密，登录后前端解码展示）
+    detail = zero_df.fillna("").to_dict("records")
+    for rec in detail:
+        for col in SENSITIVE_COLS:
+            if col in rec:
+                rec[col] = _enc_value(rec[col])
     with open(os.path.join(BASE_DIR, "detail.json"), "w", encoding="utf-8") as f:
         json.dump(detail, f, ensure_ascii=False)
 
