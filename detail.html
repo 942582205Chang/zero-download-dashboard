@@ -98,7 +98,7 @@
   </header>
 
   <div class="toolbar">
-    <input class="search" id="searchInput" placeholder="🔍 搜索标题 / 资源id / 链接 / 专辑…">
+    <input class="search" id="searchInput" placeholder="🔍 模糊搜索标题 / 资源id / 链接 / 专辑 / 审核人（多个词用空格分隔）">
     <div class="filters" id="filters"></div>
   </div>
   <div class="tags" id="filterTags"></div>
@@ -202,10 +202,11 @@ function comparator(a, b) {
 }
 
 function matches(r) {
-  const s = state.search.toLowerCase();
+  const s = state.search.trim().toLowerCase();
   if (s) {
-    const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本']].map(x => String(x||'').toLowerCase()).join(' ');
-    if (!hay.includes(s)) return false;
+    const hay = [r['标题'], r['资源id'], r['链接'], r['所属专辑'], r['专辑名称'], r['课程'], r['品牌'], r['地区'], r['版本'], r['审核人']].map(x => String(x||'').toLowerCase()).join(' ');
+    const words = s.split(/[\s,，]+/).filter(Boolean);   // 多关键词模糊搜索：空格/逗号分隔，全部命中才匹配
+    if (!words.every(w => hay.includes(w))) return false;
   }
   for (const col of FILTER_COLS) {
     const want = state.filter[col];
