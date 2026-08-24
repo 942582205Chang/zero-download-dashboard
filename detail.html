@@ -265,7 +265,19 @@ function buildFilterOptions() {
     box.appendChild(sel);
   });
   const daySel = document.createElement('select');
-  DAY_RANGES.forEach(r => { const o = document.createElement('option'); o.value = r.value; o.textContent = r.label; daySel.appendChild(o); });
+  const totalN = allDetail.length;
+  DAY_RANGES.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r.value;
+    if (r.value === '') {
+      o.textContent = r.label;
+    } else {
+      const b = r.value === '181+' ? [181, Infinity] : r.value.split('-').map(Number);
+      const n = allDetail.filter(x => { const d = Number(x['发布天数'])||0; return d >= b[0] && d <= b[1]; }).length;
+      o.textContent = r.label + '，' + n.toLocaleString('zh-CN') + '，' + (n / totalN * 100).toFixed(1) + '%';
+    }
+    daySel.appendChild(o);
+  });
   daySel.addEventListener('change', () => { state.dayRange = daySel.value; state.page = 1; apply(); });
   box.appendChild(daySel);
 }
