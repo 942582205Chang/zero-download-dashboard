@@ -57,11 +57,11 @@
   tbody tr.band td { background: rgba(0,122,255,0.06); }   /* 每5行浅蓝填充，便于横向对读 */
   thead th.fz { z-index: 4; }   /* 固定列表头：盖过可滚动表头 */
   tbody td.fz { position: sticky; z-index: 1; background: var(--surface-solid); }   /* 固定列：不透明底盖住横向滚动内容 */
-  tbody tr.band td.fz { background: color-mix(in srgb, var(--blue) 6%, var(--surface-solid)); }   /* band 行的固定列底与行色一致 */
+  tbody tr.band td.fz { background: linear-gradient(rgba(0,122,255,0.06), rgba(0,122,255,0.06)), var(--surface-solid); }   /* band 行的固定列底与行色一致（不透明） */
   tbody tr:hover td { background: rgba(0,122,255,0.04); }
-  /* 固定列悬停底必须不透明（否则滚动内容透出重叠）：普通行 + band 行分别用不透明混色 */
-  tbody tr:hover td.fz { background: color-mix(in srgb, var(--blue) 4%, var(--surface-solid)); }
-  tbody tr.band:hover td.fz { background: color-mix(in srgb, var(--blue) 8%, var(--surface-solid)); }
+  /* 固定列悬停底必须不透明（否则滚动内容透出重叠）：用「半透明渐变层 + 不透明底色」双层，全浏览器兼容 */
+  tbody tr:hover td.fz { background: linear-gradient(rgba(0,122,255,0.04), rgba(0,122,255,0.04)), var(--surface-solid); }
+  tbody tr.band:hover td.fz { background: linear-gradient(rgba(0,122,255,0.10), rgba(0,122,255,0.10)), var(--surface-solid); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .pager { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
   .pager .info { color: var(--muted); font-size: 14px; }
