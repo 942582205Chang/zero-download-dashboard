@@ -11,6 +11,7 @@ import json
 import os
 import glob
 import base64
+import hashlib
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -122,17 +123,20 @@ def main():
         }
     }
 
-    with open(OUTPUT, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
     # 全量明细单独输出 detail.json（敏感字段加密，登录后前端解码展示）
     detail = zero_df.fillna("").to_dict("records")
     for rec in detail:
         for col in SENSITIVE_COLS:
             if col in rec:
                 rec[col] = _enc_value(rec[col])
-    with open(os.path.join(BASE_DIR, "detail.json"), "w", encoding="utf-8") as f:
-        json.dump(detail, f, ensure_ascii=False)
+    detail_bytes = json.dumps(detail, ensure_ascii=False).encode("utf-8")
+    # 明细内容哈希作为版本号：内容不变版本不变 → 浏览器可命中缓存秒开；数据更新版本变化 → 自动取新数据
+    data["summary"]["version"] = hashlib.sha1(detail_bytes).hexdigest()[:12]
+
+    with open(OUTPUT, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    with open(os.path.join(BASE_DIR, "detail.json"), "wb") as f:
+        f.write(detail_bytes)
 
     print(f"OK 已生成 data.json")
     print(f"数据源：{os.path.basename(csv_path)}")
