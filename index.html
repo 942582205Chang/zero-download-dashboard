@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>品牌0下载预警看板</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
   :root {
     color-scheme: light;
@@ -288,7 +287,7 @@
       <header>
         <div class="brand">
           <h1>品牌0下载预警看板</h1>
-          <p>统计资源中"发布（审核通过）≥15天仍前台下载为 0"的资源数量与分布，用于 0 下载预警。</p>
+          <p>统计资源中"发布（审核通过）超15天仍前台下载为 0"的资源数量与分布，用于 0 下载预警。</p>
         </div>
         <div class="meta">
           <span class="badge" id="timeBadge">更新：--</span>
@@ -303,14 +302,14 @@
           <div class="sub">本批次统计资源</div>
         </div>
         <div class="kpi">
-          <div class="kpi-head"><span class="label">发布≥15天 0下载</span><span class="trend" id="frontTrend">需关注</span></div>
+          <div class="kpi-head"><span class="label">发布超15天 0下载</span><span class="trend" id="frontTrend">需关注</span></div>
           <div class="value critical" id="kpiZeroFront">--</div>
           <div class="sub">重点预警资源</div>
         </div>
         <div class="kpi">
           <div class="kpi-head"><span class="label">0 下载率</span></div>
           <div class="value critical" id="kpiZeroRate">--%</div>
-          <div class="sub">发布≥15天仍0下载 / 发布≥15天资源</div>
+          <div class="sub">发布超15天仍0下载 / 发布超15天资源</div>
         </div>
         <div class="kpi">
           <div class="kpi-head"><span class="label">B端0下载 / C端0消费</span></div>
@@ -319,7 +318,7 @@
         </div>
       </div>
 
-      <div class="section"><h2>分布分析</h2><p>多维度拆解"发布≥15天仍0下载"资源的结构与占比（全局视图）</p></div>
+      <div class="section"><h2>分布分析</h2><p>多维度拆解"发布超15天仍0下载"资源的结构与占比（全局视图）</p></div>
       <div class="chart-grid">
         <div class="card">
           <h3>按课程 · 0下载资源数</h3>
@@ -351,10 +350,10 @@
       <div class="detail-card">
         <div class="head">
           <div>
-            <h3>发布≥15天仍0下载 资源明细</h3>
+            <h3>发布超15天仍0下载 资源明细</h3>
             <div class="count">当前筛选共 <span id="detailCount">--</span> 条，可导出 Excel 查看完整明细</div>
           </div>
-          <button class="ios-btn" id="downloadBtn">⬇ 导出 Excel</button>
+          <a class="ios-btn" href="detail.html">📊 在线查看明细</a>
         </div>
       </div>
     </div>
@@ -543,80 +542,12 @@ function applyFilters() {
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-// 导出列顺序（发布天数移到审核人前）与列宽（对齐参考文件）
-const EXPORT_HEADERS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
-const EXPORT_WIDTHS  = [11, 8, 44.5, 12.875, 11.125, 12.25, 6.875, 11.25, 9, 8.625, 9, 8.625, 14.625, 11.25, 10.75, 6.625, 6.875, 6.75, null, null, 10.375, null, null, null, null, null, 11];
-
-function exportExcel() {
-  if (!detailLoaded) return alert('明细还在加载中，请稍候再导出');
-  if (!filteredRows.length) return alert('当前没有可导出的明细数据');
-  const btn = document.getElementById('downloadBtn');
-  const oldText = btn.textContent;
-  btn.textContent = '⏳ 生成中…'; btn.disabled = true;
-
-  // 排序：课程 ASC → 版本 ASC → 发布天数 ASC
-  const rows = filteredRows.slice().sort((a, b) => {
-    const c1 = String(a['课程'] || '').localeCompare(String(b['课程'] || ''), 'zh-CN');
-    if (c1) return c1;
-    const c2 = String(a['版本'] || '').localeCompare(String(b['版本'] || ''), 'zh-CN');
-    if (c2) return c2;
-    return (Number(a['发布天数']) || 0) - (Number(b['发布天数']) || 0);
-  });
-
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('发布15天0下载明细');
-  ws.views = [{ state: 'frozen', xSplit: 8, ySplit: 1 }];   // 冻结 I2
-
-  // 表头：微软雅黑 10 粗体 + 黄色底 + 行高
-  EXPORT_HEADERS.forEach((h, i) => {
-    const c = ws.getCell(1, i + 1);
-    c.value = h;
-    c.font = { name: '微软雅黑', size: 10, bold: true };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
-    c.alignment = { horizontal: 'left', vertical: 'center' };
-  });
-  ws.getRow(1).height = 16.5;
-  EXPORT_WIDTHS.forEach((w, i) => { if (w) ws.getColumn(i + 1).width = w; });
-
-  // 数据：微软雅黑 10
-  const font = { name: '微软雅黑', size: 10 };
-  rows.forEach((r, idx) => {
-    const row = ws.getRow(idx + 2);
-    EXPORT_HEADERS.forEach((h, i) => {
-      const c = row.getCell(i + 1);
-      const v = r[h];
-      c.value = (v === '' || v == null) ? '' : v;
-      c.font = font;
-    });
-  });
-
-  // 自动筛选整表
-  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: EXPORT_HEADERS.length } };
-
-  const date = allData ? allData.updateTime.split(' ')[0] : new Date().toISOString().split('T')[0];
-  wb.xlsx.writeBuffer().then(buf => {
-    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `发布15天0下载明细_${date}_${rows.length}条.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    btn.textContent = oldText; btn.disabled = false;
-  }).catch(e => {
-    btn.textContent = oldText; btn.disabled = false;
-    alert('导出失败：' + e.message);
-  });
-}
-
 function loadData() {
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
     allData = d;
     document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
     drawCharts();
     updateKPI(null);   // 聚合 summary 秒出
-    document.getElementById('downloadBtn').addEventListener('click', exportExcel);
     // 明细异步加载（7MB 级别，不阻塞首屏）
     fetch('detail.json?v=' + Date.now()).then(r => r.json()).then(det => {
       allDetail = det.map(r => {
