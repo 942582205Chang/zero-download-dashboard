@@ -310,7 +310,7 @@
         <div class="kpi">
           <div class="kpi-head"><span class="label">0 下载率</span></div>
           <div class="value critical" id="kpiZeroRate">--%</div>
-          <div class="sub">发布≥15天仍0下载 / 资源总数</div>
+          <div class="sub">发布≥15天仍0下载 / 发布≥15天资源</div>
         </div>
         <div class="kpi">
           <div class="kpi-head"><span class="label">B端0下载 / C端0消费</span></div>
@@ -364,6 +364,21 @@
 </div>
 
 <script>
+// ===== 敏感字段解密（密钥与 update_data.py 的 SENS_KEY 保持一致）=====
+const SENS_KEY = 'xkw-0dl-2026';
+const SENS_FIELDS = ['审核人','审核时间','用户名','作者id','提成比例','定价','店铺'];
+function decSens(s) {
+  if (!s) return s;
+  try {
+    const raw = atob(s);
+    let out = '';
+    for (let i = 0; i < raw.length; i++) {
+      out += String.fromCharCode(raw.charCodeAt(i) ^ SENS_KEY.charCodeAt(i % SENS_KEY.length));
+    }
+    return out;
+  } catch (e) { return s; }
+}
+
 // ===== Login =====
 const AUTH_KEY = 'dash_auth_2026';
 const PWD_HASH = '0bbb34c02cd52aef24f5bf48ac09b384178586555a3ea52f19c8b853d180454b';
@@ -550,9 +565,13 @@ function loadData() {
     document.getElementById('downloadBtn').addEventListener('click', exportExcel);
     // 明细异步加载（7MB 级别，不阻塞首屏）
     fetch('detail.json?v=' + Date.now()).then(r => r.json()).then(det => {
-      allDetail = det;
+      allDetail = det.map(r => {
+        const c = Object.assign({}, r);
+        SENS_FIELDS.forEach(k => { if (c[k]) c[k] = decSens(c[k]); });
+        return c;
+      });
       detailLoaded = true;
-      initFilters(det);
+      initFilters(allDetail);
       applyFilters();
     }).catch(() => {
       document.getElementById('detailCount').textContent = '明细加载失败';
