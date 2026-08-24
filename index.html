@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>品牌0下载预警看板</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --surface-2:   #f4f3ef;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --muted:       #898781;
+    --grid:        #e1e0d9;
+    --border:      rgba(11,11,11,0.10);
+    --series-1:    #2a78d6;
+    --series-2:    #eb6834;
+    --critical:    #d03b3b;
+    --good:        #0ca30c;
+    --warning:     #fab219;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page:        #0d0d0d;
+      --surface:     #1a1a19;
+      --surface-2:   #232321;
+      --ink:         #ffffff;
+      --ink-2:       #c3c2b7;
+      --muted:       #898781;
+      --grid:        #2c2c2a;
+      --border:      rgba(255,255,255,0.10);
+      --series-1:    #3987e5;
+      --series-2:    #d95926;
+      --critical:    #e66767;
+      --good:        #0ca30c;
+      --warning:     #fab219;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    padding: 24px;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  header { margin-bottom: 20px; }
+  header h1 { font-size: 22px; font-weight: 600; }
+  header .meta { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  header .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+
+  /* KPI 卡片 */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .kpi .label { font-size: 13px; color: var(--ink-2); }
+  .kpi .value { font-size: 28px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi .value.critical { color: var(--critical); }
+  .kpi .value.good { color: var(--good); }
+
+  /* 图表卡片 */
+  .chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .card .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .chart { width: 100%; height: 320px; }
+
+  /* 明细表 */
+  .detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .table-wrap { overflow-x: auto; margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; color: var(--muted); font-weight: 500;
+    padding: 8px 10px; border-bottom: 1px solid var(--grid);
+    white-space: nowrap; position: sticky; top: 0; background: var(--surface);
+  }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  tbody tr:hover { background: var(--surface-2); }
+  td.num { font-variant-numeric: tabular-nums; }
+  a { color: var(--series-1); text-decoration: none; }
+  .title-cell { max-width: 420px; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--surface-2); margin-right: 4px; }
+
+  footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>📊 品牌0下载预警看板</h1>
+    <div class="meta">
+      数据更新时间：<span id="updateTime">--</span> &nbsp;|&nbsp;
+      数据源：<span id="source">--</span> &nbsp;|&nbsp;
+      <span class="badge" id="totalBadge" style="background:var(--surface-2);">--</span>
+    </div>
+  </header>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="label">资源总数</div>
+      <div class="value" id="kpiTotal">--</div>
+      <div class="sub">本批次统计资源</div>
+    </div>
+    <div class="kpi">
+      <div class="label">前台 0 下载</div>
+      <div class="value critical" id="kpiZeroFront">--</div>
+      <div class="sub">需重点预警</div>
+    </div>
+    <div class="kpi">
+      <div class="label">0 下载率</div>
+      <div class="value critical" id="kpiZeroRate">--</div>
+      <div class="sub">前台0下载 / 资源总数</div>
+    </div>
+    <div class="kpi">
+      <div class="label">B端 0 下载</div>
+      <div class="value" id="kpiZeroB">--</div>
+      <div class="sub">B端渠道</div>
+    </div>
+    <div class="kpi">
+      <div class="label">C端 0 消费</div>
+      <div class="value" id="kpiZeroC">--</div>
+      <div class="sub">C端渠道</div>
+    </div>
+  </div>
+
+  <!-- 图表 -->
+  <div class="chart-grid">
+    <div class="card">
+      <h3>按课程 · 0下载资源数</h3>
+      <div class="card-sub">TOP 各课程零下载资源数量</div>
+      <div class="chart" id="chartCourse"></div>
+    </div>
+    <div class="card">
+      <h3>按年级 · 0下载资源数</h3>
+      <div class="card-sub">各年级零下载资源数量</div>
+      <div class="chart" id="chartGrade"></div>
+    </div>
+    <div class="card">
+      <h3>按品牌 · 0下载率 TOP15</h3>
+      <div class="card-sub">品牌内零下载资源占比（预警重点）</div>
+      <div class="chart" id="chartBrand"></div>
+    </div>
+    <div class="card">
+      <h3>按地区 · 0下载资源数 TOP15</h3>
+      <div class="card-sub">各地区零下载资源数量</div>
+      <div class="chart" id="chartRegion"></div>
+    </div>
+  </div>
+
+  <!-- 明细 -->
+  <div class="detail-card">
+    <h3>0 下载资源明细</h3>
+    <div class="card-sub">前台下载为 0 的资源，共 <span id="detailCount">--</span> 条（仅展示前 500 条）</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>课程</th><th>资源ID</th><th>标题</th><th>品牌</th><th>年级</th><th>地区</th>
+            <th>B端下载</th><th>C端消费</th><th>前台下载</th><th>审核时间</th><th>链接</th>
+          </tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>数据看板 · 由 GitHub Pages 托管 · 数据定期自动更新</footer>
+</div>
+
+<script>
+// 主题色（light/dark 两套，与 CSS 变量保持一致）
+const THEME = {
+  light: {
+    surface: '#fcfcfb', ink: '#0b0b0b', ink2: '#52514e',
+    muted: '#898781', grid: '#e1e0d9', series1: '#2a78d6', series2: '#eb6834'
+  },
+  dark: {
+    surface: '#1a1a19', ink: '#ffffff', ink2: '#c3c2b7',
+    muted: '#898781', grid: '#2c2c2a', series1: '#3987e5', series2: '#d95926'
+  }
+};
+
+let charts = [];
+
+function isDark() { return matchMedia('(prefers-color-scheme: dark)').matches; }
+function theme() { return THEME[isDark() ? 'dark' : 'light']; }
+
+function fmt(n) {
+  return n == null ? '--' : Number(n).toLocaleString('zh-CN');
+}
+
+// 通用 ECharts 配置
+function baseBarOpt(t) {
+  return {
+    grid: { left: 10, right: 24, top: 10, bottom: 8, containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      backgroundColor: isDark() ? '#232321' : '#ffffff',
+      borderColor: t.grid, textStyle: { color: t.ink, fontSize: 12 }
+    },
+    xAxis: { type: 'value', axisLabel: { color: t.muted }, splitLine: { lineStyle: { color: t.grid } } },
+    yAxis: {
+      type: 'category', inverse: true,
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: t.ink2, fontSize: 12 }
+    },
+    series: [{
+      type: 'bar',
+      barMaxWidth: 18,
+      itemStyle: { color: t.series1, borderRadius: [0, 4, 4, 0] },
+      emphasis: { itemStyle: { color: t.series2 } }
+    }]
+  };
+}
+
+function baseBarVerticalOpt(t) {
+  return {
+    grid: { left: 10, right: 24, top: 10, bottom: 8, containLabel: true },
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      backgroundColor: isDark() ? '#232321' : '#ffffff',
+      borderColor: t.grid, textStyle: { color: t.ink, fontSize: 12 }
+    },
+    xAxis: {
+      type: 'category',
+      axisLine: { lineStyle: { color: t.muted } }, axisTick: { show: false },
+      axisLabel: { color: t.ink2, fontSize: 11, rotate: 30, interval: 0 }
+    },
+    yAxis: { type: 'value', axisLabel: { color: t.muted }, splitLine: { lineStyle: { color: t.grid } } },
+    series: [{
+      type: 'bar', barMaxWidth: 22,
+      itemStyle: { color: t.series1, borderRadius: [4, 4, 0, 0] },
+      emphasis: { itemStyle: { color: t.series2 } }
+    }]
+  };
+}
+
+function draw() {
+  const t = theme();
+  charts.forEach(c => c.dispose());
+  charts = [];
+  const data = window.DASH;
+  if (!data) return;
+
+  // KPI
+  const s = data.summary;
+  document.getElementById('updateTime').textContent = data.updateTime;
+  document.getElementById('source').textContent = data.source || '--';
+  document.getElementById('kpiTotal').textContent = fmt(s.total);
+  document.getElementById('kpiZeroFront').textContent = fmt(s.zeroFront);
+  document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
+  document.getElementById('kpiZeroB').textContent = fmt(s.zeroB);
+  document.getElementById('kpiZeroC').textContent = fmt(s.zeroC);
+  document.getElementById('totalBadge').textContent = `0下载率 ${s.zeroFrontRate}%`;
+
+  // 按课程（横向）
+  const c = document.getElementById('chartCourse');
+  const cOpt = baseBarOpt(t);
+  cOpt.xAxis.max = Math.max(...data.byCourse.zero) * 1.15;
+  cOpt.series[0].data = data.byCourse.zero;
+  cOpt.yAxis.data = data.byCourse.categories;
+  charts.push(echarts.init(c)); charts[charts.length-1].setOption(cOpt);
+
+  // 按年级（纵向）
+  const g = document.getElementById('chartGrade');
+  const gOpt = baseBarVerticalOpt(t);
+  gOpt.xAxis.data = data.byGrade.categories;
+  gOpt.series[0].data = data.byGrade.zero;
+  charts.push(echarts.init(g)); charts[charts.length-1].setOption(gOpt);
+
+  // 按品牌 0下载率（横向）
+  const b = document.getElementById('chartBrand');
+  const bOpt = baseBarOpt(t);
+  bOpt.series[0].itemStyle.color = t.series2;
+  bOpt.series[0].emphasis.itemStyle.color = t.series1;
+  bOpt.xAxis.name = '%';
+  bOpt.xAxis.max = Math.max(...data.byBrand.rate) * 1.15;
+  bOpt.series[0].data = data.byBrand.rate;
+  bOpt.yAxis.data = data.byBrand.categories;
+  charts.push(echarts.init(b)); charts[charts.length-1].setOption(bOpt);
+
+  // 按地区（纵向）
+  const r = document.getElementById('chartRegion');
+  const rOpt = baseBarVerticalOpt(t);
+  rOpt.xAxis.data = data.byRegion.categories;
+  rOpt.series[0].data = data.byRegion.zero;
+  charts.push(echarts.init(r)); charts[charts.length-1].setOption(rOpt);
+
+  // 明细表
+  renderDetail(data.detail);
+}
+
+function renderDetail(rows) {
+  const body = document.getElementById('detailBody');
+  document.getElementById('detailCount').textContent = rows.length;
+  body.innerHTML = rows.map(row => `
+    <tr>
+      <td><span class="tag">${esc(row['课程'])}</span></td>
+      <td class="num">${esc(row['资源id'])}</td>
+      <td class="title-cell">${esc(row['标题'])}</td>
+      <td>${esc(row['品牌'])}</td>
+      <td>${esc(row['年级'])}</td>
+      <td>${esc(row['地区'])}</td>
+      <td class="num">${row['b端下载']}</td>
+      <td class="num">${row['c端消费']}</td>
+      <td class="num">${row['前台下载']}</td>
+      <td>${esc(row['审核时间'])}</td>
+      <td>${row['链接'] ? '<a href="' + esc(row['链接']) + '" target="_blank">查看</a>' : ''}</td>
+    </tr>`).join('');
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+// 加载数据 + 主题切换
+fetch('data.json').then(r => r.json()).then(d => {
+  window.DASH = d;
+  draw();
+}).catch(e => {
+  document.getElementById('kpiTotal').textContent = '加载失败';
+  console.error(e);
+});
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+window.addEventListener('resize', () => charts.forEach(c => c.resize()));
+</script>
+</body>
+</html>
