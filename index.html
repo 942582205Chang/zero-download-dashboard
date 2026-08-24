@@ -369,11 +369,11 @@ function decSens(s) {
   if (!s) return s;
   try {
     const raw = atob(s);
-    let out = '';
+    const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) {
-      out += String.fromCharCode(raw.charCodeAt(i) ^ SENS_KEY.charCodeAt(i % SENS_KEY.length));
+      bytes[i] = raw.charCodeAt(i) ^ SENS_KEY.charCodeAt(i % SENS_KEY.length);
     }
-    return out;
+    return new TextDecoder('utf-8').decode(bytes);
   } catch (e) { return s; }
 }
 
