@@ -639,22 +639,24 @@ function dayRowsHtml(rows, courseMode) {
   const avg = (n, a) => a ? (n / a).toFixed(1) : '-';
   return rows.map((r, i) => {
     const childStart = courseMode ? 2 : 3;   // 课程表：课程行(第3行)起为"已超过15天"展开；分档表：16-30天(第4行)起
-    const base = (i >= childStart && green) ? green : tot;
+    const isChild = i >= childStart;          // 带 -- 的行（展开子级）
+    const base = (isChild && green) ? green : tot;   // 占比分母：展开行用绿色行，其余用整体行
+    const overallDen = isChild ? r.all : tot.all;    // 整体占比分母：仅带 -- 行用该行 all；其余行仍用整体 all
     const cls = i === 0 ? 'total-row' : '';
-    const label = (i >= childStart ? '  -- ' : '') + r.label;   // 展开子行第一列前加两个空格+--
+    const label = (isChild ? '  -- ' : '') + r.label;   // 展开子行第一列前加两个空格+--
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num${g15}">${fmt(r.front0)}</td>` +
     `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
-    `<td class="num pct${g15}">${pct(r.front0, tot.all)}</td>` +   // 整体占比（分母=全量 all）
+    `<td class="num pct${g15}">${pct(r.front0, overallDen)}</td>` +   // 整体占比：--行分母=该行all，其余=整体all
     `<td class="num">${fmt(r.b0)}</td>` +
     `<td class="num pct">${pct(r.b0, base.b0)}</td>` +
-    `<td class="num pct">${pct(r.b0, tot.all)}</td>` +      // 整体占比（分母=全量 all）
+    `<td class="num pct">${pct(r.b0, overallDen)}</td>` +      // 整体占比
     `<td class="num">${fmt(r.c0)}</td>` +
     `<td class="num pct">${pct(r.c0, base.c0)}</td>` +
-    `<td class="num pct">${pct(r.c0, tot.all)}</td>` +      // 整体占比（分母=全量 all）
+    `<td class="num pct">${pct(r.c0, overallDen)}</td>` +      // 整体占比
     `<td class="num">${fmt(r.frontSum)}</td>` +
     `<td class="num pct">${pct(r.frontSum, base.frontSum)}</td>` +
     `<td class="num">${avg(r.frontSum, r.all)}</td>` +      // 前台均下载（分母=该行all）
