@@ -157,7 +157,7 @@
 const AUTH_KEY = 'dash_auth_2026';
 const PWD_HASH = '0bbb34c02cd52aef24f5bf48ac09b384178586555a3ea52f19c8b853d180454b';
 // ===== 数据整体解密：密钥 = SHA-256(登录密码)，与 update_data.py 的派生密钥一致 =====
-const SESS_KEY = 'dash_dec_key';     // sessionStorage 存派生密钥（刷新保留，关浏览器需重登）
+const SESS_KEY = 'dash_dec_key';     // localStorage 存派生密钥（关闭浏览器重开仍自动登录）
 let decKey = null;                    // 内存中的 32 字节派生密钥
 async function sha256hex(str) {
   const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -179,7 +179,7 @@ function decSens(s, key) {
   } catch (e) { return s; }
 }
 function lock() { document.getElementById('loginOverlay').style.display = 'flex'; }
-function logout() { localStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(SESS_KEY); decKey = null; lock(); }
+function logout() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(SESS_KEY); decKey = null; lock(); }
 function unlock() {
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('logoutBtn').style.display = 'inline-flex';
@@ -193,7 +193,7 @@ async function handleLogin() {
   if (!u || !p) { err.textContent = '请输入账号和密码'; return; }
   if (await sha256hex(u + ':' + p) === PWD_HASH) {
     decKey = await deriveKey(p);                       // 用登录密码派生解密密钥
-    sessionStorage.setItem(SESS_KEY, bytesToB64(decKey));
+    localStorage.setItem(SESS_KEY, bytesToB64(decKey));
     localStorage.setItem(AUTH_KEY, '1');
     unlock();
   }
@@ -225,8 +225,8 @@ function regionAllowed(geo) {
   checkRegion().then(geo => {
     if (regionAllowed(geo)) {
       ov.style.display = 'none';
-      if (localStorage.getItem(AUTH_KEY) === '1' && sessionStorage.getItem(SESS_KEY)) {
-        decKey = b64ToBytes(sessionStorage.getItem(SESS_KEY)); unlock();
+      if (localStorage.getItem(AUTH_KEY) === '1' && localStorage.getItem(SESS_KEY)) {
+        decKey = b64ToBytes(localStorage.getItem(SESS_KEY)); unlock();
       } else lock();
     } else {
       document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 地区），禁止访问本看板。';
