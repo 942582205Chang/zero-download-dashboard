@@ -167,6 +167,7 @@
   .days-table th, .days-table td { padding: 5px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
   .days-table th { white-space: normal; }   /* 无备注表头允许换行，压缩列宽实现全屏不滚动 */
   .days-table th:has(.pct-note) { white-space: nowrap; }   /* 有备注表头(占比/整体占比/平均值)保持单行 */
+  .days-table th .th-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }   /* 无备注表头最多2行 */
   .days-table td { white-space: nowrap; }   /* 数据保持单行 */
   /* separate 下外框双线处理：最右列/最后行边框交给表格自身 border */
   .days-table th:last-child, .days-table td:last-child { border-right: none; }
@@ -313,8 +314,8 @@
           <th class="grp" colspan="9">消费数据</th>
         </tr>
         <tr>
-          <th>all</th><th>前台 0 下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th>B端 0 下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th>C端 0 消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">all</span></th>
-          <th>前台下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th>B 端下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th>C 端消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th>
+          <th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">all</span></th>
+          <th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th>
         </tr>
       </thead>
       <tbody id="daysBody"></tbody>
