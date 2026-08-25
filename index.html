@@ -168,7 +168,7 @@
   .days-table thead .grp { font-size: 14px; font-weight: 700; }
   .days-table td.rowhead { font-weight: 600; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .days-table td .pct-note { color: var(--muted); font-size: 12px; }
+  .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
   .days-table tr.row-green td.num { color: var(--std-green); }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
@@ -299,8 +299,8 @@
           <th class="grp" colspan="9">消费数据</th>
         </tr>
         <tr>
-          <th>all</th><th>前台 0 下载</th><th>占比</th><th>B端 0 下载</th><th>占比</th><th>C端 0 消费</th><th>占比</th>
-          <th>前台下载</th><th>占比</th><th>前台均下载</th><th>B 端下载</th><th>占比</th><th>B 端均下载</th><th>C 端消费</th><th>占比</th><th>C 端均消费</th>
+          <th>all</th><th>前台 0 下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>B端 0 下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>C端 0 消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th>
+          <th>前台下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>前台均下载</th><th>B 端下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>B 端均下载</th><th>C 端消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>C 端均消费</th>
         </tr>
       </thead>
       <tbody id="daysBody"></tbody>
@@ -557,7 +557,6 @@ function renderDaysTable() {
   const green = rows.find(r => r.label === '超过 15 天'); // 绿色行：16到30天起各细分档的占比分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
   const avg = (n, a) => a ? (n / a).toFixed(2) : '-';   // 人均（分母 = 该行 all）
-  const pctCell = (v, note) => `<div>${v}</div><div class="pct-note">${note}</div>`;   // 占比数值 + 灰色12px备注
   document.getElementById('daysBody').innerHTML = rows.map((r, i) => {
     const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
     const cls = i === 0 ? 'total-row' : (r.label === '超过 15 天' ? 'row-green' : '');
@@ -565,19 +564,19 @@ function renderDaysTable() {
     `<td class="rowhead">${esc(r.label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num">${fmt(r.front0)}</td>` +
-    `<td class="num pct">${pctCell(pct(r.front0, base.front0), '前台 0 下载')}</td>` +
+    `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
     `<td class="num">${fmt(r.b0)}</td>` +
-    `<td class="num pct">${pctCell(pct(r.b0, base.b0), 'B端 0 下载')}</td>` +
+    `<td class="num pct">${pct(r.b0, base.b0)}</td>` +
     `<td class="num">${fmt(r.c0)}</td>` +
-    `<td class="num pct">${pctCell(pct(r.c0, base.c0), 'C端 0 消费')}</td>` +
+    `<td class="num pct">${pct(r.c0, base.c0)}</td>` +
     `<td class="num">${fmt(r.frontSum)}</td>` +
-    `<td class="num pct">${pctCell(pct(r.frontSum, base.frontSum), '前台下载')}</td>` +
+    `<td class="num pct">${pct(r.frontSum, base.frontSum)}</td>` +
     `<td class="num">${avg(r.frontSum, r.all)}</td>` +      // 前台均下载（分母=该行all）
     `<td class="num">${fmt(r.bSum)}</td>` +
-    `<td class="num pct">${pctCell(pct(r.bSum, base.bSum), 'B 端下载')}</td>` +
+    `<td class="num pct">${pct(r.bSum, base.bSum)}</td>` +
     `<td class="num">${avg(r.bSum, r.all)}</td>` +          // B端均下载（分母=该行all）
     `<td class="num">${fmt(r.cSum)}</td>` +
-    `<td class="num pct">${pctCell(pct(r.cSum, base.cSum), 'C 端消费')}</td>` +
+    `<td class="num pct">${pct(r.cSum, base.cSum)}</td>` +
     `<td class="num">${avg(r.cSum, r.all)}</td>` +          // C端均消费（分母=该行all）
     `</tr>`;
   }).join('');
