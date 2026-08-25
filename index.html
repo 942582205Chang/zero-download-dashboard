@@ -167,16 +167,17 @@
   .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
   #stageGrid .days-wrap, #courseGrid .days-wrap { margin-bottom: 16px; }
   /* 列宽统一：以 一、小初高整体 为准固定（table-layout:fixed + 首列/序号/占比/均列宽），其余表格列宽与之一致 */
-  /* width:auto → 表格宽度=colgroup 总和(1130px)，各列精确按设定值，不被容器拉伸；超宽由 .days-wrap 横向滚动 */
-  .days-table { width: auto; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
-  .days-table col.c1 { width: 102px; }   /* 首列：学段名/课程名 */
-  .days-table col.cn { width: 52px; }    /* all 列 */
-  .days-table col.c0 { width: 52px; }    /* 前台 0 下载 / B端0 下载 / C端0 消费（两行显示） */
-  .days-table col.cp { width: 52px; }    /* 占比/整体占比列（含2行表头） */
-  .days-table col.cavg { width: 52px; }  /* 平均值列 */
-  .days-table col.cdown { width: 52px; } /* 前台下载 */
-  .days-table col.cbdown { width: 72px; }/* B 端下载 */
-  .days-table col.ccon { width: 72px; }  /* C 端消费 */
+  /* 表格宽度必须显式写死(1130px=colgroup总和)：width:auto 会退化为按内容分配 → 各表相同列宽不一致、紫线错位 */
+  /* 超宽由 .days-wrap 横向滚动 */
+  .days-table { width: 1130px; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
+  .days-table col.c1 { width: 102px !important; }   /* 首列：学段名/课程名 */
+  .days-table col.cn { width: 52px !important; }    /* all 列 */
+  .days-table col.c0 { width: 52px !important; }    /* 前台 0 下载 / B端0 下载 / C端0 消费（两行显示） */
+  .days-table col.cp { width: 52px !important; }    /* 占比/整体占比列（含2行表头） */
+  .days-table col.cavg { width: 52px !important; }  /* 平均值列 */
+  .days-table col.cdown { width: 52px !important; } /* 前台下载 */
+  .days-table col.cbdown { width: 72px !important; }/* B 端下载 */
+  .days-table col.ccon { width: 72px !important; }  /* C 端消费 */
   .days-table th, .days-table td { padding: 3.75px 6px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
   .days-table th { white-space: normal; overflow: visible; }   /* 表头不裁剪：居中后完整显示，不被 52px 窄列压线截断 */
   .days-table td { white-space: nowrap; overflow: hidden; }   /* 数据保持单行 */
