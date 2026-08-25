@@ -170,11 +170,12 @@
   .days-table tbody tr:last-child td { border-bottom: none; }
   .days-table thead th { background: var(--grid); }
   .days-table thead .grp { font-size: 14px; font-weight: 700; }
-  .days-table td.rowhead { font-weight: 600; }
+  .days-table td.rowhead { font-weight: 600; text-align: left; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
-  .days-table tr.row-green td.num { color: var(--std-green); }
+  /* 最后五行(16到30天起，为"超过 15 天"的拆解子级)数据灰色 */
+  .days-table tbody tr:nth-child(n+4) td { color: var(--muted); }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 第一列（发布天数）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
@@ -568,9 +569,10 @@ function renderDaysTable() {
   const avg = (n, a) => a ? (n / a).toFixed(1) : '-';   // 人均（分母 = 该行 all，1 位小数）
   document.getElementById('daysBody').innerHTML = rows.map((r, i) => {
     const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
-    const cls = i === 0 ? 'total-row' : (r.label === '超过 15 天' ? 'row-green' : '');
+    const cls = i === 0 ? 'total-row' : '';
+    const label = (i >= 3 ? '-- ' : '') + r.label;   // 最后五行(16到30天起，超过15天拆解子级)第一列前加 --
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
-    `<td class="rowhead">${esc(r.label)}</td>` +
+    `<td class="rowhead">${esc(label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num">${fmt(r.front0)}</td>` +
     `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
