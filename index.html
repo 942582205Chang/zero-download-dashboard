@@ -556,7 +556,7 @@ function renderDaysTable() {
   const tot = rows[0]; // 小初高整体：整体占比分母
   const green = rows.find(r => r.label === '超过 15 天'); // 绿色行：16到30天起各细分档的占比分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
-  const avg = (n, a) => a ? (n / a).toFixed(2) : '-';   // 人均（分母 = 该行 all）
+  const avg = (n, a) => a ? (n / a).toFixed(1) : '-';   // 人均（分母 = 该行 all，1 位小数）
   document.getElementById('daysBody').innerHTML = rows.map((r, i) => {
     const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
     const cls = i === 0 ? 'total-row' : (r.label === '超过 15 天' ? 'row-green' : '');
