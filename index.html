@@ -185,9 +185,6 @@
   .days-table thead tr:first-child th:nth-child(2),
   .days-table thead tr:nth-child(2) th:nth-child(7),
   .days-table tbody td:nth-child(8) { border-right: none; }
-  .days-table thead tr:first-child th:nth-child(3),
-  .days-table thead tr:nth-child(2) th:nth-child(8),
-  .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple); }
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; }
@@ -381,17 +378,21 @@
 </div>
 
 <script>
-// ===== 敏感字段解密（密钥与 update_data.py 的 SENS_KEY 保持一致）=====
-const SENS_KEY = 'xkw-0dl-2026';
-const SENS_FIELDS = ['审核人','审核时间','用户名','作者id','提成比例','定价','店铺'];
-function decSens(s) {
+// ===== 数据整体解密：密钥 = SHA-256(登录密码)，与 update_data.py 的派生密钥一致 =====
+const SESS_KEY = 'dash_dec_key';     // sessionStorage 存派生密钥（刷新保留，关浏览器需重登）
+let decKey = null;                    // 内存中的 32 字节派生密钥
+async function deriveKey(p) {
+  const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(p));
+  return new Uint8Array(buf);
+}
+function b64ToBytes(s) { const bin = atob(s); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+function bytesToB64(b) { let bin = ''; for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]); return btoa(bin); }
+function decSens(s, key) {
   if (!s) return s;
   try {
     const raw = atob(s);
     const bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) {
-      bytes[i] = raw.charCodeAt(i) ^ SENS_KEY.charCodeAt(i % SENS_KEY.length);
-    }
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
     return new TextDecoder('utf-8').decode(bytes);
   } catch (e) { return s; }
 }
@@ -412,11 +413,16 @@ async function handleLogin() {
   err.textContent = '';
   if (!u || !p) { err.textContent = '请输入账号和密码'; return; }
   try {
-    if (await sha256hex(u + ':' + p) === PWD_HASH) { localStorage.setItem(AUTH_KEY, '1'); unlock(); }
+    if (await sha256hex(u + ':' + p) === PWD_HASH) {
+      decKey = await deriveKey(p);                       // 用登录密码派生解密密钥
+      sessionStorage.setItem(SESS_KEY, bytesToB64(decKey));
+      localStorage.setItem(AUTH_KEY, '1');
+      unlock();
+    }
     else { err.textContent = '账号或密码错误'; }
   } catch (e) { err.textContent = e.message; }
 }
-function logout() { localStorage.removeItem(AUTH_KEY); lock(); }
+function logout() { localStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(SESS_KEY); decKey = null; lock(); }
 // ===== IP 地区限制：仅 郑州 / 北京 地区可访问 =====
 const REGION_API = 'https://whois.pconline.com.cn/ipJson.jsp';
 function checkRegion() {
@@ -443,7 +449,9 @@ function regionAllowed(geo) {
   checkRegion().then(geo => {
     if (regionAllowed(geo)) {
       ov.style.display = 'none';
-      if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
+      if (localStorage.getItem(AUTH_KEY) === '1' && sessionStorage.getItem(SESS_KEY)) {
+        decKey = b64ToBytes(sessionStorage.getItem(SESS_KEY)); unlock();
+      } else lock();
     } else {
       document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 地区），禁止访问本看板。';
     }
@@ -575,7 +583,7 @@ function loadData() {
   // 数据整体加密：登录后才能进到这里。首页只下载 data.json(约5.6KB)即可渲染全部；
   // 明细(10MB)只在 detail.html 用后台 worker 下载解密，首页不拉取，保持秒开
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
-    allData = JSON.parse(decSens(d.enc));
+    allData = JSON.parse(decSens(d.enc, decKey));
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
     drawCharts();
     updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
