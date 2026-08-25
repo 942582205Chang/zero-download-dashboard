@@ -479,22 +479,22 @@ function updateKPI() {
   document.getElementById('detailCount').textContent = fmt(s.zeroFront);
 }
 
-// 发布天数分档统计表：占比针对前一列数值（资源数量组 ÷ 该档 all，消费数据组 ÷ 整体对应总量）
+// 发布天数分档统计表：所有占比分母统一 = 整体（小初高整体）对应列的值
 function renderDaysTable() {
   const rows = allData && allData.byDays;
   if (!rows || !rows.length) return;
-  const tot = rows[0]; // 小初高整体 = 消费数据组占比分母
-  const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '-';
+  const tot = rows[0]; // 小初高整体：所有占比的统一分母
+  const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
   document.getElementById('daysBody').innerHTML = rows.map((r, i) =>
     `<tr${i === 0 ? ' class="total-row"' : ''}>` +
     `<td class="rowhead">${esc(r.label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num">${fmt(r.front0)}</td>` +
-    `<td class="num pct">${pct(r.front0, r.all)}</td>` +
+    `<td class="num pct">${pct(r.front0, tot.front0)}</td>` +
     `<td class="num">${fmt(r.b0)}</td>` +
-    `<td class="num pct">${pct(r.b0, r.all)}</td>` +
+    `<td class="num pct">${pct(r.b0, tot.b0)}</td>` +
     `<td class="num">${fmt(r.c0)}</td>` +
-    `<td class="num pct">${pct(r.c0, r.all)}</td>` +
+    `<td class="num pct">${pct(r.c0, tot.c0)}</td>` +
     `<td class="num">${fmt(r.frontSum)}</td>` +
     `<td class="num pct">${pct(r.frontSum, tot.frontSum)}</td>` +
     `<td class="num">${fmt(r.bSum)}</td>` +
