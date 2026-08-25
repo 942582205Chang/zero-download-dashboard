@@ -138,10 +138,36 @@ def main():
     by_days = build_day_table(df, "整体")
 
     # 各学段发布天数分档表（二、各学段数据）：课程前2字 = 学段
+    # 学科排序：语文、数学、英语、物理、化学、生物、政治/道法、历史、地理、科学 + 其他学科（字母 ASC，放最后）
+    COURSE_ORDER = ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "道法", "历史", "地理", "科学"]
     stages = []
     for st in ["小学", "初中", "高中"]:
         sub = df[df["课程"].astype(str).str.startswith(st)]
         stages.append({"stage": st, "rows": build_day_table(sub, "整体")})
+
+    # 三、各课程数据（每学段一张表）：前三行 = 整体/不超过15天/已超过15天（与二、各学段数据一致），
+    # 接下来每行 = 该学段内一个"课程 已超过 15 天"的子集（onlyOver15=True）
+    course_stages = []
+    for st in ["小学", "初中", "高中"]:
+        sub = df[df["课程"].astype(str).str.startswith(st)]
+        # 该学段全部课程名（去学段前缀后取学科名），按主学科顺序排序，其余按字母 ASC 放最后
+        subj = sorted(set(sub["课程"].astype(str).str[2:]))
+        subj.sort(key=lambda s: (COURSE_ORDER.index(s) if s in COURSE_ORDER else len(COURSE_ORDER), s))
+        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 仅保留 整体/已超过15天
+        for sname in subj:
+            # 该课程"已超过 15 天"的子集数据
+            go = sub[(sub["课程"].astype(str).str[2:] == sname) & (sub["发布天数"] > 15)]
+            rows.append({
+                "label": sname,
+                "all": int(len(go)),
+                "front0": int((go["前台下载"] == 0).sum()),
+                "b0": int((go["b端下载"] == 0).sum()),
+                "c0": int((go["c端消费"] == 0).sum()),
+                "frontSum": int(go["前台下载"].sum()),
+                "bSum": int(go["b端下载"].sum()),
+                "cSum": int(go["c端消费"].sum()),
+            })
+        course_stages.append({"stage": st, "rows": rows})
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -185,7 +211,9 @@ def main():
         # 发布天数分档统计表（表格区块数据，占比前端计算）
         "byDays": by_days,
         # 各学段发布天数分档表（二、各学段数据）：小学整体/初中整体/高中整体
-        "byDaysStages": stages
+        "byDaysStages": stages,
+        # 三、各课程数据：每学段一张表，前三行同分档表，其后每行 = 课程"已超过 15 天"子集
+        "byCourseStages": course_stages
     }
 
     # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
