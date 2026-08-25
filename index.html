@@ -167,6 +167,11 @@
   .days-table tr.row-green td.num { color: var(--green); font-weight: 700; }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
+  /* 紫色分隔线：发布天数右侧 + 前台下载左侧（消费数据组边界） */
+  .days-table th:first-child, .days-table td:first-child { border-right: 2px solid var(--purple); }
+  .days-table thead tr:first-child th:nth-child(3),
+  .days-table thead tr:nth-child(2) th:nth-child(8),
+  .days-table tbody td:nth-child(9) { border-left: 2px solid var(--purple); }
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; }
