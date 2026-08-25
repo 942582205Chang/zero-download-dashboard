@@ -92,6 +92,13 @@
 </head>
 <body>
 
+<div class="overlay" id="regionOverlay">
+  <div class="login-box" style="text-align:center">
+    <h2>🌐 地区校验</h2>
+    <p id="regionMsg">正在校验访问地区…</p>
+  </div>
+</div>
+
 <div class="overlay" id="loginOverlay">
   <div class="login-box">
     <h2>🔒 0下载明细</h2>
@@ -180,7 +187,38 @@ async function handleLogin() {
   if (await sha256hex(u + ':' + p) === PWD_HASH) { localStorage.setItem(AUTH_KEY, '1'); unlock(); }
   else err.textContent = '账号或密码错误';
 }
-if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
+// ===== IP 地区限制：仅 郑州 / 北京 地区可访问 =====
+const REGION_API = 'https://whois.pconline.com.cn/ipJson.jsp';
+function checkRegion() {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = r => { if (!settled) { settled = true; resolve(r); } };
+    const t = setTimeout(() => finish(null), 5000);          // 超时兜底 → 放行
+    window.IPCallBack = function(d) { clearTimeout(t); finish(d); };
+    const s = document.createElement('script');
+    s.charset = 'gbk';                                        // pconline 返回 GBK 编码
+    s.src = REGION_API + '?v=' + Date.now();
+    s.onerror = function() { clearTimeout(t); finish(null); };
+    document.head.appendChild(s);
+  });
+}
+function regionAllowed(geo) {
+  if (!geo || !geo.city) return true;                         // 接口异常 → 放行，避免误伤
+  const city = String(geo.city || '');
+  return city.indexOf('郑州') > -1 || city.indexOf('北京') > -1;
+}
+(function gate() {
+  const ov = document.getElementById('regionOverlay');
+  ov.style.display = 'flex';
+  checkRegion().then(geo => {
+    if (regionAllowed(geo)) {
+      ov.style.display = 'none';
+      if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
+    } else {
+      document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 地区），禁止访问本看板。';
+    }
+  });
+})();
 document.getElementById('loginBtn').addEventListener('click', handleLogin);
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -489,20 +527,20 @@ function loadData() {
 function fallbackLoad() {
   const loading = document.getElementById('loading');
   loading.textContent = '数据加载中…';
-  // 版本号缓存：内容不变秒开，更新自动取新（先取 data.json 拿版本号）
+  // 版本号缓存：内容不变秒开，更新自动取新（先取 data.json 拿版本号）；数据整体加密，先解密
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
-    if (d.updateTime) document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
-    const ver = (d.summary && d.summary.version) ? d.summary.version : Date.now();
+    const d2 = JSON.parse(decSens(d.enc));
+    if (d2.updateTime) document.getElementById('timeBadge').textContent = '更新：' + d2.updateTime;
+    const ver = (d2.summary && d2.summary.version) ? d2.summary.version : Date.now();
     return fetch('detail.json?v=' + ver);
-  }).then(r => r.json()).then(det => {
+  }).then(r => r.json()).then(edet => {
+    const det = JSON.parse(decSens(edet.enc));
     allDetail = [];
     const step = 400;
     function batch(i) {
       const end = Math.min(i + step, det.length);
       for (; i < end; i++) {
-        const r = det[i]; const c = Object.assign({}, r);
-        SENS_FIELDS.forEach(k => { if (c[k]) c[k] = decSens(c[k]); });
-        allDetail.push(c);
+        allDetail.push(Object.assign({}, det[i]));
       }
       loading.textContent = '数据解密中 ' + Math.round(end / det.length * 100) + '%…';
       if (end < det.length) { setTimeout(() => batch(end), 0); }
