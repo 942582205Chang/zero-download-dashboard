@@ -177,11 +177,11 @@
   .days-table col.cdown { width: 52px; } /* 前台下载 */
   .days-table col.cbdown { width: 72px; }/* B 端下载 */
   .days-table col.ccon { width: 72px; }  /* C 端消费 */
-  .days-table th, .days-table td { padding: 3.75px 6px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); overflow: hidden; }
-  .days-table th { white-space: normal; }   /* 无备注表头允许换行，压缩列宽实现全屏不滚动 */
+  .days-table th, .days-table td { padding: 3.75px 6px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
+  .days-table th { white-space: normal; overflow: visible; }   /* 表头不裁剪：居中后完整显示，不被 52px 窄列压线截断 */
+  .days-table td { white-space: nowrap; overflow: hidden; }   /* 数据保持单行 */
   .days-table th:has(.pct-note) { white-space: nowrap; }   /* 有备注表头(占比/整体占比/平均值)保持单行 */
   .days-table th .th-clamp { display: block; word-break: keep-all; }   /* 无备注表头完整显示（不截断），中文按词换行 */
-  .days-table td { white-space: nowrap; }   /* 数据保持单行 */
   /* separate 下外框双线处理：最右列/最后行边框交给表格自身 border */
   .days-table th:last-child, .days-table td:last-child { border-right: none; }
   .days-table tbody tr:last-child td { border-bottom: none; }
