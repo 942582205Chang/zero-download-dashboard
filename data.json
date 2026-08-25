@@ -1,13 +1,13 @@
 {
-  "updateTime": "2026-08-25 10:09",
+  "updateTime": "2026-08-25 10:48",
   "source": "查询结果_2026年08月25日10时07分.csv",
   "summary": {
     "total": 53287,
     "eligible": 41107,
     "zeroFront": 8191,
     "zeroFrontRate": 19.93,
-    "zeroB": 398,
-    "zeroC": 11268,
+    "zeroB": 63,
+    "zeroC": 5870,
     "thresholdDays": 15,
     "version": "84843c48051b"
   },
