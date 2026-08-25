@@ -85,6 +85,31 @@ def main():
     eligible = int((df["发布天数"] > 15).sum())   # 已超过15天观察期的资源
     over15 = df[df["发布天数"] > 15]              # 发布超15天的资源（B/C 口径基数，与备注一致）
 
+    # 发布天数分档统计表（页面顶部表格用，2026-08-25 新增）
+    DAY_GROUPS = [
+        ("小初高整体", pd.Series(True, index=df.index)),
+        ("不超过15天", df["发布天数"] <= 15),
+        ("超过15天",   df["发布天数"] > 15),
+        ("16到30天",   (df["发布天数"] >= 16) & (df["发布天数"] <= 30)),
+        ("31到60天",   (df["发布天数"] >= 31) & (df["发布天数"] <= 60)),
+        ("61到90天",   (df["发布天数"] >= 61) & (df["发布天数"] <= 90)),
+        ("91到180天",  (df["发布天数"] >= 91) & (df["发布天数"] <= 180)),
+        ("超过180天",  df["发布天数"] > 180),
+    ]
+    by_days = []
+    for name, mask in DAY_GROUPS:
+        g = df[mask]
+        by_days.append({
+            "label": name,
+            "all": int(len(g)),
+            "front0": int((g["前台下载"] == 0).sum()),
+            "b0": int((g["b端下载"] == 0).sum()),
+            "c0": int((g["c端消费"] == 0).sum()),
+            "frontSum": int(g["前台下载"].sum()),
+            "bSum": int(g["b端下载"].sum()),
+            "cSum": int(g["c端消费"].sum()),
+        })
+
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "source": os.path.basename(csv_path),
@@ -122,7 +147,9 @@ def main():
             "categories": group_rate(df, zero_df, "版本", 15)["版本"].tolist(),
             "zero": group_rate(df, zero_df, "版本", 15)["零下载数"].tolist(),
             "rate": group_rate(df, zero_df, "版本", 15)["占比"].tolist()
-        }
+        },
+        # 发布天数分档统计表（表格区块数据，占比前端计算）
+        "byDays": by_days
     }
 
     # 全量明细单独输出 detail.json（敏感字段加密，登录后前端解码展示）
