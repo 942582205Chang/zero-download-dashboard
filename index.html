@@ -189,14 +189,14 @@
   .days-table thead tr:first-child th:first-child { background: var(--grid); }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   .days-table thead tr:first-child th:nth-child(3),
-  .days-table thead tr:nth-child(2) th:nth-child(8),
-  .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple-soft); }
+  .days-table thead tr:nth-child(2) th:nth-child(11),
+  .days-table tbody td:nth-child(12) { border-left: 1px solid var(--purple-soft); }
   .days-table thead tr:first-child th:nth-child(2),
   .days-table thead tr:nth-child(2) th:nth-child(2),
   .days-table tbody td:nth-child(2) { border-left: none; }
   .days-table thead tr:first-child th:nth-child(2),
-  .days-table thead tr:nth-child(2) th:nth-child(7),
-  .days-table tbody td:nth-child(8) { border-right: none; }
+  .days-table thead tr:nth-child(2) th:nth-child(10),
+  .days-table tbody td:nth-child(11) { border-right: none; }
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; }
@@ -286,7 +286,7 @@
       <div class="c-sub">资源发布超过 15 天的资源，前台下载 0 次</div>
     </div>
     <div class="capsule">
-      <div class="c-head">0 下载占比：<span class="c-val green" id="kpiZeroRate">--%</span></div>
+      <div class="c-head">整体占比：<span class="c-val green" id="kpiZeroRate">--%</span></div>
       <div class="c-sub">0 下载资源总数 ÷ 资源总数</div>
     </div>
     <div class="capsule">
@@ -306,11 +306,11 @@
       <thead>
         <tr>
           <th rowspan="2">发布天数</th>
-          <th class="grp" colspan="7">资源数量</th>
+          <th class="grp" colspan="10">资源数量</th>
           <th class="grp" colspan="9">消费数据</th>
         </tr>
         <tr>
-          <th>all</th><th>前台 0 下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>B端 0 下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>C端 0 消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th>
+          <th>all</th><th>前台 0 下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th>B端 0 下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th>C端 0 消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">all</span></th>
           <th>前台下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th>B 端下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th>C 端消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th>
         </tr>
       </thead>
@@ -577,10 +577,13 @@ function renderDaysTable() {
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num">${fmt(r.front0)}</td>` +
     `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
+    `<td class="num pct">${pct(r.front0, tot.all)}</td>` +   // 整体占比（分母=全量 all）
     `<td class="num">${fmt(r.b0)}</td>` +
     `<td class="num pct">${pct(r.b0, base.b0)}</td>` +
+    `<td class="num pct">${pct(r.b0, tot.all)}</td>` +      // 整体占比（分母=全量 all）
     `<td class="num">${fmt(r.c0)}</td>` +
     `<td class="num pct">${pct(r.c0, base.c0)}</td>` +
+    `<td class="num pct">${pct(r.c0, tot.all)}</td>` +      // 整体占比（分母=全量 all）
     `<td class="num">${fmt(r.frontSum)}</td>` +
     `<td class="num pct">${pct(r.frontSum, base.frontSum)}</td>` +
     `<td class="num">${avg(r.frontSum, r.all)}</td>` +      // 前台均下载（分母=该行all）
