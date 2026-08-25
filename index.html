@@ -165,6 +165,7 @@
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
   .days-wrap { display: flex; justify-content: center; overflow-x: auto; overflow-y: hidden; margin-top: 4px; }
   .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
+  #stageGrid .days-wrap { margin-bottom: 16px; }
   .days-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
   .days-table th, .days-table td { padding: 3.75px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
   .days-table th { white-space: normal; }   /* 无备注表头允许换行，压缩列宽实现全屏不滚动 */
@@ -326,27 +327,14 @@
 
   <!-- 发布天数分档统计表 -->
   <div class="section"><h2>一、小初高整体</h2><p>  --按发布天数分档统计资源数量与消费情况</p></div>
-  <div class="days-wrap">
-    <table class="days-table">
-      <thead>
-        <tr>
-          <th rowspan="2">发布天数</th>
-          <th class="grp" colspan="10">资源数量</th>
-          <th class="grp" colspan="9">消费数据</th>
-        </tr>
-        <tr>
-          <th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">all</span></th>
-          <th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th>
-        </tr>
-      </thead>
-      <tbody id="daysBody"></tbody>
-    </table>
-  </div>
+  <div class="days-wrap"><div id="daysTable1"></div></div>
 
-  <!-- 一、各学段数据 -->
-  <div class="section"><h2>二、各学段数据</h2><p>  --按小学/初中/高中拆解 0 下载指标</p></div>
-  <div class="chart-grid" id="stageGrid">
-    <!-- 待填充 -->
+  <!-- 二、各学段数据 -->
+  <div class="section"><h2>二、各学段数据</h2><p>  --按发布天数分档统计资源数量与消费情况（按小学/初中/高中 拆解）</p></div>
+  <div id="stageGrid">
+    <div class="days-wrap"><div id="daysTable2"></div></div>
+    <div class="days-wrap"><div id="daysTable3"></div></div>
+    <div class="days-wrap"><div id="daysTable4"></div></div>
   </div>
 
   <!-- 二、各课程数据 -->
@@ -585,15 +573,15 @@ function updateKPI() {
   document.getElementById('detailCount').textContent = fmt(s.zeroFront);
 }
 
-// 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体(小初高整体)行
-function renderDaysTable() {
-  const rows = allData && allData.byDays;
-  if (!rows || !rows.length) return;
-  const tot = rows[0]; // 小初高整体：整体占比分母
+const DAYS_HEAD = '<thead><tr><th rowspan="2">发布天数</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
+
+// 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
+function dayRowsHtml(rows) {
+  const tot = rows[0]; // 整体行：整体占比分母
   const green = rows.find(r => r.label === '已超过 15 天'); // 超过15天行：16到30天起各细分档的占比分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
-  const avg = (n, a) => a ? (n / a).toFixed(1) : '-';   // 人均（分母 = 该行 all，1 位小数）
-  document.getElementById('daysBody').innerHTML = rows.map((r, i) => {
+  const avg = (n, a) => a ? (n / a).toFixed(1) : '-';
+  return rows.map((r, i) => {
     const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
     const cls = i === 0 ? 'total-row' : '';
     const label = (i >= 3 ? '-- ' : '') + r.label;   // 最后五行(16到30天起，超过15天拆解子级)第一列前加 --
@@ -623,6 +611,21 @@ function renderDaysTable() {
   }).join('');
 }
 
+function renderDaysTable(containerId, rows) {
+  if (!rows || !rows.length) return;
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '<table class="days-table">' + DAYS_HEAD + '<tbody>' + dayRowsHtml(rows) + '</tbody></table>';
+}
+
+function renderStageTables() {
+  const stages = allData && allData.byDaysStages;
+  if (!stages || !stages.length) return;
+  stages.forEach((s, idx) => {
+    renderDaysTable('daysTable' + (idx + 2), s.rows);
+  });
+}
+
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function loadData() {
@@ -633,7 +636,8 @@ function loadData() {
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
     drawCharts();
     updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
-    renderDaysTable();   // 发布天数分档统计表
+    renderDaysTable('daysTable1', allData.byDays);   // 发布天数分档统计表（一、小初高整体）
+    renderStageTables();
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
