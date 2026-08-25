@@ -123,27 +123,28 @@
   .logout:hover { filter: brightness(0.95); }
   .meta a.badge:hover { filter: brightness(0.95); }
 
-  /* KPI 胶囊 — 扁平圆角框，两行（数字 + 灰色备注） */
+  /* KPI 胶囊 — 扁平圆角框，两行（数字 + 灰色备注），整体与行内均居中 */
   .kpi-capsules {
     display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap;
+    justify-content: center;
   }
   .capsule {
-    display: flex; flex-direction: column; gap: 3px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
     padding: 12px 18px; border-radius: 10px;
     background: var(--surface); border: 1px solid var(--separator);
     box-shadow: var(--shadow-sm);
   }
   .capsule .c-head {
-    display: flex; align-items: baseline; gap: 6px;
+    display: flex; align-items: baseline; justify-content: center; gap: 6px;
     font-size: 15px; font-weight: 600; color: var(--ink-2); white-space: nowrap;
   }
   .capsule .c-val {
-    font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
+    font-size: 15px; font-weight: 700; letter-spacing: 0;
     font-variant-numeric: tabular-nums; color: var(--ink);
   }
   .capsule .c-val.critical { color: var(--red); }
   .capsule .c-sub {
-    font-size: 12px; color: var(--muted); line-height: 1.4; white-space: nowrap;
+    font-size: 12px; color: var(--muted); line-height: 1.4; white-space: nowrap; text-align: center;
   }
 
   /* Sections */
@@ -429,31 +430,15 @@ function drawCharts() {
   const r = echarts.init(document.getElementById('chartRegion')); r.setOption(rOpt); charts.push(r);
 }
 
-function updateKPI(rows) {
-  // 无 rows：用聚合 summary 显示全量真值（KPI 秒出）
-  if (!rows) {
-    const s = allData.summary;
-    document.getElementById('kpiTotal').textContent = fmt(s.total);
-    document.getElementById('kpiZeroFront').textContent = fmt(s.zeroFront);
-    document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
-    document.getElementById('kpiZeroB').textContent = fmt(s.zeroB);
-    document.getElementById('kpiZeroC').textContent = fmt(s.zeroC);
-    document.getElementById('detailCount').textContent = fmt(s.zeroFront);
-    return;
-  }
-  // 有 rows：基于明细计算
-  const total = rows.length;
-  const zeroFront = rows.filter(r => Number(r['前台下载']) === 0).length;
-  const rate = total ? (zeroFront / total * 100).toFixed(2) : '0.00';
-  const zeroB = rows.filter(r => Number(r['b端下载']) === 0).length;
-  const zeroC = rows.filter(r => Number(r['c端消费']) === 0).length;
-
-  document.getElementById('kpiTotal').textContent = fmt(total);
-  document.getElementById('kpiZeroFront').textContent = fmt(zeroFront);
-  document.getElementById('kpiZeroRate').textContent = rate + '%';
-  document.getElementById('kpiZeroB').textContent = fmt(zeroB);
-  document.getElementById('kpiZeroC').textContent = fmt(zeroC);
-  document.getElementById('detailCount').textContent = fmt(zeroFront);
+function updateKPI() {
+  // KPI 永远用 data.json 的 summary（全量真值）；detail.json 只是 0下载明细子集，不参与 KPI 计算
+  const s = allData.summary;
+  document.getElementById('kpiTotal').textContent = fmt(s.total);
+  document.getElementById('kpiZeroFront').textContent = fmt(s.zeroFront);
+  document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
+  document.getElementById('kpiZeroB').textContent = fmt(s.zeroB);
+  document.getElementById('kpiZeroC').textContent = fmt(s.zeroC);
+  document.getElementById('detailCount').textContent = fmt(s.zeroFront);
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -463,7 +448,7 @@ function loadData() {
     allData = d;
     document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
     drawCharts();
-    updateKPI(null);   // 聚合 summary 秒出
+    updateKPI();   // 聚合 summary 秒出（KPI 全量真值）
     // 明细异步加载
     fetch('detail.json?v=' + (d.summary && d.summary.version ? d.summary.version : Date.now())).then(r => r.json()).then(det => {
       allDetail = det.map(r => {
@@ -472,7 +457,8 @@ function loadData() {
         return c;
       });
       detailLoaded = true;
-      updateKPI(allDetail);
+      // 明细条数只用于"当前共 N 条"，不覆盖 KPI
+      document.getElementById('detailCount').textContent = fmt(allDetail.length);
     }).catch(() => {
       document.getElementById('detailCount').textContent = '明细加载失败';
     });
