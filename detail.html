@@ -178,6 +178,26 @@ function decSens(s, key) {
     return new TextDecoder('utf-8').decode(bytes);
   } catch (e) { return s; }
 }
+// XOR 解密为原始字节（detail 新格式解出的是 gzip 压缩字节）
+function decBytes(s, key) {
+  const raw = atob(s);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
+  return bytes;
+}
+// gzip 解压
+async function gunzip(bytes) {
+  const ds = new DecompressionStream('gzip');
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  const buf = await new Response(stream).arrayBuffer();
+  return new TextDecoder('utf-8').decode(buf);
+}
+// 解密 detail：兼容旧格式（未压缩明文）与新格式（gzip 压缩）
+async function parseDetail(enc, key) {
+  const dec = decBytes(enc, key);
+  try { return JSON.parse(new TextDecoder('utf-8').decode(dec)); }
+  catch (e) { return JSON.parse(await gunzip(dec)); }
+}
 function lock() { document.getElementById('loginOverlay').style.display = 'flex'; }
 function logout() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(SESS_KEY); decKey = null; lock(); }
 function unlock() {
@@ -549,8 +569,8 @@ function fallbackLoad() {
     if (d2.updateTime) document.getElementById('timeBadge').textContent = '更新：' + d2.updateTime;
     const ver = (d2.summary && d2.summary.version) ? d2.summary.version : Date.now();
     return fetch('detail.json?v=' + ver);
-  }).then(r => r.json()).then(edet => {
-    const det = JSON.parse(decSens(edet.enc, decKey));
+  }).then(r => r.json()).then(async edet => {
+    const det = await parseDetail(edet.enc, decKey);
     allDetail = [];
     const step = 400;
     function batch(i) {
