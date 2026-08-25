@@ -135,13 +135,13 @@ def main():
     over15 = df[df["发布天数"] > 15]              # 发布超15天的资源（B/C 口径基数，与备注一致）
 
     # 发布天数分档统计表（一、小初高整体）
-    by_days = build_day_table(df, "小初高整体")
+    by_days = build_day_table(df, "整体")
 
     # 各学段发布天数分档表（二、各学段数据）：课程前2字 = 学段
     stages = []
     for st in ["小学", "初中", "高中"]:
         sub = df[df["课程"].astype(str).str.startswith(st)]
-        stages.append({"stage": st, "rows": build_day_table(sub, st + "整体")})
+        stages.append({"stage": st, "rows": build_day_table(sub, "整体")})
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
