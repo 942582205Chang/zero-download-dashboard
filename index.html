@@ -298,6 +298,16 @@
   .side-nav .nav-item.active { background: var(--blue); color: #fff; font-weight: 700; }
   .side-nav .nav-top, .side-nav .nav-bottom { font-weight: 700; color: var(--ink); }
   .side-nav .sep { height: 1px; background: var(--separator); margin: 2px 2px; }
+  /* 收起/展开按钮：全屏显示（标题旁小按钮），收起态时导航框收缩为小胶囊按钮 */
+  .side-nav .nav-toggle {
+    font-size: 11px; font-weight: 700; color: var(--ink-2);
+    background: none; border: none; cursor: pointer; padding: 2px 4px;
+    border-radius: 6px; text-align: left; user-select: none;
+  }
+  .side-nav .nav-toggle:hover { background: var(--grid); }
+  .side-nav.collapsed { flex-direction: row; gap: 4px; padding: 4px 6px; cursor: pointer; }
+  .side-nav.collapsed .nav-item, .side-nav.collapsed .sep { display: none; }
+  .side-nav.collapsed .nav-toggle { padding: 3px 8px; text-align: center; }
 </style>
 </head>
 <body>
@@ -712,6 +722,12 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   const box = document.getElementById('sideNav');
   const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '分布分析', '返回底部'];
   const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '分布分析', null];
+  // 收起/展开按钮（第一个）：文本随状态切换
+  const toggle = document.createElement('button');
+  toggle.className = 'nav-toggle';
+  toggle.type = 'button';
+  toggle.title = '收起/展开导航';
+  box.appendChild(toggle);
   const items = labels.map((lab, i) => {
     const a = document.createElement('a');
     a.className = 'nav-item' + (i === 0 || i === labels.length - 1 ? ' nav-top nav-bottom' : '');
@@ -737,6 +753,33 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const txt = h.textContent.trim();
     if (targets.indexOf(txt) > -1) h.setAttribute('data-nav', txt);
   });
+
+  // ===== 收起/展开逻辑 =====
+  let collapsed = false;
+  function renderNav() {
+    toggle.textContent = collapsed ? '☰' : '—';   // 收起态显示"☰"，展开态显示"—"
+    box.classList.toggle('collapsed', collapsed);
+  }
+  toggle.addEventListener('click', e => { e.stopPropagation(); collapsed = !collapsed; renderNav(); });
+  // 收起态点击整个胶囊 → 展开
+  box.addEventListener('click', e => {
+    if (collapsed && e.target === box) { collapsed = false; renderNav(); }
+  });
+  // 是否与正文重叠：导航框右边界 > 正文容器(或视口)左边 + 8px
+  function overlapping() {
+    const r = box.getBoundingClientRect();
+    const contentLeft = Math.max(document.body.getBoundingClientRect().left + 14, 0);
+    return r.left + r.width > contentLeft;
+  }
+  // 检测到重叠 → 自动收起（全屏表格很宽需横向滚动、非全屏盖住正文都适用）；
+  // 展开只能手动点击（用户意图），不自动展开
+  function autoCollapse() {
+    if (overlapping() && !collapsed) { collapsed = true; renderNav(); }
+  }
+  window.addEventListener('resize', autoCollapse);
+  window.addEventListener('scroll', autoCollapse, { passive: true });
+  renderNav();
+
   // 滚动监听：找到当前视口最顶的区块 → 高亮
   let last = null;
   window.addEventListener('scroll', () => {
