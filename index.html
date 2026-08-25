@@ -606,8 +606,10 @@ function updateKPI() {
 }
 
 // 表头：第一行首列=学段名（小初高/小学/初中/高中），第二行首列=发布天数（不合并）
-function daysHead(stage) {
-  return '<thead><tr><th class="grp">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>发布天数</th><th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">all</span></th><th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
+function daysHead(stage, overallNote) {
+  // overallNote：整体占比备注 —— 一/二用"all/区间天数"，三(课程表)用"all/学科"
+  const on = overallNote || 'all';
+  return '<thead><tr><th class="grp">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>发布天数</th><th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
 }
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
@@ -654,7 +656,9 @@ function renderDaysTable(containerId, rows, stage, courseMode) {
   if (!wrap) return;
   // 列：首列(学段/发布天数/课程) + 9个序号列 + 3个占比 + 3个整体占比 + 3个均列 = 20列
   const cols = '<col class="c1">' + '<col class="cn">'.repeat(9) + '<col class="cp">'.repeat(3) + '<col class="cp">'.repeat(3) + '<col class="cavg">'.repeat(3);
-  wrap.innerHTML = '<table class="days-table' + (courseMode ? ' course-table' : '') + '">' + '<colgroup>' + cols + '</colgroup>' + daysHead(stage) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody></table>';
+  // 整体占比备注：一/二(分档表)用"all/区间天数"，三(课程表)用"all/学科"
+  const overallNote = courseMode ? 'all/学科' : 'all/区间天数';
+  wrap.innerHTML = '<table class="days-table' + (courseMode ? ' course-table' : '') + '">' + '<colgroup>' + cols + '</colgroup>' + daysHead(stage, overallNote) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody></table>';
 }
 
 function renderStageTables() {
