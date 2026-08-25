@@ -13,6 +13,29 @@ function decSens(s, key) {
   } catch (e) { return s; }
 }
 
+// XOR 解密为原始字节（detail 新格式解出的是 gzip 压缩字节）
+function decBytes(s, key) {
+  const raw = atob(s);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
+  return bytes;
+}
+
+// gzip 解压（Worker 内可用 DecompressionStream）
+async function gunzip(bytes) {
+  const ds = new DecompressionStream('gzip');
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  const buf = await new Response(stream).arrayBuffer();
+  return new TextDecoder('utf-8').decode(buf);
+}
+
+// 解密 detail：兼容旧格式（未压缩明文）与新格式（gzip 压缩）
+async function parseDetail(enc, key) {
+  const dec = decBytes(enc, key);
+  try { return JSON.parse(new TextDecoder('utf-8').decode(dec)); }
+  catch (e) { return JSON.parse(await gunzip(dec)); }
+}
+
 self.onmessage = e => {
   decKey = e.data.key;
   start();
@@ -29,8 +52,8 @@ function start() {
       return fetch('detail.json?v=' + ver);
     })
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(edet => {
-      const det = JSON.parse(decSens(edet.enc, decKey));
+    .then(edet => (async () => {
+      const det = await parseDetail(edet.enc, decKey);
       const total = det.length;
       self.postMessage({ type: 'start', total });
       const out = new Array(total);
@@ -43,6 +66,5 @@ function start() {
         self.postMessage({ type: 'batch', data: out.slice(i, i + BATCH) });
       }
       self.postMessage({ type: 'done', total });
-    })
-    .catch(e => self.postMessage({ type: 'error', message: e.message }));
+    })().catch(e => self.postMessage({ type: 'error', message: e.message })))
 }
