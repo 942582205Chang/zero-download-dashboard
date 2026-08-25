@@ -19,6 +19,7 @@
     --blue:      #007aff;
     --orange:    #ff9500;
     --green:     #34c759;
+    --std-green: #008000;
     --yellow:    #ffcc00;
     --red:       #ff3b30;
     --purple:    #af52de;
@@ -40,6 +41,7 @@
       --blue:      #0a84ff;
       --orange:    #ff9f0a;
       --green:     #30d158;
+      --std-green: #4caf50;
       --yellow:    #ffd60a;
       --red:       #ff453a;
       --purple:    #bf5af2;
@@ -164,7 +166,7 @@
   .days-table td.rowhead { font-weight: 600; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .days-table tr.total-row td { font-weight: 700; }
-  .days-table tr.row-green td.num { color: var(--green); font-weight: 700; }
+  .days-table tr.row-green td.num { color: var(--std-green); font-weight: 700; }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 紫色分隔线：发布天数右侧 + 前台下载左侧（消费数据组边界） */
