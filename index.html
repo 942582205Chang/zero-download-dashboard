@@ -146,6 +146,9 @@
     font-size: 15px; font-weight: 700; letter-spacing: 0;
     font-variant-numeric: tabular-nums; color: var(--ink);
   }
+  .capsule .c-unit {
+    font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 4px;
+  }
   .capsule .c-val.critical { color: var(--red); }
   .capsule .c-sub {
     font-size: 11px; color: var(--muted); line-height: 1.3; white-space: nowrap; text-align: center;
@@ -224,11 +227,11 @@
   <!-- KPI 胶囊 -->
   <div class="kpi-capsules">
     <div class="capsule">
-      <div class="c-head">资源总数：<span class="c-val" id="kpiTotal">--</span></div>
+      <div class="c-head">资源总数：<span class="c-val" id="kpiTotal">--</span><span class="c-unit">份</span></div>
       <div class="c-sub">26-27学年发布的资源</div>
     </div>
     <div class="capsule">
-      <div class="c-head">0 下载资源总数：<span class="c-val critical" id="kpiZeroFront">--</span></div>
+      <div class="c-head">0 下载资源总数：<span class="c-val critical" id="kpiZeroFront">--</span><span class="c-unit">份</span></div>
       <div class="c-sub">资源发布超过 15 天的资源，前台下载 0 次</div>
     </div>
     <div class="capsule">
@@ -236,11 +239,11 @@
       <div class="c-sub">0 下载资源总数 ÷ 资源总数</div>
     </div>
     <div class="capsule">
-      <div class="c-head">B端 0 下载：<span class="c-val" id="kpiZeroB">--</span></div>
+      <div class="c-head">B端 0 下载：<span class="c-val" id="kpiZeroB">--</span><span class="c-unit">份</span></div>
       <div class="c-sub">资源发布超过 15 天的资源，B 端下载 0 次</div>
     </div>
     <div class="capsule">
-      <div class="c-head">C端 0 消费：<span class="c-val" id="kpiZeroC">--</span></div>
+      <div class="c-head">C端 0 消费：<span class="c-val" id="kpiZeroC">--</span><span class="c-unit">份</span></div>
       <div class="c-sub">资源发布超过 15 天的资源，C 端消费 0 元</div>
     </div>
   </div>
