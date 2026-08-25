@@ -162,6 +162,7 @@
 
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
   .days-wrap { display: flex; justify-content: center; overflow-x: auto; margin-top: 4px; }
+  .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
   .days-table { border-collapse: collapse; font-size: 13px; text-align: center; border: 1px solid var(--separator); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
   .days-table th, .days-table td { padding: 5px 12px; border: 1px solid var(--separator); white-space: nowrap; }
   .days-table thead th { background: var(--grid); }
