@@ -164,6 +164,7 @@
   .days-table td.rowhead { font-weight: 600; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .days-table tr.total-row td { font-weight: 700; }
+  .days-table tr.row-green td.num { color: var(--green); font-weight: 700; }
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; }
@@ -484,8 +485,9 @@ function renderDaysTable() {
   if (!rows || !rows.length) return;
   const tot = rows[0]; // 小初高整体：所有占比的统一分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
-  document.getElementById('daysBody').innerHTML = rows.map((r, i) =>
-    `<tr${i === 0 ? ' class="total-row"' : ''}>` +
+  document.getElementById('daysBody').innerHTML = rows.map((r, i) => {
+    const cls = i === 0 ? 'total-row' : (r.label === '超过 15 天' ? 'row-green' : '');
+    return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(r.label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num">${fmt(r.front0)}</td>` +
@@ -500,8 +502,8 @@ function renderDaysTable() {
     `<td class="num pct">${pct(r.bSum, tot.bSum)}</td>` +
     `<td class="num">${fmt(r.cSum)}</td>` +
     `<td class="num pct">${pct(r.cSum, tot.cSum)}</td>` +
-    `</tr>`
-  ).join('');
+    `</tr>`;
+  }).join('');
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
