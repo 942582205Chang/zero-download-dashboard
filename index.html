@@ -106,6 +106,12 @@
     /* 字体字号保持标题原样，与右侧胶囊仅外观一致 */
   }
   .brand p { color: var(--muted); font-size: 15px; margin-top: 4px; }
+  .title-row {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .title-row .dimension {
+    color: var(--muted); font-size: 14px; line-height: 1.4;
+  }
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .badge {
     display: inline-flex; align-items: center; gap: 6px;
@@ -207,8 +213,10 @@
 <div class="page">
   <header>
     <div class="brand">
-      <h1 class="pill">0 下载 · 预警看板</h1>
-      <p>数据维度：小初高委托创作 2026-2027 学年发布 15 天后，前台下载次数为 0 的资源，用于 0 下载预警。</p>
+      <div class="title-row">
+        <h1 class="pill">0 下载 · 预警看板</h1>
+        <span class="dimension">数据维度：小初高委托创作 2026-2027 学年发布 15 天后，前台下载次数为 0 的资源，用于 0 下载预警。</span>
+      </div>
     </div>
     <div class="meta">
       <span class="badge" id="timeBadge">更新：--</span>
