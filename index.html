@@ -189,10 +189,11 @@
   .days-table tr.total-row td { font-weight: 700; }
   /* 最后五行(16到30天起，为"超过 15 天"的拆解子级)数据灰色 */
   .days-table tbody tr:nth-child(n+4) td { color: var(--muted); }
-  .days-table tbody tr:nth-child(n+4) td:first-child { text-align: right; }   /* 最后五行第一列居右 */
-  /* 课程表：第3行起（已超过15天的课程展开子级）数据灰色 + 第一列居右 */
+  /* 最后五行第一列（-- 开头）居左，两空格保真显示 */
+  .days-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: pre; }
+  /* 课程表：第3行起（已超过15天的课程展开子级）数据灰色 + 第一列居左 */
   .course-table tbody tr:nth-child(n+3) td { color: var(--muted); }
-  .course-table tbody tr:nth-child(n+3) td:first-child { text-align: right; }
+  .course-table tbody tr:nth-child(n+3) td:first-child { text-align: left; white-space: pre; }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 第一列（学段名/发布天数）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
@@ -620,7 +621,7 @@ function dayRowsHtml(rows, courseMode) {
     const childStart = courseMode ? 2 : 3;   // 课程表：课程行(第3行)起为"已超过15天"展开；分档表：16-30天(第4行)起
     const base = (i >= childStart && green) ? green : tot;
     const cls = i === 0 ? 'total-row' : '';
-    const label = (i >= childStart ? '-- ' : '') + r.label;   // 展开子行第一列前加 --
+    const label = (i >= childStart ? '  -- ' : '') + r.label;   // 展开子行第一列前加两个空格+--
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(label)}</td>` +
