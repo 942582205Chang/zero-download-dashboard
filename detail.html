@@ -156,23 +156,30 @@
 // ===== 登录 =====
 const AUTH_KEY = 'dash_auth_2026';
 const PWD_HASH = '0bbb34c02cd52aef24f5bf48ac09b384178586555a3ea52f19c8b853d180454b';
-const SENS_KEY = 'xkw-0dl-2026';
-const SENS_FIELDS = ['审核人','审核时间','用户名','作者id','提成比例','定价','店铺'];
+// ===== 数据整体解密：密钥 = SHA-256(登录密码)，与 update_data.py 的派生密钥一致 =====
+const SESS_KEY = 'dash_dec_key';     // sessionStorage 存派生密钥（刷新保留，关浏览器需重登）
+let decKey = null;                    // 内存中的 32 字节派生密钥
 async function sha256hex(str) {
   const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-function decSens(s) {
+async function deriveKey(p) {
+  const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(p));
+  return new Uint8Array(buf);
+}
+function b64ToBytes(s) { const bin = atob(s); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+function bytesToB64(b) { let bin = ''; for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]); return btoa(bin); }
+function decSens(s, key) {
   if (!s) return s;
   try {
     const raw = atob(s);
     const bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ SENS_KEY.charCodeAt(i % SENS_KEY.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
     return new TextDecoder('utf-8').decode(bytes);
   } catch (e) { return s; }
 }
 function lock() { document.getElementById('loginOverlay').style.display = 'flex'; }
-function logout() { localStorage.removeItem(AUTH_KEY); lock(); }
+function logout() { localStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(SESS_KEY); decKey = null; lock(); }
 function unlock() {
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('logoutBtn').style.display = 'inline-flex';
@@ -184,7 +191,12 @@ async function handleLogin() {
   const err = document.getElementById('loginErr');
   err.textContent = '';
   if (!u || !p) { err.textContent = '请输入账号和密码'; return; }
-  if (await sha256hex(u + ':' + p) === PWD_HASH) { localStorage.setItem(AUTH_KEY, '1'); unlock(); }
+  if (await sha256hex(u + ':' + p) === PWD_HASH) {
+    decKey = await deriveKey(p);                       // 用登录密码派生解密密钥
+    sessionStorage.setItem(SESS_KEY, bytesToB64(decKey));
+    localStorage.setItem(AUTH_KEY, '1');
+    unlock();
+  }
   else err.textContent = '账号或密码错误';
 }
 // ===== IP 地区限制：仅 郑州 / 北京 地区可访问 =====
@@ -213,7 +225,9 @@ function regionAllowed(geo) {
   checkRegion().then(geo => {
     if (regionAllowed(geo)) {
       ov.style.display = 'none';
-      if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
+      if (localStorage.getItem(AUTH_KEY) === '1' && sessionStorage.getItem(SESS_KEY)) {
+        decKey = b64ToBytes(sessionStorage.getItem(SESS_KEY)); unlock();
+      } else lock();
     } else {
       document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 地区），禁止访问本看板。';
     }
@@ -501,7 +515,7 @@ function loadData() {
   const loading = document.getElementById('loading');
   if (window.Worker) {
     try {
-      const w = new Worker('worker.js');
+      const w = new Worker('worker.js'); w.postMessage({ key: decKey });   // 把解密密钥传给后台 worker
       w.onmessage = e => {
         const m = e.data;
         if (m.type === 'time') {
@@ -529,12 +543,12 @@ function fallbackLoad() {
   loading.textContent = '数据加载中…';
   // 版本号缓存：内容不变秒开，更新自动取新（先取 data.json 拿版本号）；数据整体加密，先解密
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
-    const d2 = JSON.parse(decSens(d.enc));
+    const d2 = JSON.parse(decSens(d.enc, decKey));
     if (d2.updateTime) document.getElementById('timeBadge').textContent = '更新：' + d2.updateTime;
     const ver = (d2.summary && d2.summary.version) ? d2.summary.version : Date.now();
     return fetch('detail.json?v=' + ver);
   }).then(r => r.json()).then(edet => {
-    const det = JSON.parse(decSens(edet.enc));
+    const det = JSON.parse(decSens(edet.enc, decKey));
     allDetail = [];
     const step = 400;
     function batch(i) {
