@@ -163,8 +163,8 @@
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
   .days-wrap { display: flex; justify-content: center; overflow-x: auto; overflow-y: hidden; margin-top: 4px; }
   .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
-  .days-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
-  .days-table th, .days-table td { padding: 5px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
+  .days-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
+  .days-table th, .days-table td { padding: 3.75px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
   .days-table th { white-space: normal; }   /* 无备注表头允许换行，压缩列宽实现全屏不滚动 */
   .days-table th:has(.pct-note) { white-space: nowrap; }   /* 有备注表头(占比/整体占比/平均值)保持单行 */
   .days-table th .th-clamp { display: block; word-break: keep-all; }   /* 无备注表头完整显示（不截断），中文按词换行 */
