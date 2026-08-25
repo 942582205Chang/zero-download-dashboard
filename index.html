@@ -161,9 +161,9 @@
   }
 
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
-  .days-wrap { display: flex; justify-content: center; overflow-x: auto; margin-top: 4px; }
+  .days-wrap { display: flex; justify-content: center; overflow-x: auto; overflow-y: hidden; margin-top: 4px; border-radius: 12px; box-shadow: var(--shadow-sm); }
   .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
-  .days-table { border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; border: 1px solid var(--separator); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
+  .days-table { border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
   .days-table th, .days-table td { padding: 5px 12px; white-space: nowrap; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
   /* separate 下外框双线处理：最右列/最后行边框交给表格自身 border */
   .days-table th:last-child, .days-table td:last-child { border-right: none; }
