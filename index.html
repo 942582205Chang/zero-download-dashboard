@@ -177,6 +177,7 @@
   .days-table thead th { background: var(--grid); }
   .days-table thead .grp { font-size: 14px; font-weight: 700; }
   .days-table td.rowhead { font-weight: 600; text-align: left; }
+  .days-table td.green { color: var(--std-green); }   /* 已超过15天行：整体占比(all)用标准绿 */
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
@@ -596,12 +597,13 @@ function renderDaysTable() {
     const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
     const cls = i === 0 ? 'total-row' : '';
     const label = (i >= 3 ? '-- ' : '') + r.label;   // 最后五行(16到30天起，超过15天拆解子级)第一列前加 --
+    const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载(8191)+其整体占比(15.37%) 标绿
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
-    `<td class="num">${fmt(r.front0)}</td>` +
+    `<td class="num${g15}">${fmt(r.front0)}</td>` +
     `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
-    `<td class="num pct">${pct(r.front0, tot.all)}</td>` +   // 整体占比（分母=全量 all）
+    `<td class="num pct${g15}">${pct(r.front0, tot.all)}</td>` +   // 整体占比（分母=全量 all）
     `<td class="num">${fmt(r.b0)}</td>` +
     `<td class="num pct">${pct(r.b0, base.b0)}</td>` +
     `<td class="num pct">${pct(r.b0, tot.all)}</td>` +      // 整体占比（分母=全量 all）
