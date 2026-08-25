@@ -492,29 +492,31 @@ function updateKPI() {
   document.getElementById('detailCount').textContent = fmt(s.zeroFront);
 }
 
-// 发布天数分档统计表：所有占比分母统一 = 整体（小初高整体）对应列的值
+// 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体(小初高整体)行
 function renderDaysTable() {
   const rows = allData && allData.byDays;
   if (!rows || !rows.length) return;
-  const tot = rows[0]; // 小初高整体：所有占比的统一分母
+  const tot = rows[0]; // 小初高整体：整体占比分母
+  const green = rows.find(r => r.label === '超过 15 天'); // 绿色行：16到30天起各细分档的占比分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
   document.getElementById('daysBody').innerHTML = rows.map((r, i) => {
+    const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
     const cls = i === 0 ? 'total-row' : (r.label === '超过 15 天' ? 'row-green' : '');
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(r.label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num">${fmt(r.front0)}</td>` +
-    `<td class="num pct">${pct(r.front0, tot.front0)}</td>` +
+    `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
     `<td class="num">${fmt(r.b0)}</td>` +
-    `<td class="num pct">${pct(r.b0, tot.b0)}</td>` +
+    `<td class="num pct">${pct(r.b0, base.b0)}</td>` +
     `<td class="num">${fmt(r.c0)}</td>` +
-    `<td class="num pct">${pct(r.c0, tot.c0)}</td>` +
+    `<td class="num pct">${pct(r.c0, base.c0)}</td>` +
     `<td class="num">${fmt(r.frontSum)}</td>` +
-    `<td class="num pct">${pct(r.frontSum, tot.frontSum)}</td>` +
+    `<td class="num pct">${pct(r.frontSum, base.frontSum)}</td>` +
     `<td class="num">${fmt(r.bSum)}</td>` +
-    `<td class="num pct">${pct(r.bSum, tot.bSum)}</td>` +
+    `<td class="num pct">${pct(r.bSum, base.bSum)}</td>` +
     `<td class="num">${fmt(r.cSum)}</td>` +
-    `<td class="num pct">${pct(r.cSum, tot.cSum)}</td>` +
+    `<td class="num pct">${pct(r.cSum, base.cSum)}</td>` +
     `</tr>`;
   }).join('');
 }
