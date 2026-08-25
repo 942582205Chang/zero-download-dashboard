@@ -176,6 +176,7 @@
   .days-table tr.total-row td { font-weight: 700; }
   /* 最后五行(16到30天起，为"超过 15 天"的拆解子级)数据灰色 */
   .days-table tbody tr:nth-child(n+4) td { color: var(--muted); }
+  .days-table tbody tr:nth-child(n+4) td:first-child { text-align: right; }   /* 最后五行第一列居右 */
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 第一列（发布天数）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
