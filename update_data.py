@@ -18,11 +18,26 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_DIR = os.path.join(BASE_DIR, "csv")
 OUTPUT = os.path.join(BASE_DIR, "data.json")
 
-# 敏感字段：不再剔除，改为加密后写入 detail.json（公开仓库不明文暴露，登录后前端解码展示）
+# 敏感字段：整体加密覆盖（不再逐条单独加密）
 SENSITIVE_COLS = ["审核人", "审核时间", "用户名", "作者id", "提成比例", "定价", "店铺"]
 
-# 混淆密钥（与 index.html 的 SENS_KEY 保持一致；配合登录门，防公开仓库明文 + 防未登录抓取）
-SENS_KEY = "xkw-0dl-2026"
+# 加密密钥 = SHA-256(登录密码)，与前端 deriveKey 一致；密码不写进公开代码
+# 来源优先级：环境变量 DASH_PASSWORD → dashboard-auto-update/config.json 的 password（本地字段，不进公开仓库）
+def _load_password():
+    pwd = (os.environ.get("DASH_PASSWORD") or "").strip()
+    if pwd:
+        return pwd
+    try:
+        cfg = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "dashboard-auto-update", "config.json"))
+        with open(cfg, encoding="utf-8") as f:
+            pwd = (json.load(f).get("password") or "").strip()
+        if pwd:
+            return pwd
+    except Exception:
+        pass
+    raise RuntimeError("缺少加密密码：请设置环境变量 DASH_PASSWORD 或 dashboard-auto-update/config.json 的 password")
+
+SENS_KEY = hashlib.sha256(_load_password().encode("utf-8")).digest()   # 32 字节派生密钥
 
 
 def _enc_value(v):
@@ -30,7 +45,7 @@ def _enc_value(v):
     if v is None or v == "":
         return v
     data = str(v).encode("utf-8")
-    key = SENS_KEY.encode("utf-8")
+    key = SENS_KEY
     out = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
     return base64.b64encode(out).decode("ascii")
 
