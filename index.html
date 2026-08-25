@@ -196,44 +196,45 @@
   .course-table tbody tr:nth-child(n+3) td:first-child { text-align: left; white-space: pre; }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
-  /* 第一列（学段名/发布天数）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
+  /* 第一列（学段名）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
   .days-table thead tr:first-child th:first-child,
-  .days-table thead tr:nth-child(2) th:first-child,
   .days-table td:first-child {
     position: sticky; left: 0; z-index: 2;
     background: var(--surface-solid);
     border-right: 1px solid var(--purple-soft);   /* 第一列右侧浅紫分隔线 */
   }
-  .days-table thead tr:first-child th:first-child,
-  .days-table thead tr:nth-child(2) th:first-child { background: var(--grid); }
+  .days-table thead tr:first-child th:first-child { background: var(--grid); }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   /* 浅紫线：前台下载左(消费组边界) + B端0/C端0/B端下载/C端消费 左线（指标分隔） */
+  /* 首列已 rowspan 合并，表头第二行从 all(第2列) 开始 */
   .days-table thead tr:first-child th:nth-child(3),
-  .days-table thead tr:nth-child(2) th:nth-child(12),
-  .days-table thead tr:nth-child(2) th:nth-child(6),
-  .days-table thead tr:nth-child(2) th:nth-child(9),
-  .days-table thead tr:nth-child(2) th:nth-child(15),
-  .days-table thead tr:nth-child(2) th:nth-child(18),
+  .days-table thead tr:nth-child(2) th:nth-child(11),
+  .days-table thead tr:nth-child(2) th:nth-child(5),
+  .days-table thead tr:nth-child(2) th:nth-child(8),
+  .days-table thead tr:nth-child(2) th:nth-child(14),
+  .days-table thead tr:nth-child(2) th:nth-child(17),
   .days-table tbody td:nth-child(12),
   .days-table tbody td:nth-child(6),
   .days-table tbody td:nth-child(9),
   .days-table tbody td:nth-child(15),
   .days-table tbody td:nth-child(18) { border-left: 1px solid var(--purple-soft); }
   .days-table thead tr:first-child th:nth-child(2),
-  .days-table thead tr:nth-child(2) th:nth-child(3),
+  .days-table thead tr:nth-child(2) th:nth-child(1),
   .days-table tbody td:nth-child(2) { border-left: none; }
   /* 紫线紧邻左侧灰线去掉（separate 下避免双线） */
   .days-table thead tr:first-child th:nth-child(2),
-  .days-table thead tr:nth-child(2) th:nth-child(11),
+  .days-table thead tr:nth-child(2) th:nth-child(10),
   .days-table tbody td:nth-child(11) { border-right: none; }
-  .days-table thead tr:nth-child(2) th:nth-child(5),
-  .days-table thead tr:nth-child(2) th:nth-child(8),
-  .days-table thead tr:nth-child(2) th:nth-child(14),
-  .days-table thead tr:nth-child(2) th:nth-child(17),
+  .days-table thead tr:nth-child(2) th:nth-child(4),
+  .days-table thead tr:nth-child(2) th:nth-child(7),
+  .days-table thead tr:nth-child(2) th:nth-child(13),
+  .days-table thead tr:nth-child(2) th:nth-child(16),
   .days-table tbody td:nth-child(5),
   .days-table tbody td:nth-child(8),
   .days-table tbody td:nth-child(14),
   .days-table tbody td:nth-child(17) { border-right: none; }
+  /* 首列合并后：第一行首列(rowspan=2)的右紫线；第二行首格(all)左边紧邻首列，无多余线 */
+  .days-table thead tr:first-child th:first-child { border-bottom: 1px solid var(--separator); }
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; }
@@ -608,8 +609,9 @@ function updateKPI() {
 // 表头：第一行首列=学段名（小初高/小学/初中/高中），第二行首列=发布天数（不合并）
 function daysHead(stage, overallNote) {
   // overallNote：整体占比备注 —— 一/二用"all/区间天数"，三(课程表)用"all/学科"
+  // 首列：学段名(小初高/小学/初中/高中) rowspan=2 合并，第二行不再显示"发布天数"
   const on = overallNote || 'all';
-  return '<thead><tr><th class="grp">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>发布天数</th><th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
+  return '<thead><tr><th class="grp" rowspan="2">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
 }
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
