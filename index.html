@@ -163,8 +163,11 @@
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
   .days-wrap { display: flex; justify-content: center; overflow-x: auto; margin-top: 4px; }
   .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
-  .days-table { border-collapse: collapse; font-size: 13px; text-align: center; border: 1px solid var(--separator); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
-  .days-table th, .days-table td { padding: 5px 12px; border: 1px solid var(--separator); white-space: nowrap; }
+  .days-table { border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: center; border: 1px solid var(--separator); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
+  .days-table th, .days-table td { padding: 5px 12px; white-space: nowrap; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
+  /* separate 下外框双线处理：最右列/最后行边框交给表格自身 border */
+  .days-table th:last-child, .days-table td:last-child { border-right: none; }
+  .days-table tbody tr:last-child td { border-bottom: none; }
   .days-table thead th { background: var(--grid); }
   .days-table thead .grp { font-size: 14px; font-weight: 700; }
   .days-table td.rowhead { font-weight: 600; }
@@ -174,10 +177,15 @@
   .days-table tr.row-green td.num { color: var(--std-green); }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
-  /* 紫色分隔线（浅紫）：发布天数右侧 + 前台下载左侧（消费数据组边界）。
-     去掉紫线紧邻一侧的灰边框，让紫线独占显示，避免 border-collapse 合并被灰线覆盖。 */
+  /* 第一列（发布天数）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
   .days-table thead tr:first-child th:first-child,
-  .days-table td:first-child { border-right: 1px solid var(--purple-soft); }
+  .days-table td:first-child {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--surface-solid);
+    border-right: 1px solid var(--purple-soft);   /* 第一列右侧浅紫分隔线 */
+  }
+  .days-table thead tr:first-child th:first-child { background: var(--grid); }
+  /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(8),
   .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple-soft); }
