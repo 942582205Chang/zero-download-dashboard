@@ -83,6 +83,7 @@ def main():
     zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] > 15)].copy()
     zero_front = len(zero_df)
     eligible = int((df["发布天数"] > 15).sum())   # 已超过15天观察期的资源
+    over15 = df[df["发布天数"] > 15]              # 发布超15天的资源（B/C 口径基数，与备注一致）
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -92,8 +93,9 @@ def main():
             "eligible": eligible,
             "zeroFront": int(zero_front),
             "zeroFrontRate": round(zero_front / eligible * 100, 2),
-            "zeroB": int((df["b端下载"] == 0).sum()),
-            "zeroC": int((df["c端消费"] == 0).sum()),
+            # B端0下载 / C端0消费：口径 = 发布超15天的资源（与页面备注一致），2026-08-25 修正
+            "zeroB": int((over15["b端下载"] == 0).sum()),
+            "zeroC": int((over15["c端消费"] == 0).sum()),
             "thresholdDays": 15
         },
         "byCourse": {
