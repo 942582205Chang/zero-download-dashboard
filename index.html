@@ -266,6 +266,24 @@
   .ios-btn.secondary { background: var(--surface-solid); color: var(--blue); border: 1px solid var(--separator); }
 
   footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 32px; }
+
+  /* 左侧随滚动跟随的简略导航（页面最外层，不改变现有版面） */
+  .side-nav {
+    position: fixed; left: 10px; top: 50%; transform: translateY(-50%);
+    z-index: 150; display: flex; flex-direction: column; gap: 2px;
+    background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+    border: 1px solid var(--separator); border-radius: 10px;
+    padding: 6px 6px; box-shadow: var(--shadow-sm);
+  }
+  .side-nav .nav-item {
+    font-size: 10px; color: var(--ink-2); text-decoration: none;
+    text-align: center; line-height: 1.15; padding: 3px 4px; border-radius: 6px;
+    cursor: pointer; white-space: nowrap; transition: background .12s, color .12s;
+  }
+  .side-nav .nav-item:hover { background: var(--grid); }
+  .side-nav .nav-item.active { background: var(--blue); color: #fff; font-weight: 700; }
+  .side-nav .nav-top, .side-nav .nav-bottom { font-weight: 700; color: var(--ink); }
+  .side-nav .sep { height: 1px; background: var(--separator); margin: 2px 2px; }
 </style>
 </head>
 <body>
@@ -290,6 +308,7 @@
   </div>
 </div>
 
+<div class="side-nav" id="sideNav"></div>
 <div class="page">
   <header>
     <div class="brand">
@@ -651,6 +670,45 @@ function loadData() {
 
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (allData) { drawCharts(); } });
 window.addEventListener('resize', () => charts.forEach(c => c.resize()));
+
+// ===== 左侧简略导航：返回顶部 / 各区块标签 / 返回底部，滚动自动高亮 =====
+(function initSideNav() {
+  const box = document.getElementById('sideNav');
+  const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '分布分析', '返回底部'];
+  const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '分布分析', null];
+  const items = labels.map((lab, i) => {
+    const a = document.createElement('a');
+    a.className = 'nav-item' + (i === 0 || i === labels.length - 1 ? ' nav-top nav-bottom' : '');
+    a.textContent = lab;
+    a.onclick = () => {
+      if (targets[i] === null) { window.scrollTo({ top: i === 0 ? 0 : document.documentElement.scrollHeight, behavior: 'smooth' }); return; }
+      const el = document.querySelector('.section h2[data-nav="' + targets[i] + '"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    box.appendChild(a);
+    return a;
+  });
+  // 给各区块 h2 打上导航锚点标记
+  document.querySelectorAll('.section h2').forEach(h => {
+    const txt = h.textContent.trim();
+    if (targets.indexOf(txt) > -1) h.setAttribute('data-nav', txt);
+  });
+  // 滚动监听：找到当前视口最顶的区块 → 高亮
+  let last = null;
+  window.addEventListener('scroll', () => {
+    const secs = [...document.querySelectorAll('.section')];
+    let cur = null;
+    for (const s of secs) {
+      const h2 = s.querySelector('h2');
+      const r = s.getBoundingClientRect();
+      if (r.top <= 130) cur = h2.getAttribute('data-nav') || null;
+    }
+    if (cur !== last) {
+      last = cur;
+      items.forEach((a, i) => a.classList.toggle('active', targets[i] === cur));
+    }
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>
