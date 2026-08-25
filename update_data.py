@@ -87,27 +87,11 @@ def group_rate(df, zero_df, col, topn=None):
     return merged.head(topn) if topn else merged
 
 
-def main():
-    csv_path = find_latest_csv()
-    df = load_csv(csv_path)
-
-    # 下载列转数值
-    for col in ["b端下载", "c端消费", "前台下载"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
-    # 发布天数 = now - 审核时间。0下载预警口径：发布(审核通过)超过15天(严格>15) 仍前台0下载
-    audit = pd.to_datetime(df["审核时间"], errors="coerce")
-    df["发布天数"] = (datetime.now() - audit).dt.days.fillna(-1).astype(int)
-
-    total = len(df)
-    zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] > 15)].copy()
-    zero_front = len(zero_df)
-    eligible = int((df["发布天数"] > 15).sum())   # 已超过15天观察期的资源
-    over15 = df[df["发布天数"] > 15]              # 发布超15天的资源（B/C 口径基数，与备注一致）
-
-    # 发布天数分档统计表（页面顶部表格用，2026-08-25 新增）
+def build_day_table(df, overall_label):
+    """发布天数分档统计表（8行：整体/不超过15天/已超过15天/16-30/31-60/61-90/91-180/超过180天）。
+    overall_label 为表格第一行名称（小初高整体 / 小学整体 / 初中整体 / 高中整体）。"""
     DAY_GROUPS = [
-        ("小初高整体", pd.Series(True, index=df.index)),
+        (overall_label, pd.Series(True, index=df.index)),
         ("不超过 15 天", df["发布天数"] <= 15),
         ("已超过 15 天", df["发布天数"] > 15),
         ("16 到 30 天",  (df["发布天数"] >= 16) & (df["发布天数"] <= 30)),
@@ -129,6 +113,35 @@ def main():
             "bSum": int(g["b端下载"].sum()),
             "cSum": int(g["c端消费"].sum()),
         })
+    return by_days
+
+
+def main():
+    csv_path = find_latest_csv()
+    df = load_csv(csv_path)
+
+    # 下载列转数值
+    for col in ["b端下载", "c端消费", "前台下载"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+    # 发布天数 = now - 审核时间。0下载预警口径：发布(审核通过)超过15天(严格>15) 仍前台0下载
+    audit = pd.to_datetime(df["审核时间"], errors="coerce")
+    df["发布天数"] = (datetime.now() - audit).dt.days.fillna(-1).astype(int)
+
+    total = len(df)
+    zero_df = df[(df["前台下载"] == 0) & (df["发布天数"] > 15)].copy()
+    zero_front = len(zero_df)
+    eligible = int((df["发布天数"] > 15).sum())   # 已超过15天观察期的资源
+    over15 = df[df["发布天数"] > 15]              # 发布超15天的资源（B/C 口径基数，与备注一致）
+
+    # 发布天数分档统计表（一、小初高整体）
+    by_days = build_day_table(df, "小初高整体")
+
+    # 各学段发布天数分档表（二、各学段数据）：课程前2字 = 学段
+    stages = []
+    for st in ["小学", "初中", "高中"]:
+        sub = df[df["课程"].astype(str).str.startswith(st)]
+        stages.append({"stage": st, "rows": build_day_table(sub, st + "整体")})
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -170,7 +183,9 @@ def main():
             "rate": group_rate(df, zero_df, "版本", 15)["占比"].tolist()
         },
         # 发布天数分档统计表（表格区块数据，占比前端计算）
-        "byDays": by_days
+        "byDays": by_days,
+        # 各学段发布天数分档表（二、各学段数据）：小学整体/初中整体/高中整体
+        "byDaysStages": stages
     }
 
     # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
