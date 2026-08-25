@@ -12,6 +12,7 @@ import os
 import glob
 import base64
 import hashlib
+import gzip
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,14 +41,18 @@ def _load_password():
 SENS_KEY = hashlib.sha256(_load_password().encode("utf-8")).digest()   # 32 字节派生密钥
 
 
+def _enc_bytes(b):
+    """bytes 按密钥逐字节 XOR + base64（返回 ascii 字符串）"""
+    key = SENS_KEY
+    out = bytes(x ^ key[i % len(key)] for i, x in enumerate(b))
+    return base64.b64encode(out).decode("ascii")
+
+
 def _enc_value(v):
     """简单可逆混淆：按密钥逐字节 XOR + base64。空值原样保留。"""
     if v is None or v == "":
         return v
-    data = str(v).encode("utf-8")
-    key = SENS_KEY
-    out = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
-    return base64.b64encode(out).decode("ascii")
+    return _enc_bytes(str(v).encode("utf-8"))
 
 
 def find_latest_csv():
@@ -176,8 +181,9 @@ def main():
     data["summary"]["version"] = hashlib.sha1(detail_bytes).hexdigest()[:12]
 
     # 本页涉及数据整体加密：data.json / detail.json 均只存 {"enc": "..."}，前端登录后解密（密钥 SENS_KEY）
+    # detail.json 先 gzip 压缩再加密：明文 7.4MB→480KB，线上加载从 1 分钟+ 降到秒级（2026-08-25）
     data_enc = _enc_value(json.dumps(data, ensure_ascii=False))
-    detail_enc = _enc_value(detail_json)
+    detail_enc = _enc_bytes(gzip.compress(detail_bytes, compresslevel=9))
     with open(OUTPUT, "w", encoding="utf-8") as f:
         f.write(json.dumps({"enc": data_enc}))
     with open(os.path.join(BASE_DIR, "detail.json"), "w", encoding="utf-8") as f:
