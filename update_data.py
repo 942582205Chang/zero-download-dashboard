@@ -132,7 +132,8 @@ def main():
             "total": int(total),
             "eligible": eligible,
             "zeroFront": int(zero_front),
-            "zeroFrontRate": round(zero_front / eligible * 100, 2),
+            # 整体占比 = 0下载资源总数 ÷ 全量资源总数（2026-08-25 口径：分母从 eligible 改为全量 total）
+            "zeroFrontRate": round(zero_front / total * 100, 2),
             # B端0下载 / C端0消费：口径 = 发布超15天的资源（与页面备注一致），2026-08-25 修正
             "zeroB": int((over15["b端下载"] == 0).sum()),
             "zeroC": int((over15["c端消费"] == 0).sum()),
