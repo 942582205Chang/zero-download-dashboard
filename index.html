@@ -168,10 +168,14 @@
   #stageGrid .days-wrap, #courseGrid .days-wrap { margin-bottom: 16px; }
   /* 列宽统一：以 一、小初高整体 为准固定（table-layout:fixed + 首列/序号/占比/均列宽），其余表格列宽与之一致 */
   .days-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
-  .days-table col.c1 { width: 118px; }   /* 首列：学段名/发布天数/课程名 */
-  .days-table col.cn { width: 92px; }    /* 序号列 all/前台0/… */
-  .days-table col.cp { width: 108px; }   /* 占比列（含2行表头备注） */
-  .days-table col.cavg { width: 94px; }  /* 平均值列 */
+  .days-table col.c1 { width: 102px; }   /* 首列：学段名/课程名 */
+  .days-table col.cn { width: 52px; }    /* all 列 */
+  .days-table col.c0 { width: 52px; }    /* 前台 0 下载 / B端0 下载 / C端0 消费（两行显示） */
+  .days-table col.cp { width: 52px; }    /* 占比/整体占比列（含2行表头） */
+  .days-table col.cavg { width: 52px; }  /* 平均值列 */
+  .days-table col.cdown { width: 52px; } /* 前台下载 */
+  .days-table col.cbdown { width: 72px; }/* B 端下载 */
+  .days-table col.ccon { width: 72px; }  /* C 端消费 */
   .days-table th, .days-table td { padding: 3.75px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); overflow: hidden; }
   .days-table th { white-space: normal; }   /* 无备注表头允许换行，压缩列宽实现全屏不滚动 */
   .days-table th:has(.pct-note) { white-space: nowrap; }   /* 有备注表头(占比/整体占比/平均值)保持单行 */
@@ -609,9 +613,10 @@ function updateKPI() {
 // 表头：第一行首列=学段名（小初高/小学/初中/高中），第二行首列=发布天数（不合并）
 function daysHead(stage, overallNote) {
   // overallNote：整体占比备注 —— 一/二用"all/区间天数"，三(课程表)用"all/学科"
-  // 首列：学段名(小初高/小学/初中/高中) rowspan=2 合并，第二行不再显示"发布天数"
+  // 首列：学段名(小初高/小学/初中/高中) rowspan=2 合并
+  // 表头第二行：前台0 下载 / B端0 下载 / C端0 消费 从 0 前换行两行显示（第二行非备注，只是换行）
   const on = overallNote || 'all';
-  return '<thead><tr><th class="grp" rowspan="2">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th><span class="th-clamp">all</span></th><th><span class="th-clamp">前台 0 下载</span></th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">B端 0 下载</span></th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">C端 0 消费</span></th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th><span class="th-clamp">前台下载</span></th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th><span class="th-clamp">B 端下载</span></th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th><span class="th-clamp">C 端消费</span></th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
+  return '<thead><tr><th class="grp" rowspan="2">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>all</th><th>前台0<br>下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>B端0<br>下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>C端0<br>消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>前台下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th>B 端下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th>C 端消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
 }
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
@@ -656,8 +661,9 @@ function renderDaysTable(containerId, rows, stage, courseMode) {
   if (!rows || !rows.length) return;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  // 列：首列(学段/发布天数/课程) + 9个序号列 + 3个占比 + 3个整体占比 + 3个均列 = 20列
-  const cols = '<col class="c1">' + '<col class="cn">'.repeat(9) + '<col class="cp">'.repeat(3) + '<col class="cp">'.repeat(3) + '<col class="cavg">'.repeat(3);
+  // 列：首列(学段/课程) + all + 前台0 + 占比 + 整体占比 + B端0 + 占比 + 整体占比 + C端0 + 占比 + 整体占比
+  //      + 前台下载 + 占比 + 平均值 + B端下载 + 占比 + 平均值 + C端消费 + 占比 + 平均值 = 20列
+  const cols = '<col class="c1"><col class="cn"><col class="c0"><col class="cp"><col class="cp"><col class="c0"><col class="cp"><col class="cp"><col class="c0"><col class="cp"><col class="cp"><col class="cdown"><col class="cp"><col class="cavg"><col class="cbdown"><col class="cp"><col class="cavg"><col class="ccon"><col class="cp"><col class="cavg">';
   // 整体占比备注：一/二(分档表)用"all/区间天数"，三(课程表)用"all/学科"
   const overallNote = courseMode ? 'all/学科' : 'all/区间天数';
   wrap.innerHTML = '<table class="days-table' + (courseMode ? ' course-table' : '') + '">' + '<colgroup>' + cols + '</colgroup>' + daysHead(stage, overallNote) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody></table>';
