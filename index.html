@@ -705,7 +705,8 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     }
     if (cur !== last) {
       last = cur;
-      items.forEach((a, i) => a.classList.toggle('active', targets[i] === cur));
+      // 仅区块标签参与高亮；返回顶部/返回底部（targets 为空）永不自动高亮
+      items.forEach((a, i) => { if (targets[i]) a.classList.toggle('active', targets[i] === cur); });
     }
   }, { passive: true });
 })();
