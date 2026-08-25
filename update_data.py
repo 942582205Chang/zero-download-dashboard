@@ -152,20 +152,20 @@ def main():
         "byDays": by_days
     }
 
-    # 全量明细单独输出 detail.json（敏感字段加密，登录后前端解码展示）
+    # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
     detail = zero_df.fillna("").to_dict("records")
-    for rec in detail:
-        for col in SENSITIVE_COLS:
-            if col in rec:
-                rec[col] = _enc_value(rec[col])
-    detail_bytes = json.dumps(detail, ensure_ascii=False).encode("utf-8")
+    detail_json = json.dumps(detail, ensure_ascii=False)
+    detail_bytes = detail_json.encode("utf-8")
     # 明细内容哈希作为版本号：内容不变版本不变 → 浏览器可命中缓存秒开；数据更新版本变化 → 自动取新数据
     data["summary"]["version"] = hashlib.sha1(detail_bytes).hexdigest()[:12]
 
+    # 本页涉及数据整体加密：data.json / detail.json 均只存 {"enc": "..."}，前端登录后解密（密钥 SENS_KEY）
+    data_enc = _enc_value(json.dumps(data, ensure_ascii=False))
+    detail_enc = _enc_value(detail_json)
     with open(OUTPUT, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    with open(os.path.join(BASE_DIR, "detail.json"), "wb") as f:
-        f.write(detail_bytes)
+        f.write(json.dumps({"enc": data_enc}))
+    with open(os.path.join(BASE_DIR, "detail.json"), "w", encoding="utf-8") as f:
+        f.write(json.dumps({"enc": detail_enc}))
 
     print(f"OK 已生成 data.json")
     print(f"数据源：{os.path.basename(csv_path)}")
