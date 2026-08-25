@@ -169,12 +169,17 @@
   .days-table tr.row-green td.num { color: var(--std-green); }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
-  /* 紫色分隔线：发布天数右侧 + 前台下载左侧（消费数据组边界） */
+  /* 紫色分隔线：发布天数右侧 + 前台下载左侧（消费数据组边界）。
+     0.5px 会被相邻 1px 灰线在 border-collapse 下覆盖吞掉，必须 1px；
+     发布天数右侧紫线需同时去掉 all 列左边框，避免被灰线覆盖。 */
   .days-table thead tr:first-child th:first-child,
-  .days-table td:first-child { border-right: 0.5px solid var(--purple); }
+  .days-table td:first-child { border-right: 1px solid var(--purple); }
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(8),
-  .days-table tbody td:nth-child(9) { border-left: 0.5px solid var(--purple); }
+  .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple); }
+  .days-table thead tr:first-child th:nth-child(2),
+  .days-table thead tr:nth-child(2) th:nth-child(2),
+  .days-table tbody td:nth-child(2) { border-left: none; }
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(8),
   .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple); }
