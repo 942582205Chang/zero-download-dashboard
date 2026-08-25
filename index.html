@@ -19,7 +19,7 @@
     --blue:      #007aff;
     --orange:    #ff9500;
     --green:     #34c759;
-    --std-green: #7A9A6A;
+    --std-green: #69874F;
     --yellow:    #ffcc00;
     --red:       #ff3b30;
     --purple:    #af52de;
@@ -41,7 +41,7 @@
       --blue:      #0a84ff;
       --orange:    #ff9f0a;
       --green:     #30d158;
-      --std-green: #93B183;
+      --std-green: #82A066;
       --yellow:    #ffd60a;
       --red:       #ff453a;
       --purple:    #bf5af2;
@@ -171,7 +171,10 @@
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 紫色分隔线：发布天数右侧 + 前台下载左侧（消费数据组边界） */
   .days-table thead tr:first-child th:first-child,
-  .days-table td:first-child { border-right: 1px solid var(--purple); }
+  .days-table td:first-child { border-right: 0.5px solid var(--purple); }
+  .days-table thead tr:first-child th:nth-child(3),
+  .days-table thead tr:nth-child(2) th:nth-child(8),
+  .days-table tbody td:nth-child(9) { border-left: 0.5px solid var(--purple); }
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(8),
   .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple); }
