@@ -23,6 +23,7 @@
     --yellow:    #ffcc00;
     --red:       #ff3b30;
     --purple:    #af52de;
+    --purple-soft: #caa8e8;
     --teal:      #5ac8fa;
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.08);
     --shadow-md: 0 4px 12px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.06);
@@ -45,6 +46,7 @@
       --yellow:    #ffd60a;
       --red:       #ff453a;
       --purple:    #bf5af2;
+      --purple-soft: #b58ae0;
       --teal:      #64d2ff;
       --shadow-sm: 0 1px 2px rgba(0,0,0,0.30), 0 1px 3px rgba(0,0,0,0.40);
       --shadow-md: 0 4px 12px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.25);
@@ -169,17 +171,19 @@
   .days-table tr.row-green td.num { color: var(--std-green); }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
-  /* 紫色分隔线：发布天数右侧 + 前台下载左侧（消费数据组边界）。
-     0.5px 会被相邻 1px 灰线在 border-collapse 下覆盖吞掉，必须 1px；
-     发布天数右侧紫线需同时去掉 all 列左边框，避免被灰线覆盖。 */
+  /* 紫色分隔线（浅紫）：发布天数右侧 + 前台下载左侧（消费数据组边界）。
+     去掉紫线紧邻一侧的灰边框，让紫线独占显示，避免 border-collapse 合并被灰线覆盖。 */
   .days-table thead tr:first-child th:first-child,
-  .days-table td:first-child { border-right: 1px solid var(--purple); }
+  .days-table td:first-child { border-right: 1px solid var(--purple-soft); }
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(8),
-  .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple); }
+  .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple-soft); }
   .days-table thead tr:first-child th:nth-child(2),
   .days-table thead tr:nth-child(2) th:nth-child(2),
   .days-table tbody td:nth-child(2) { border-left: none; }
+  .days-table thead tr:first-child th:nth-child(2),
+  .days-table thead tr:nth-child(2) th:nth-child(7),
+  .days-table tbody td:nth-child(8) { border-right: none; }
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(8),
   .days-table tbody td:nth-child(9) { border-left: 1px solid var(--purple); }
@@ -227,6 +231,13 @@
 </style>
 </head>
 <body>
+
+<div class="overlay" id="regionOverlay">
+  <div class="login-box" style="text-align:center">
+    <h2>🌐 地区校验</h2>
+    <p id="regionMsg">正在校验访问地区…</p>
+  </div>
+</div>
 
 <div class="overlay" id="loginOverlay">
   <div class="login-box">
@@ -405,7 +416,38 @@ async function handleLogin() {
   } catch (e) { err.textContent = e.message; }
 }
 function logout() { localStorage.removeItem(AUTH_KEY); lock(); }
-if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
+// ===== IP 地区限制：仅 郑州 / 北京 地区可访问 =====
+const REGION_API = 'https://whois.pconline.com.cn/ipJson.jsp';
+function checkRegion() {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = r => { if (!settled) { settled = true; resolve(r); } };
+    const t = setTimeout(() => finish(null), 5000);          // 超时兜底 → 放行
+    window.IPCallBack = function(d) { clearTimeout(t); finish(d); };
+    const s = document.createElement('script');
+    s.charset = 'gbk';                                        // pconline 返回 GBK 编码
+    s.src = REGION_API + '?v=' + Date.now();
+    s.onerror = function() { clearTimeout(t); finish(null); };
+    document.head.appendChild(s);
+  });
+}
+function regionAllowed(geo) {
+  if (!geo || !geo.city) return true;                         // 接口异常 → 放行，避免误伤
+  const city = String(geo.city || '');
+  return city.indexOf('郑州') > -1 || city.indexOf('北京') > -1;
+}
+(function gate() {
+  const ov = document.getElementById('regionOverlay');
+  ov.style.display = 'flex';
+  checkRegion().then(geo => {
+    if (regionAllowed(geo)) {
+      ov.style.display = 'none';
+      if (localStorage.getItem(AUTH_KEY) === '1') unlock(); else lock();
+    } else {
+      document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 地区），禁止访问本看板。';
+    }
+  });
+})();
 document.getElementById('loginBtn').addEventListener('click', handleLogin);
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -529,25 +571,14 @@ function renderDaysTable() {
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function loadData() {
+  // 数据整体加密：登录后才能进到这里。首页只下载 data.json(约5.6KB)即可渲染全部；
+  // 明细(10MB)只在 detail.html 用后台 worker 下载解密，首页不拉取，保持秒开
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
-    allData = d;
-    document.getElementById('timeBadge').textContent = '更新：' + d.updateTime;
+    allData = JSON.parse(decSens(d.enc));
+    document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
     drawCharts();
-    updateKPI();   // 聚合 summary 秒出（KPI 全量真值）
+    updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
     renderDaysTable();   // 发布天数分档统计表
-    // 明细异步加载
-    fetch('detail.json?v=' + (d.summary && d.summary.version ? d.summary.version : Date.now())).then(r => r.json()).then(det => {
-      allDetail = det.map(r => {
-        const c = Object.assign({}, r);
-        SENS_FIELDS.forEach(k => { if (c[k]) c[k] = decSens(c[k]); });
-        return c;
-      });
-      detailLoaded = true;
-      // 明细条数只用于"当前共 N 条"，不覆盖 KPI
-      document.getElementById('detailCount').textContent = fmt(allDetail.length);
-    }).catch(() => {
-      document.getElementById('detailCount').textContent = '明细加载失败';
-    });
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
