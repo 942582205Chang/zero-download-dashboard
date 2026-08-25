@@ -625,9 +625,9 @@ function updateKPI() {
 function daysHead(stage, overallNote) {
   // overallNote：整体占比备注 —— 一/二用"all/区间天数"，三(课程表)用"all/学科"
   // 首列：学段名(小初高/小学/初中/高中) rowspan=2 合并
-  // 表头第二行：前台0 下载 / B端0 下载 / C端0 消费 从 0 前换行两行显示（第二行非备注，只是换行）
+  // 表头第二行：前台0 下载 / B端0 下载 / C端0 消费 从 0 前换行；前台下载/前台下载2字、B 端下载/C 端消费从端后断开 —— 均两行显示（非备注）
   const on = overallNote || 'all';
-  return '<thead><tr><th class="grp" rowspan="2">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>all</th><th>前台0<br>下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>B端0<br>下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>C端0<br>消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>前台下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th>B 端下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th>C 端消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
+  return '<thead><tr><th class="grp" rowspan="2">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>all</th><th>前台0<br>下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>B端0<br>下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>C端0<br>消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>前台<br>下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th>B 端<br>下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th>C 端<br>消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
 }
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
