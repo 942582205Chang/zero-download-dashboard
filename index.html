@@ -165,9 +165,14 @@
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
   .days-wrap { display: flex; justify-content: center; overflow-x: auto; overflow-y: hidden; margin-top: 4px; }
   .days-wrap { justify-content: safe center; }   /* 表格超宽时退化为左对齐，避免居中裁掉左侧滚不到 */
-  #stageGrid .days-wrap { margin-bottom: 16px; }
-  .days-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
-  .days-table th, .days-table td { padding: 3.75px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); }
+  #stageGrid .days-wrap, #courseGrid .days-wrap { margin-bottom: 16px; }
+  /* 列宽统一：以 一、小初高整体 为准固定（table-layout:fixed + 首列/序号/占比/均列宽），其余表格列宽与之一致 */
+  .days-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
+  .days-table col.c1 { width: 118px; }   /* 首列：学段名/发布天数/课程名 */
+  .days-table col.cn { width: 92px; }    /* 序号列 all/前台0/… */
+  .days-table col.cp { width: 108px; }   /* 占比列（含2行表头备注） */
+  .days-table col.cavg { width: 94px; }  /* 平均值列 */
+  .days-table th, .days-table td { padding: 3.75px 12px; border-bottom: 1px solid var(--separator); border-right: 1px solid var(--separator); overflow: hidden; }
   .days-table th { white-space: normal; }   /* 无备注表头允许换行，压缩列宽实现全屏不滚动 */
   .days-table th:has(.pct-note) { white-space: nowrap; }   /* 有备注表头(占比/整体占比/平均值)保持单行 */
   .days-table th .th-clamp { display: block; word-break: keep-all; }   /* 无备注表头完整显示（不截断），中文按词换行 */
@@ -646,7 +651,9 @@ function renderDaysTable(containerId, rows, stage, courseMode) {
   if (!rows || !rows.length) return;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  wrap.innerHTML = '<table class="days-table' + (courseMode ? ' course-table' : '') + '">' + daysHead(stage) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody></table>';
+  // 列：首列(学段/发布天数/课程) + 9个序号列 + 3个占比 + 3个整体占比 + 3个均列 = 20列
+  const cols = '<col class="c1">' + '<col class="cn">'.repeat(9) + '<col class="cp">'.repeat(3) + '<col class="cp">'.repeat(3) + '<col class="cavg">'.repeat(3);
+  wrap.innerHTML = '<table class="days-table' + (courseMode ? ' course-table' : '') + '">' + '<colgroup>' + cols + '</colgroup>' + daysHead(stage) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody></table>';
 }
 
 function renderStageTables() {
