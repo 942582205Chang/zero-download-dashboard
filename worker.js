@@ -1,7 +1,6 @@
-// detail 明细工作线程：后台下载 detail.json → 解密敏感字段 → 分批回传主线程
-// 目的：把 7.8MB 下载 + 8千条解密移到后台，页面加载/交互保持流畅
+// detail 明细工作线程：后台下载 detail.json → 整体解密 → 分批回传主线程
+// 目的：把 ~10MB 下载 + 整体解密移到后台，页面加载/交互保持流畅
 const SENS_KEY = 'xkw-0dl-2026';
-const SENS_FIELDS = ['审核人','审核时间','用户名','作者id','提成比例','定价','店铺'];
 
 function decSens(s) {
   if (!s) return s;
@@ -17,19 +16,19 @@ function decSens(s) {
 fetch('data.json?v=' + Date.now())
   .then(r => r.json())
   .then(d => {
-    if (d.updateTime) self.postMessage({ type: 'time', updateTime: d.updateTime });   // 把更新时间传回主线程显示
-    const ver = (d.summary && d.summary.version) ? d.summary.version : Date.now();
+    const d2 = JSON.parse(decSens(d.enc));
+    if (d2.updateTime) self.postMessage({ type: 'time', updateTime: d2.updateTime });   // 把更新时间传回主线程显示
+    const ver = (d2.summary && d2.summary.version) ? d2.summary.version : Date.now();
     return fetch('detail.json?v=' + ver);
   })
   .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-  .then(det => {
+  .then(edet => {
+    const det = JSON.parse(decSens(edet.enc));
     const total = det.length;
     self.postMessage({ type: 'start', total });
     const out = new Array(total);
     for (let i = 0; i < total; i++) {
-      const c = Object.assign({}, det[i]);
-      for (const k of SENS_FIELDS) { if (c[k]) c[k] = decSens(c[k]); }
-      out[i] = c;
+      out[i] = Object.assign({}, det[i]);
       if ((i + 1) % 2000 === 0) self.postMessage({ type: 'progress', done: i + 1, total });
     }
     const BATCH = 800;   // 分批回传，避免一次性克隆大对象卡顿
