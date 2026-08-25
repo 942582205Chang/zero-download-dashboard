@@ -192,15 +192,33 @@
   }
   .days-table thead tr:first-child th:first-child { background: var(--grid); }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
+  /* 浅紫线：前台下载左(消费组边界) + B端0/C端0/B端下载/C端消费 左线（指标分隔） */
   .days-table thead tr:first-child th:nth-child(3),
   .days-table thead tr:nth-child(2) th:nth-child(11),
-  .days-table tbody td:nth-child(12) { border-left: 1px solid var(--purple-soft); }
+  .days-table thead tr:nth-child(2) th:nth-child(5),
+  .days-table thead tr:nth-child(2) th:nth-child(8),
+  .days-table thead tr:nth-child(2) th:nth-child(14),
+  .days-table thead tr:nth-child(2) th:nth-child(17),
+  .days-table tbody td:nth-child(12),
+  .days-table tbody td:nth-child(6),
+  .days-table tbody td:nth-child(9),
+  .days-table tbody td:nth-child(15),
+  .days-table tbody td:nth-child(18) { border-left: 1px solid var(--purple-soft); }
   .days-table thead tr:first-child th:nth-child(2),
   .days-table thead tr:nth-child(2) th:nth-child(2),
   .days-table tbody td:nth-child(2) { border-left: none; }
+  /* 紫线紧邻左侧灰线去掉（separate 下避免双线） */
   .days-table thead tr:first-child th:nth-child(2),
   .days-table thead tr:nth-child(2) th:nth-child(10),
   .days-table tbody td:nth-child(11) { border-right: none; }
+  .days-table thead tr:nth-child(2) th:nth-child(4),
+  .days-table thead tr:nth-child(2) th:nth-child(7),
+  .days-table thead tr:nth-child(2) th:nth-child(13),
+  .days-table thead tr:nth-child(2) th:nth-child(16),
+  .days-table tbody td:nth-child(5),
+  .days-table tbody td:nth-child(8),
+  .days-table tbody td:nth-child(14),
+  .days-table tbody td:nth-child(17) { border-right: none; }
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; }
