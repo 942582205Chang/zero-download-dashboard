@@ -185,6 +185,9 @@
   /* 最后五行(16到30天起，为"超过 15 天"的拆解子级)数据灰色 */
   .days-table tbody tr:nth-child(n+4) td { color: var(--muted); }
   .days-table tbody tr:nth-child(n+4) td:first-child { text-align: right; }   /* 最后五行第一列居右 */
+  /* 课程表：第3行起（已超过15天的课程展开子级）数据灰色 + 第一列居右 */
+  .course-table tbody tr:nth-child(n+3) td { color: var(--muted); }
+  .course-table tbody tr:nth-child(n+3) td:first-child { text-align: right; }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 第一列（学段名/发布天数）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
@@ -358,10 +361,12 @@
     <div class="days-wrap"><div id="daysTable4"></div></div>
   </div>
 
-  <!-- 二、各课程数据 -->
-  <div class="section"><h2>三、各课程数据</h2><p>  --各课程 0 下载详情</p></div>
-  <div class="chart-grid" id="courseGrid">
-    <!-- 待填充 -->
+  <!-- 三、各课程数据 -->
+  <div class="section"><h2>三、各课程数据</h2><p>  --按课程拆解发布天数分档（已超过 15 天展开）</p></div>
+  <div id="courseGrid">
+    <div class="days-wrap"><div id="courseTable1"></div></div>
+    <div class="days-wrap"><div id="courseTable2"></div></div>
+    <div class="days-wrap"><div id="courseTable3"></div></div>
   </div>
 
   <!-- 三、各项目数据 -->
@@ -600,16 +605,18 @@ function daysHead(stage) {
 }
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
-function dayRowsHtml(rows) {
+// courseMode：课程表模式 —— 课程行(第3行起，即"已超过15天"的展开)灰字 + -- 前缀 + 居右，分母用已超过15天行
+function dayRowsHtml(rows, courseMode) {
   const tot = rows[0]; // 整体行：整体占比分母
-  const green = rows.find(r => r.label === '已超过 15 天'); // 超过15天行：16到30天起各细分档的占比分母
+  const green = rows.find(r => r.label === '已超过 15 天'); // 超过15天行：展开子行的占比分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
   const avg = (n, a) => a ? (n / a).toFixed(1) : '-';
   return rows.map((r, i) => {
-    const base = (i >= 3 && green) ? green : tot; // 从16到30天(第4行)起切换分母为绿色行
+    const childStart = courseMode ? 2 : 3;   // 课程表：课程行(第3行)起为"已超过15天"展开；分档表：16-30天(第4行)起
+    const base = (i >= childStart && green) ? green : tot;
     const cls = i === 0 ? 'total-row' : '';
-    const label = (i >= 3 ? '-- ' : '') + r.label;   // 最后五行(16到30天起，超过15天拆解子级)第一列前加 --
-    const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载(8191)+其整体占比(15.37%) 标绿
+    const label = (i >= childStart ? '-- ' : '') + r.label;   // 展开子行第一列前加 --
+    const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
@@ -635,11 +642,11 @@ function dayRowsHtml(rows) {
   }).join('');
 }
 
-function renderDaysTable(containerId, rows, stage) {
+function renderDaysTable(containerId, rows, stage, courseMode) {
   if (!rows || !rows.length) return;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  wrap.innerHTML = '<table class="days-table">' + daysHead(stage) + '<tbody>' + dayRowsHtml(rows) + '</tbody></table>';
+  wrap.innerHTML = '<table class="days-table' + (courseMode ? ' course-table' : '') + '">' + daysHead(stage) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody></table>';
 }
 
 function renderStageTables() {
@@ -647,6 +654,14 @@ function renderStageTables() {
   if (!stages || !stages.length) return;
   stages.forEach((s, idx) => {
     renderDaysTable('daysTable' + (idx + 2), s.rows, s.stage);
+  });
+}
+
+function renderCourseTables() {
+  const stages = allData && allData.byCourseStages;
+  if (!stages || !stages.length) return;
+  stages.forEach((s, idx) => {
+    renderDaysTable('courseTable' + (idx + 1), s.rows, s.stage, true);
   });
 }
 
@@ -662,6 +677,7 @@ function loadData() {
     updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
     renderDaysTable('daysTable1', allData.byDays, '小初高');   // 发布天数分档统计表（一、小初高整体）
     renderStageTables();
+    renderCourseTables();
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
@@ -684,6 +700,14 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
       if (targets[i] === null) { window.scrollTo({ top: i === 0 ? 0 : document.documentElement.scrollHeight, behavior: 'smooth' }); return; }
       const el = document.querySelector('.section h2[data-nav="' + targets[i] + '"]');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // 点击后滚到区块标题顶部（含标题行），稍等平滑滚动到位再修正偏移，确保标题可见
+      setTimeout(() => {
+        const s = document.querySelector('.section h2[data-nav="' + targets[i] + '"]');
+        if (s) {
+          const r = s.getBoundingClientRect();
+          if (r.top < 0) s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 350);
     };
     box.appendChild(a);
     return a;
