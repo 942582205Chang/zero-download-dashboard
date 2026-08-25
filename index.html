@@ -99,7 +99,9 @@
 
   header {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 16px; margin-bottom: 22px; flex-wrap: nowrap;
+    gap: 16px; flex-wrap: nowrap;
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg); padding: 12px 0 10px; margin-bottom: 12px;
   }
   .brand { flex: 1 1 auto; min-width: 0; }
   .brand h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
