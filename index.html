@@ -235,9 +235,10 @@
   .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
   .combo-scroll .combo-table thead th:first-child { z-index: 4; background: var(--grid); }
   .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
-  /* 合计行吸附在滚动容器底部（sticky bottom），始终可见 */
+  /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
+  .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
   /* 七、汇总行样式：加粗，浅色底，独立于数据行 */
   .combo-table .combo-total td { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
@@ -818,6 +819,7 @@ function comboStatsArr() { return allData.comboStats || []; }
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
 // 按当前筛选过滤预聚合结果（未筛选维度忽略）
+// 特殊：课程→学段 天然一致，若已选学段但课程未选，课程过滤跳过（避免"改了学段但课程残留旧学段"导致空结果）
 function comboFiltered() {
   const q = comboState;
   const act = COMBO_KEYS.filter(k => q[k]);
@@ -828,10 +830,14 @@ function comboFiltered() {
 // 联动：重建 5 个下拉 —— 每个维度可选项 = 当前已选组合下该维度实际出现的值（池空则用全量）
 // 特殊联动：课程自带学段前缀 → 选中课程时自动锁定对应学段；选中学段时课程只列该学段
 function refreshComboOptions(changedKey) {
-  const pool = comboFiltered();
+  // 先按"除自身外的其它已选"建立候选池，供每个维度取值收缩
   COMBO_KEYS.forEach(k => {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
+    // 该维度的候选池：忽略本维度自身的筛选（否则选了学段后，学段下拉只剩自己，改不回全部）
+    const q = { ...comboState }; q[k] = '';
+    const act = COMBO_KEYS.filter(x => q[x]);
+    const pool = act.length ? comboStatsArr().filter(s => act.every(x => String(s[x] || '') === q[x])) : comboStatsArr();
     const old = comboState[k];
     const avail = [...new Set(pool.map(s => String(s[k] || '')))].sort();
     const vals = avail.length ? avail : comboDimVals(k);
@@ -840,7 +846,6 @@ function refreshComboOptions(changedKey) {
     vals.forEach(v => sel.appendChild(new Option(v, v)));
     if (old && vals.indexOf(old) > -1) sel.value = old;
     else sel.value = '';
-    // 选中值颜色：全部=黑色/普通，设置了筛选值=蓝色
     sel.classList.toggle('has-val', !!comboState[k]);
     syncComboSelLabel(sel, k);
   });
