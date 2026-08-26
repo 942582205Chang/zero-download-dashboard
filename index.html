@@ -427,36 +427,6 @@
     <!-- 待填充 -->
   </div>
 
-  <!-- 分布分析 -->
-  <div class="section"><h2>分布分析</h2><p>  --多维度拆解"发布超15天仍0下载"资源的结构与占比（全局视图）</p></div>
-  <div class="chart-grid">
-    <div class="card">
-      <h3>按课程 · 0下载资源数</h3>
-      <div class="card-sub">TOP 各课程零下载资源数量</div>
-      <div class="chart" id="chartCourse"></div>
-    </div>
-    <div class="card">
-      <h3>按年级 · 0下载资源数</h3>
-      <div class="card-sub">各年级零下载资源数量</div>
-      <div class="chart" id="chartGrade"></div>
-    </div>
-    <div class="card">
-      <h3>按品牌 · 0下载率 TOP15</h3>
-      <div class="card-sub">品牌内零下载资源占比（预警重点）</div>
-      <div class="chart" id="chartBrand"></div>
-    </div>
-    <div class="card">
-      <h3>按版本 · 0下载率 TOP15</h3>
-      <div class="card-sub">版本内零下载资源占比（预警重点）</div>
-      <div class="chart" id="chartVersion"></div>
-    </div>
-    <div class="card">
-      <h3>按地区 · 0下载资源数 TOP15</h3>
-      <div class="card-sub">各地区零下载资源数量</div>
-      <div class="chart" id="chartRegion"></div>
-    </div>
-  </div>
-
   <!-- 明细入口 -->
   <div class="detail-card">
     <div class="head">
@@ -602,30 +572,8 @@ function drawCharts() {
   const t = T();
   const d = allData;
 
-  const cOpt = makeOption('horizontal', d.byCourse.zero, { color: t.blue });
-  cOpt.xAxis.max = Math.max(...d.byCourse.zero) * 1.12;
-  cOpt.yAxis.data = d.byCourse.categories;
-  const c = echarts.init(document.getElementById('chartCourse')); c.setOption(cOpt); charts.push(c);
-
-  const gOpt = makeOption('vertical', { categories: d.byGrade.categories, values: d.byGrade.zero }, { color: t.orange });
-  gOpt.yAxis.max = Math.max(...d.byGrade.zero) * 1.12;
-  const g = echarts.init(document.getElementById('chartGrade')); g.setOption(gOpt); charts.push(g);
-
-  const bOpt = makeOption('horizontal', d.byBrand.rate, { color: t.green, isRate: true });
-  bOpt.xAxis.max = Math.max(...d.byBrand.rate) * 1.12;
-  bOpt.xAxis.axisLabel.formatter = '{value}%';
-  bOpt.yAxis.data = d.byBrand.categories;
-  const b = echarts.init(document.getElementById('chartBrand')); b.setOption(bOpt); charts.push(b);
-
-  const vOpt = makeOption('horizontal', d.byVersion.rate, { color: t.purple, isRate: true });
-  vOpt.xAxis.max = Math.max(...d.byVersion.rate) * 1.12;
-  vOpt.xAxis.axisLabel.formatter = '{value}%';
-  vOpt.yAxis.data = d.byVersion.categories;
-  const v = echarts.init(document.getElementById('chartVersion')); v.setOption(vOpt); charts.push(v);
-
-  const rOpt = makeOption('vertical', { categories: d.byRegion.categories, values: d.byRegion.zero }, { color: t.yellow });
-  rOpt.yAxis.max = Math.max(...d.byRegion.zero) * 1.12;
-  const r = echarts.init(document.getElementById('chartRegion')); r.setOption(rOpt); charts.push(r);
+  // 分布分析模块已删除（2026-08-26），此函数保留空实现以兼容调用方
+  return;
 }
 
 function updateKPI() {
@@ -820,8 +768,8 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 // ===== 左侧简略导航：返回顶部 / 各区块标签 / 返回底部，滚动自动高亮 =====
 (function initSideNav() {
   const box = document.getElementById('sideNav');
-  const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '分布分析', '返回底部'];
-  const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '分布分析', null];
+  const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '返回底部'];
+  const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', null];
   // 收起/展开按钮（第一个）：文本随状态切换
   const toggle = document.createElement('button');
   toggle.className = 'nav-toggle';
