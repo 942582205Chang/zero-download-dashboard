@@ -199,12 +199,20 @@
   .combo-table .days-table-bd, .combo-table td, .combo-table th { border-left: none !important; }
   .combo-table tbody tr:nth-child(n+4) td { color: var(--ink) !important; font-weight: 400 !important; }
   .combo-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: normal; font-size: 13px; }
+  /* 学段列右侧无线（覆盖通用 first-child 紫线） */
   .combo-table tbody td:first-child,
-  .combo-table thead tr:first-child th:first-child { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table thead tr:first-child th:first-child { border-right: none !important; }
 
   /* 七、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左 */
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
+  /* 七、边线规则：学段列右侧无线；类型列右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线 */
+  .combo-table thead tr:first-child th:first-child,
+  .combo-table tbody td:first-child { border-right: none !important; }
+  .combo-table thead tr:nth-child(2) th:nth-child(4),
+  .combo-table tbody td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table thead tr:nth-child(2) th:nth-child(8),
+  .combo-table tbody td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
@@ -479,7 +487,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v26</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v27</b>（2026-08-26）</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -498,7 +506,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v26';
+const PAGE_VERSION = 'v27';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
