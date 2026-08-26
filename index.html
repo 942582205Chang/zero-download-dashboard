@@ -170,7 +170,7 @@
   /* 各列宽度在 renderDaysTable 的 DAY_COLS 常量里配置，表格总宽由 JS 自动计算并写死（改一处即全表对齐） */
   .days-table { table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 1.09; text-align: center; border: 1px solid var(--separator); border-radius: 12px; box-shadow: var(--shadow-sm); background: var(--surface-solid); }
   /* 各列默认宽（内联 style 已写死实际值；此处保留类名默认值兜底，改宽请改 renderDaysTable 的 DAY_COLS） */
-  .days-table col.c1 { width: 102px; }   /* 首列：学段名/课程名 */
+  .days-table col.c1 { width: 110px; }   /* 首列：学段名/课程名 */
   .days-table col.cn { width: 78px; }    /* all 列 */
   .days-table col.c0 { width: 60px; }    /* 前台 0 下载 / B端0 下载 / C端0 消费（两行显示） */
   .days-table col.cp { width: 70px; }    /* 占比/整体占比列（含2行表头） */
@@ -438,11 +438,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v18</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v19</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v18';
+const PAGE_VERSION = 'v19';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -666,7 +666,7 @@ function renderDaysTable(containerId, rows, stage, courseMode) {
   if (!wrap) return;
   // ===== 各列宽度配置（唯一改列宽的地方：改这里即自动重算表格总宽并同步写死，全表对齐）=====
   const DAY_COLS = [
-    ['c1', 102], ['cn', 78], ['c0', 60], ['cp', 70], ['cp', 70],
+    ['c1', 110], ['cn', 78], ['c0', 60], ['cp', 70], ['cp', 70],
     ['c0', 60], ['cp', 70], ['cp', 70], ['c0', 60], ['cp', 70], ['cp', 70],
     ['cdown', 80], ['cp', 70], ['cavg', 70], ['cbdown', 98], ['cp', 70], ['cavg', 70],
     ['ccon', 88], ['cp', 70], ['cavg', 70],
