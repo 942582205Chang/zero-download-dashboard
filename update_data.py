@@ -169,6 +169,67 @@ def main():
             })
         course_stages.append({"stage": st, "rows": rows})
 
+    # 四、各项目数据（品牌系列）：每学段一张表，参照三、课程表——前三行=整体/已超过15天，
+    # 其后每行 = 该学段内一个"品牌"的 发布超15天 子集（仅统计审核通过超15天的资源）
+    brand_stages = []
+    for st in ["小学", "初中", "高中"]:
+        sub = df[df["课程"].astype(str).str.startswith(st)]
+        brands = [b for b in sorted(sub["品牌"].astype(str).unique()) if str(b) != "nan"]
+        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 整体/已超过15天
+        for bname in brands:
+            go = sub[(sub["品牌"].astype(str) == bname) & (sub["发布天数"] > 15)]
+            rows.append({
+                "label": bname,
+                "all": int(len(go)),
+                "front0": int((go["前台下载"] == 0).sum()),
+                "b0": int((go["b端下载"] == 0).sum()),
+                "c0": int((go["c端消费"] == 0).sum()),
+                "frontSum": int(go["前台下载"].sum()),
+                "bSum": int(go["b端下载"].sum()),
+                "cSum": int(go["c端消费"].sum()),
+            })
+        brand_stages.append({"stage": st, "rows": rows})
+
+    # 五、各场景数据（场景）：每学段一张表，参照三/四，其后每行 = 该学段内一个"场景"的 发布超15天 子集
+    scene_stages = []
+    for st in ["小学", "初中", "高中"]:
+        sub = df[df["课程"].astype(str).str.startswith(st)]
+        scenes = [s for s in sorted(sub["场景"].astype(str).unique()) if str(s) != "nan"]
+        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 整体/已超过15天
+        for sname in scenes:
+            go = sub[(sub["场景"].astype(str) == sname) & (sub["发布天数"] > 15)]
+            rows.append({
+                "label": sname,
+                "all": int(len(go)),
+                "front0": int((go["前台下载"] == 0).sum()),
+                "b0": int((go["b端下载"] == 0).sum()),
+                "c0": int((go["c端消费"] == 0).sum()),
+                "frontSum": int(go["前台下载"].sum()),
+                "bSum": int(go["b端下载"].sum()),
+                "cSum": int(go["c端消费"].sum()),
+            })
+        scene_stages.append({"stage": st, "rows": rows})
+
+    # 六、各资源类型数据（资源类型）：每学段一张表，参照三/四/五，其后每行 = 该学段内一个"类型"的 发布超15天 子集
+    type_stages = []
+    for st in ["小学", "初中", "高中"]:
+        sub = df[df["课程"].astype(str).str.startswith(st)]
+        types = [t for t in sorted(sub["类型"].astype(str).unique()) if str(t) != "nan"]
+        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 整体/已超过15天
+        for tname in types:
+            go = sub[(sub["类型"].astype(str) == tname) & (sub["发布天数"] > 15)]
+            rows.append({
+                "label": tname,
+                "all": int(len(go)),
+                "front0": int((go["前台下载"] == 0).sum()),
+                "b0": int((go["b端下载"] == 0).sum()),
+                "c0": int((go["c端消费"] == 0).sum()),
+                "frontSum": int(go["前台下载"].sum()),
+                "bSum": int(go["b端下载"].sum()),
+                "cSum": int(go["c端消费"].sum()),
+            })
+        type_stages.append({"stage": st, "rows": rows})
+
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "source": os.path.basename(csv_path),
@@ -213,7 +274,13 @@ def main():
         # 各学段发布天数分档表（二、各学段数据）：小学整体/初中整体/高中整体
         "byDaysStages": stages,
         # 三、各课程数据：每学段一张表，前三行同分档表，其后每行 = 课程"已超过 15 天"子集
-        "byCourseStages": course_stages
+        "byCourseStages": course_stages,
+        # 四、各项目数据（品牌系列）：每学段一张表，其后每行 = 品牌"已超过 15 天"子集
+        "byBrandStages": brand_stages,
+        # 五、各场景数据：每学段一张表，其后每行 = 场景"已超过 15 天"子集
+        "bySceneStages": scene_stages,
+        # 六、各资源类型数据：每学段一张表，其后每行 = 类型"已超过 15 天"子集
+        "byTypeStages": type_stages
     }
 
     # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
