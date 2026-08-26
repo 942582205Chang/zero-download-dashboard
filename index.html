@@ -215,7 +215,13 @@
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
   /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  .combo-scroll .combo-table thead th { position: sticky; top: 0; z-index: 3; }
+  /* 七、表头两行全部吸顶：用 position:sticky 包裹整个 thead（两行都粘住），
+     首列 sticky 背景不透明，避免横向滚动时数值透上来 */
+  .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
+  .combo-scroll .combo-table thead th { background: var(--grid); }
+  .combo-scroll .combo-table thead th:first-child,
+  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
+  .combo-scroll .combo-table tbody td:first-child { background: var(--surface-solid); }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
   /* 各表子级行(第4行起，为各子类的"已超过 15 天"展开)数据灰色（含第一列，不额外加粗） */
@@ -473,7 +479,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v25</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v26</b>（2026-08-26）</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -492,7 +498,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v25';
+const PAGE_VERSION = 'v26';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
