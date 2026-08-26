@@ -226,14 +226,14 @@
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
   /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  /* 七、表头两行全部吸顶：用 position:sticky 包裹整个 thead（两行都粘住）
-     注意：thead sticky 会破坏"两行表头各自吸顶"，改成两行分别 sticky top:0 / top:行高 */
-  .combo-scroll .combo-table thead th { position: sticky; top: 0; z-index: 3; background: var(--grid); }
-  .combo-scroll .combo-table thead tr:nth-child(2) th { top: 34px; }   /* 第二行表头吸顶在首行下方 */
-  .combo-scroll .combo-table thead tr:first-child th:first-child { top: 0; }
-  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-solid); }
-  .combo-scroll .combo-table thead th:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  .combo-scroll .combo-table thead tr:nth-child(2) th:first-child { top: 34px; z-index: 4; }
+  /* 七、表头两行全部吸顶（第一列含表头也一并吸顶固定）：
+     thead 整体 sticky top:0 → 两行表头一起吸顶；首列 th/td sticky left:0 固定列头 */
+  .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
+  .combo-scroll .combo-table thead th { background: var(--grid); }
+  .combo-scroll .combo-table thead th:first-child,
+  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
+  .combo-scroll .combo-table thead th:first-child { z-index: 4; background: var(--grid); }
+  .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
   /* 七、汇总行样式：加粗，浅色底，独立于数据行 */
   .combo-table .combo-total td { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
@@ -493,7 +493,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v28</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v29</b>（2026-08-26）</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -512,7 +512,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v28';
+const PAGE_VERSION = 'v29';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -874,9 +874,12 @@ function renderComboTable() {
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
     String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN');
   const rows = [...list].sort(cmp);
+  // C端单份消费 = 该组合 C端消费 ÷ 该组合 资源数量_all 的 all 列（保留 2 位小数）
+  const cAvg = (e) => e.all.all ? (e.all.cSum / e.all.all) : null;
   const tr = rows.map((e, i) => {
     const A = e.all, O = e.over15;
     const L = (v) => '<td class="num">' + fmt(v) + '</td>';
+    const ca = cAvg(e);
     return '<tr>' +
       // 第一列(学段)居中；第二三四列(品牌/场景/类型)居左
       '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
@@ -887,11 +890,15 @@ function renderComboTable() {
       L(A.all) + L(A.front0) + L(A.b0) + L(A.c0) +
       // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费
       L(O.all) + L(O.front0) + L(O.b0) + L(O.c0) +
-      // 消费数据_all：前台下载 / B端下载 / C端消费
+      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费
       L(A.frontSum) + L(A.bSum) + L(A.cSum) +
+      '<td class="num">' + (ca === null ? '-' : ca.toFixed(2)) + '</td>' +
       '</tr>';
   }).join('');
-  // 汇总行：当前筛选结果（无筛选=全部）下，第5列到最后一列(共11个数值列)的合计
+  // 汇总行：当前筛选结果（无筛选=全部）下，第5列到最后一列(共12个数值列)的合计
+  // 注：C端单份消费是"率"，合计列为该列自身合计（按同口径 C端消费 ÷ all 汇总），非直接求和
+  const sumAll = rows.reduce((s, e) => s + e.all.all, 0);
+  const sumC = rows.reduce((s, e) => s + e.all.cSum, 0);
   const ttl = rows.reduce((acc, e) => {
     const A = e.all, O = e.over15;
     acc[0] += A.all; acc[1] += A.front0; acc[2] += A.b0; acc[3] += A.c0;
@@ -902,18 +909,19 @@ function renderComboTable() {
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead" colspan="4" style="text-align:center;font-weight:700">合计</td>' +
     ttl.map(v => '<td class="num" style="font-weight:700">' + fmt(v) + '</td>').join('') +
+    '<td class="num" style="font-weight:700">' + (sumAll ? (sumC / sumAll).toFixed(2) : '-') + '</td>' +
     '</tr>';
-  // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4: all|前台0|B端0|C端0消费) | 资源数量_超过15天(4: all|前台0|B端0|C端0消费) | 消费数据_all(3)
+  // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
   const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
-    '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="3">消费数据_all</th></tr>' +
+    '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
     '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
-    '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th></tr>';
+    '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
   wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
-    '<colgroup><col><col><col><col>' + Array(11).fill('<col>').join('') + '</colgroup>' +
+    '<colgroup><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
-    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="15" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
+    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
 }
 
 // 七、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
