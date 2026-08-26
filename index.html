@@ -287,6 +287,7 @@
   .detail-card .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .detail-card h3 { font-size: 18px; font-weight: 800; }
   .detail-card .count { font-size: 14px; color: var(--muted); }
+  .footer-version { margin-top: 28px; padding: 12px 0 20px; text-align: center; font-size: 12px; color: var(--muted); border-top: 1px solid var(--separator); }
   .ios-btn {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 18px; border-radius: 14px; font-size: 15px; font-weight: 700;
@@ -439,9 +440,22 @@
       </div>
     </div>
   </div>
-</div>
 
+  <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
+  <footer class="footer-version">看板版本 <b>v3</b>（2026-08-26）</footer>
+</div>
 <script>
+// ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
+const PAGE_VERSION = 'v3';
+// 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
+try {
+  if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
+    localStorage.setItem('dash_page_ver', PAGE_VERSION);
+    location.reload(true);
+  } else {
+    localStorage.setItem('dash_page_ver', PAGE_VERSION);
+  }
+} catch (e) { /* localStorage 不可用时静默忽略，不影响页面 */ }
 // ===== 数据整体解密：密钥 = SHA-256(登录密码)，与 update_data.py 的派生密钥一致 =====
 const SESS_KEY = 'dash_dec_key';     // localStorage 存派生密钥（关闭浏览器重开仍自动登录）
 let decKey = null;                    // 内存中的 32 字节派生密钥
@@ -587,7 +601,6 @@ function updateKPI() {
   document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
   document.getElementById('kpiZeroB').textContent = fmt(s.zeroB);
   document.getElementById('kpiZeroC').textContent = fmt(s.zeroC);
-  document.getElementById('detailCount').textContent = fmt(s.zeroFront);
 }
 
 // 表头 / 首列统计说明气泡（悬浮显示）：
