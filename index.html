@@ -206,13 +206,16 @@
   /* 七、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左 */
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
-  /* 七、边线规则：学段列右侧无线；类型列右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线 */
+  /* 七、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
+     资源数量_超过15天 的 C端0消费(第12列) 右侧淡紫线 */
   .combo-table thead tr:first-child th:first-child,
   .combo-table tbody td:first-child { border-right: none !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(4),
   .combo-table tbody td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(8),
   .combo-table tbody td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table thead tr:nth-child(2) th:nth-child(12),
+  .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
@@ -223,13 +226,16 @@
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
   /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  /* 七、表头两行全部吸顶：用 position:sticky 包裹整个 thead（两行都粘住），
-     首列 sticky 背景不透明，避免横向滚动时数值透上来 */
-  .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
-  .combo-scroll .combo-table thead th { background: var(--grid); }
-  .combo-scroll .combo-table thead th:first-child,
-  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  .combo-scroll .combo-table tbody td:first-child { background: var(--surface-solid); }
+  /* 七、表头两行全部吸顶：用 position:sticky 包裹整个 thead（两行都粘住）
+     注意：thead sticky 会破坏"两行表头各自吸顶"，改成两行分别 sticky top:0 / top:行高 */
+  .combo-scroll .combo-table thead th { position: sticky; top: 0; z-index: 3; background: var(--grid); }
+  .combo-scroll .combo-table thead tr:nth-child(2) th { top: 34px; }   /* 第二行表头吸顶在首行下方 */
+  .combo-scroll .combo-table thead tr:first-child th:first-child { top: 0; }
+  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface-solid); }
+  .combo-scroll .combo-table thead th:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
+  .combo-scroll .combo-table thead tr:nth-child(2) th:first-child { top: 34px; z-index: 4; }
+  /* 七、汇总行样式：加粗，浅色底，独立于数据行 */
+  .combo-table .combo-total td { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
   /* 各表子级行(第4行起，为各子类的"已超过 15 天"展开)数据灰色（含第一列，不额外加粗） */
@@ -487,7 +493,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v27</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v28</b>（2026-08-26）</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -506,7 +512,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v27';
+const PAGE_VERSION = 'v28';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -885,6 +891,18 @@ function renderComboTable() {
       L(A.frontSum) + L(A.bSum) + L(A.cSum) +
       '</tr>';
   }).join('');
+  // 汇总行：当前筛选结果（无筛选=全部）下，第5列到最后一列(共11个数值列)的合计
+  const ttl = rows.reduce((acc, e) => {
+    const A = e.all, O = e.over15;
+    acc[0] += A.all; acc[1] += A.front0; acc[2] += A.b0; acc[3] += A.c0;
+    acc[4] += O.all; acc[5] += O.front0; acc[6] += O.b0; acc[7] += O.c0;
+    acc[8] += A.frontSum; acc[9] += A.bSum; acc[10] += A.cSum;
+    return acc;
+  }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const totalRow = '<tr class="combo-total">' +
+    '<td class="rowhead" colspan="4" style="text-align:center;font-weight:700">合计</td>' +
+    ttl.map(v => '<td class="num" style="font-weight:700">' + fmt(v) + '</td>').join('') +
+    '</tr>';
   // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4: all|前台0|B端0|C端0消费) | 资源数量_超过15天(4: all|前台0|B端0|C端0消费) | 消费数据_all(3)
   const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
     '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="3">消费数据_all</th></tr>' +
@@ -895,7 +913,7 @@ function renderComboTable() {
   wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
     '<colgroup><col><col><col><col>' + Array(11).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
-    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="15" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + '</tbody></table>';
+    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="15" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
 }
 
 // 七、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
