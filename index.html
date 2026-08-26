@@ -433,11 +433,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v8</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v9</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v8';
+const PAGE_VERSION = 'v9';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -838,7 +838,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   }
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
-    const el = e.target.closest ? e.target.closest('td.num.pct') : null;
+    const el = e.target.closest ? e.target.closest('td.num.pct[data-a][data-b]') : null;
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
@@ -855,7 +855,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   });
   document.addEventListener('mouseout', e => {
     const to = e.relatedTarget;
-    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num.pct') === target)) return;
+    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num.pct[data-a][data-b]') === target)) return;
     if (tip.classList.contains('show')) {
       clearTimeout(showTimer);
       hideTimer = setTimeout(hide, HIDE_DELAY);
