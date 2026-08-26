@@ -433,11 +433,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v6</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v7</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v6';
+const PAGE_VERSION = 'v7';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -814,9 +814,12 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const pct = target.getAttribute('data-pct');   // "分子|分母"（原始值）
     if (!pct) { hide(); return; }
     const [a, b] = pct.split('|').map(s => Number(s));
+    // 分母为 0 / 非有限数 → 该格显示 '-'（不参与计算）；结果为 0% → 也不弹公式
     if (!isFinite(b) || b === 0) { hide(); return; }
+    const res = a / b * 100;
+    if (!(res > 0)) { hide(); return; }   // 0%（含 0/0）不显示气泡
     // 气泡文案：具体公式，不带 ×100%（结果直接是百分比）
-    tip.textContent = fmt(a) + ' ÷ ' + fmt(b) + ' = ' + (a / b * 100).toFixed(2) + '%';
+    tip.textContent = fmt(a) + ' ÷ ' + fmt(b) + ' = ' + res.toFixed(2) + '%';
     tip.classList.add('show');
     position();
     // 高亮参与计算的数字：在同一表格里找与分子/分母文本一致的数值单元格
