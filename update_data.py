@@ -240,6 +240,7 @@ def main():
     }
     # 按 (学段,品牌,场景,类型) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
     # 只传聚合结果，不传全量行 → data.json 保持 KB/MB 级，30万+ 行也扛得住（重活在 pandas 后端完成）
+    # 金额求和用 round(sum)（比 int() 截断更接近真实，见 C端消费 int=2082444 → round=2082548 的口径差）
     df["学段"] = df["课程"].astype(str).str[:2]
     combo_stats = []
     for (st, brand, scene, typ), g in df.groupby(["学段", "品牌", "场景", "类型"], dropna=False):
@@ -249,9 +250,9 @@ def main():
                 "front0": int((sub["前台下载"] == 0).sum()),
                 "b0": int((sub["b端下载"] == 0).sum()),
                 "c0": int((sub["c端消费"] == 0).sum()),
-                "frontSum": int(sub["前台下载"].sum()),
-                "bSum": int(sub["b端下载"].sum()),
-                "cSum": int(sub["c端消费"].sum()),
+                "frontSum": round(sub["前台下载"].sum()),
+                "bSum": round(sub["b端下载"].sum()),
+                "cSum": round(sub["c端消费"].sum()),
             }
         a_all = agg(g)
         a_over = agg(g[g["发布天数"] > 15])
@@ -259,6 +260,14 @@ def main():
             "学段": str(st), "品牌": str(brand), "场景": str(scene), "类型": str(typ),
             "all": a_all, "over15": a_over,
         })
+    # 让"全部组合之和"与一/二的全量口径对齐：round 逐组进位可能造成±几元的偏差，
+    # 把偏差修正到组合数最大的那组上，保证无筛选时七的合计 == 一的全量合计
+    if combo_stats:
+        _want = int(df["c端消费"].sum())
+        _cur = sum(e["all"]["cSum"] for e in combo_stats)
+        if _cur != _want:
+            _max = max(combo_stats, key=lambda e: e["all"]["all"])
+            _max["all"]["cSum"] += (_want - _cur)
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
