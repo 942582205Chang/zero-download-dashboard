@@ -203,7 +203,9 @@
   .combo-table tbody td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
 
-  /* 七、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左 */
+  /* 七、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左；前4列不加粗（覆盖 rowhead 600） */
+  .combo-table.combo-auto td.combo-dim,
+  .combo-table.combo-auto td.combo-dim-l { font-weight: 400; }
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
   /* 七、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
@@ -482,20 +484,21 @@
   </div>
 
   <!-- 七、学段/品牌/场景/类型 组合筛选表 -->
-  <div class="section"><h2>七、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型 筛选后汇总（默认全部）</p></div>
+  <div class="section"><h2>七、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
   <div class="combo-toolbar" id="comboFilters">
     <span class="combo-label">筛选：</span>
     <select id="cf-学段"></select>
     <select id="cf-品牌"></select>
     <select id="cf-场景"></select>
     <select id="cf-类型"></select>
+    <select id="cf-课程"></select>
     <button type="button" id="cfClear" class="combo-clear">✕ 清除</button>
     <button type="button" id="cfExport" class="combo-export">⬇ 导出 Excel</button>
   </div>
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v30</b></footer>
+  <footer class="footer-version">看板版本 <b>v32</b></footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -514,7 +517,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v30';
+const PAGE_VERSION = 'v32';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -808,23 +811,25 @@ function loadData() {
 // ===== 七、学段/品牌/场景/类型 组合筛选表 =====
 // 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(3列)|资源数量_超过15天(3列)|消费数据_all(3列)；
 // 第二行列：学段|品牌|场景|类型 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费
-// 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；4 个下拉联动（选中某维后其它维可选项收缩）
-let comboState = { '学段': '', '品牌': '', '场景': '', '类型': '' };
+// 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；5 个下拉联动（选中某维后其它维可选项收缩）
+let comboState = { '学段': '', '品牌': '', '场景': '', '类型': '', '课程': '' };
+const COMBO_KEYS = ['学段', '品牌', '场景', '类型', '课程'];
 function comboStatsArr() { return allData.comboStats || []; }
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
 // 按当前筛选过滤预聚合结果（未筛选维度忽略）
 function comboFiltered() {
   const q = comboState;
-  const act = Object.keys(q).filter(k => q[k]);
+  const act = COMBO_KEYS.filter(k => q[k]);
   if (!act.length) return comboStatsArr();
   return comboStatsArr().filter(s => act.every(k => String(s[k] || '') === q[k]));
 }
 
-// 联动：重建 4 个下拉 —— 每个维度可选项 = 当前已选组合下该维度实际出现的值（池空则用全量）
-function refreshComboOptions() {
+// 联动：重建 5 个下拉 —— 每个维度可选项 = 当前已选组合下该维度实际出现的值（池空则用全量）
+// 特殊联动：课程自带学段前缀 → 选中课程时自动锁定对应学段；选中学段时课程只列该学段
+function refreshComboOptions(changedKey) {
   const pool = comboFiltered();
-  ['学段', '品牌', '场景', '类型'].forEach(k => {
+  COMBO_KEYS.forEach(k => {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
     const old = comboState[k];
@@ -839,12 +844,18 @@ function refreshComboOptions() {
     sel.classList.toggle('has-val', !!comboState[k]);
     syncComboSelLabel(sel, k);
   });
+  // 课程→学段 自动联动：选中课程时，若学段为空则锁定为课程前2字
+  if (comboState['课程'] && !comboState['学段']) {
+    const st = comboState['课程'].slice(0, 2);
+    comboState['学段'] = st;
+    const selSt = document.getElementById('cf-学段');
+    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); syncComboSelLabel(selSt, '学段'); }
+  }
 }
 // 下拉显示文案：未选=「学段：全部」；选中=「学段：选中的值」（title 悬停+选中文字均按此）
 function syncComboSelLabel(sel, k) {
   const v = comboState[k];
   const txt = v ? (k + '：' + v) : (k + '：全部');
-  // 把下拉选中项文字也改为「学段：xx」（保留原值在 data-v）
   if (sel.selectedIndex > -1) {
     const opt = sel.options[sel.selectedIndex];
     if (opt) { opt.setAttribute('data-v', opt.textContent); opt.textContent = txt; }
@@ -854,17 +865,17 @@ function syncComboSelLabel(sel, k) {
 
 function initComboTable() {
   if (!allData.comboDims) return;
-  ['学段', '品牌', '场景', '类型'].forEach(k => {
+  COMBO_KEYS.forEach(k => {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
     sel.addEventListener('change', () => {
       comboState[k] = sel.value;
-      refreshComboOptions();   // 联动：其它维度可选项收缩（含文案同步）
+      refreshComboOptions();   // 联动：其它维度可选项收缩（含课程→学段自动锁定）
       renderComboTable();
     });
   });
   document.getElementById('cfClear').addEventListener('click', () => {
-    ['学段', '品牌', '场景', '类型'].forEach(k => { comboState[k] = ''; const s = document.getElementById('cf-' + k); if (s) s.value = ''; });
+    COMBO_KEYS.forEach(k => { comboState[k] = ''; const s = document.getElementById('cf-' + k); if (s) s.value = ''; });
     refreshComboOptions();
     renderComboTable();
   });
@@ -1031,13 +1042,20 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const contentLeft = Math.max(document.body.getBoundingClientRect().left + 14, 0);
     return r.left + r.width > contentLeft;
   }
-  // 检测到重叠 → 自动收起（全屏表格很宽需横向滚动、非全屏盖住正文都适用）；
-  // 展开只能手动点击（用户意图），不自动展开
+  // 检测全屏：正文容器宽度 ≥ 视口宽 × 0.92（近似全屏态）
+  function isFullscreen() {
+    const page = document.querySelector('.page') || document.body;
+    const w = page.getBoundingClientRect().width;
+    return w >= window.innerWidth * 0.92;
+  }
+  // 全屏默认展开，非全屏默认折叠；无论是否全屏都允许手动展开/折叠
   function autoCollapse() {
-    if (overlapping() && !collapsed) { collapsed = true; renderNav(); }
+    const want = isFullscreen() ? false : true;   // 全屏→展开(false)，非全屏→折叠(true)
+    if (collapsed !== want) { collapsed = want; renderNav(); }
   }
   window.addEventListener('resize', autoCollapse);
   window.addEventListener('scroll', autoCollapse, { passive: true });
+  autoCollapse();   // 初始按当前屏宽设定默认状态
   renderNav();
 
   // 滚动监听：找到当前视口最顶的区块 → 高亮
