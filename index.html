@@ -249,8 +249,9 @@
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  /* 七、汇总行样式：整行（含"合计"格与所有数值格）加粗，浅色底；合计行不画紫色分隔线 */
-  .combo-table .combo-total td, .combo-table .combo-total td .num { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
+  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
+  .combo-scroll .combo-table .combo-total td,
+  .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .combo-table .combo-total td:nth-child(4),
   .combo-table .combo-total td:nth-child(8),
   .combo-table .combo-total td:nth-child(12) { border-right: none !important; }
@@ -512,7 +513,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v33</b></footer>
+  <footer class="footer-version">看板版本 <b>v34</b></footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -531,7 +532,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v33';
+const PAGE_VERSION = 'v34';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -1166,7 +1167,9 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
-      show();
+      // 用 requestAnimationFrame 延到本轮渲染后再 show：table.innerHTML 重渲染会先清除旧单元格，
+      // 若紧跟 mouseover 直接 show 可能拿到被清掉的旧 data-k 定位 → 高亮丢失（前3行以外的行尤其明显）
+      requestAnimationFrame(show);
     } else if (!el) {
       hide();
       target = null;
