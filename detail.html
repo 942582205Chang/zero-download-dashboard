@@ -88,26 +88,10 @@
   .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
   .bar .count { color: var(--muted); font-size: 14px; }
   .bar .count b { color: var(--ink); }
-
-  /* 表头 / 首列统计说明气泡（悬浮显示）——文字天蓝色，可选中复制 */
-  .hint-tip {
-    position: fixed; z-index: 1200; pointer-events: auto;
-    max-width: 380px; padding: 10px 13px;
-    background: var(--surface-solid);
-    border: 1px solid var(--separator);
-    border-radius: 12px; box-shadow: var(--shadow-lg);
-    font-size: 12.5px; line-height: 1.55; color: var(--teal);
-    white-space: pre-line; opacity: 0; visibility: hidden;
-    transition: opacity .12s ease, visibility .12s;
-    user-select: text; -webkit-user-select: text;
-  }
-  .hint-tip.show { opacity: 1; visibility: visible; }
-  #detailTable [data-tip] { cursor: help; }
 </style>
 </head>
 <body>
 
-<div class="hint-tip" id="hintTip"></div>
 <div class="overlay" id="regionOverlay">
   <div class="login-box" style="text-align:center">
     <h2>🌐 地区校验</h2>
@@ -116,6 +100,7 @@
 </div>
 
 <div class="overlay" id="loginOverlay">
+  <div class="login-box">
     <h2>🔒 0下载明细</h2>
     <p>请输入账号密码查看明细</p>
     <label for="loginUser">账号</label>
@@ -276,36 +261,6 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const COL_LABELS = { 'b端下载': 'B端下载', 'c端消费': 'C端消费' };   // 表头显示文本映射（数据字段 key 仍用小写原名）
 const colLabel = c => COL_LABELS[c] || c;
-// 列统计说明气泡（悬浮表头/首列显示）：统计维度 + 计算方法
-const COL_TIPS = {
-  '课程': '统计维度：资源所属课程（学段+学科，如"初中数学"）。\n说明：小初高委托创作资源按学科分组，便于按学科定位 0 下载问题。',
-  '资源id': '统计维度：单条资源。\n说明：学科网资源唯一标识，点击可打开资源详情页。',
-  '标题': '统计维度：单条资源。\n说明：资源名称，可直接看出内容与年级/版本/学期。',
-  '场景': '统计维度：资源使用场景。\n说明：如 同步/复习/考试 等，多个场景用下划线组合。',
-  '类型': '统计维度：资源类型。\n说明：如 试卷/练习/课件 等，多个类型用下划线组合。',
-  '品牌': '统计维度：资源所属品牌。\n说明："品牌1_品牌2"两级品牌组合，未打标显示"未打标"。',
-  '年级': '统计维度：资源适用年级。\n说明：一年级~九年级 / 高一~高三，未打标显示"未打标"。',
-  '版本': '统计维度：教材版本。\n说明：如 人教版/北师大版，未打标显示"未打标"。',
-  'B端下载': '统计维度：单条资源。\n单位：次。\n计算：B 端下载次数合计，来源消费日志中 B 端下载行为计数。',
-  'C端消费': '统计维度：单条资源。\n单位：元。\n计算：C 端消费金额合计，按消费类型加权折算，保留 2 位小数。',
-  '前台下载': '统计维度：单条资源。\n单位：次。\n计算：前台下载次数合计。\n预警口径：本页仅统计"发布超 15 天仍前台下载为 0"的资源。',
-  '发布天数': '统计维度：单条资源。\n单位：天。\n计算：发布天数 = 当前时间 − 审核时间（向下取整）。\n预警口径：严格大于 15 天才纳入预警。',
-  '审核人': '统计维度：单条资源。\n说明：审核人_上传人 组合（最后一次审核人 + 上传者）。',
-  '审核时间': '统计维度：单条资源。\n说明：审核最后一次结束时间，用于计算发布天数。',
-  '学年': '统计维度：资源所属学年。\n说明：如 2026~2027 学年。',
-  '年份': '统计维度：资源适用年份（如 2026 中高考等）。',
-  '学期': '统计维度：资源适用学期（上学期/下学期/不限）。',
-  '地区': '统计维度：资源适用地区（省市/区县，多地区用竖杠分隔）。',
-  '等级_状态': '统计维度：资源等级与状态。\n说明："等级_状态"组合（如 精品_发布 / 普通_下线），等级与状态用下划线拼接。',
-  '作者id': '统计维度：资源作者。\n说明：资源提供者/作者标识。',
-  '用户名': '统计维度：资源上传者。\n说明：上传者账号名称，未标显示"自主上传"。',
-  '店铺': '统计维度：资源所属店铺。\n说明："店铺id_店铺名"组合。',
-  '提成比例': '统计维度：单条资源。\n单位：%。\n说明：合作提成比例，普通资源默认 50。',
-  '定价': '统计维度：单条资源。\n单位：元。\n说明：资源定价，以储值模式展示。',
-  '链接': '统计维度：单条资源。\n说明：资源详情页链接，点击在新标签页打开。',
-  '所属专辑': '统计维度：资源所属专辑。\n说明：专辑 id 列表，多个用竖杠分隔。',
-  '专辑名称': '统计维度：资源所属专辑。\n说明：专辑名称列表，多个用竖杠分隔。'
-};
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
 const FILTER_COLS = ['课程','品牌','场景','类型','审核人','年级','版本','地区'];   // 下拉筛选列（品牌后接场景/类型；审核人按正序）；全部参与联动
 const DAY_RANGES = [   // 发布天数分段下拉（数据范围 16~232 天，按分布切段）
@@ -519,8 +474,7 @@ function render() {
     let arr = '';
     if (state.sortCol === c) arr = state.sortDir === 1 ? '↑' : '↓';
     else if (!state.sortCol && c === '课程') arr = '↑';
-    const t = COL_TIPS[colLabel(c)];
-    return '<th data-col="' + c + '"' + (t ? ' data-tip="' + esc(t) + '"' : '') + '>' + esc(colLabel(c)) + '<span class="arr">' + arr + '</span></th>';
+    return '<th data-col="' + c + '">' + esc(colLabel(c)) + '<span class="arr">' + arr + '</span></th>';
   }).join('') + '</tr>';
   thead.querySelectorAll('th').forEach(th => {
     th.addEventListener('click', () => {
@@ -553,58 +507,6 @@ function render() {
   }).join('') + '</tr>').join('');
   applySticky();
 }
-
-// ===== 表头 / 首列统计说明气泡（悬浮显示）=====
-(function initHintTip() {
-  const tip = document.getElementById('hintTip');
-  if (!tip) return;
-  let target = null, showTimer = null, hideTimer = null;
-  const MIN_DELAY = 250, HIDE_DELAY = 150;   // 气泡可选中复制，延迟稍长便于停留
-  function show() {
-    if (!target) return;
-    const txt = (target.getAttribute('data-tip') || '').replace(/\s*\n\s*/g, '\n');
-    if (!txt) { hide(); return; }
-    tip.textContent = txt;
-    tip.classList.add('show');
-    position();
-  }
-  function hide() { tip.classList.remove('show'); }
-  function position() {
-    const r = target.getBoundingClientRect();
-    const tw = tip.offsetWidth, th = tip.offsetHeight;
-    let x = r.left, y = r.top - th - 8;
-    if (y < 8) y = r.bottom + 8;
-    if (x + tw > window.innerWidth - 8) x = Math.max(8, window.innerWidth - tw - 8);
-    tip.style.left = x + 'px'; tip.style.top = y + 'px';
-  }
-  let hoverOnTip = false;
-  document.addEventListener('mouseover', e => {
-    if (e.target.closest && e.target.closest('#hintTip')) { hoverOnTip = true; return; }
-    const el = e.target.closest ? e.target.closest('[data-tip]') : null;
-    if (el) {
-      target = el;
-      hoverOnTip = false;
-      clearTimeout(hideTimer);
-      if (showTimer) clearTimeout(showTimer);
-      showTimer = setTimeout(show, 50);
-      tip.classList.remove('show');
-    } else if (!tip.classList.contains('show')) {
-      target = null;
-    }
-  });
-  document.addEventListener('mouseout', e => {
-    const to = e.relatedTarget;
-    const toInTip = to && to.closest && to.closest('#hintTip');
-    const toInTarget = to && to.closest && to.closest('[data-tip]') === target;
-    if (toInTip || toInTarget) return;
-    if (e.target.closest && e.target.closest('[data-tip]') === target) {
-      clearTimeout(showTimer);
-      hideTimer = setTimeout(hide, HIDE_DELAY);
-    }
-  });
-  window.addEventListener('scroll', () => { if (tip.classList.contains('show')) position(); }, { passive: true });
-  window.addEventListener('resize', () => { if (tip.classList.contains('show')) position(); });
-})();
 
 // 固定前 3 列（课程/资源id/标题）：按实际列宽设置 sticky left，横向滚动时保持不动
 function applySticky() {
