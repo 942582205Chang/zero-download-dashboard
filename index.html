@@ -196,12 +196,12 @@
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
-  /* 各表最后子级行(第4行起，为各子类的"已超过 15 天"展开)数据灰色 */
-  .days-table tbody tr:nth-child(n+4) td { color: var(--muted); }
+  /* 各表最后子级行(第4行起，为各子类的"已超过 15 天"展开)数据灰色（含第一列，不额外加粗） */
+  .days-table tbody tr:nth-child(n+4) td { color: var(--muted); font-weight: 400; }
   /* 第4行起第一列（-- 开头）居左，两空格保真显示 */
   .days-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: pre; }
-  /* 课程表（三~六）：第4行起（各子类行）灰色 + 第一列居左 */
-  .course-table tbody tr:nth-child(n+4) td { color: var(--muted); }
+  /* 课程表（三~六）：第4行起（各子类行）灰色 + 第一列居左（不额外加粗） */
+  .course-table tbody tr:nth-child(n+4) td { color: var(--muted); font-weight: 400; }
   .course-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: pre; }
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
@@ -438,11 +438,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v14</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v15</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v14';
+const PAGE_VERSION = 'v15';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
