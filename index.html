@@ -694,7 +694,6 @@ function daysHead(stage, overallNote) {
   const t = (label, tipKey) => ' data-tip="' + esc(HEADER_TIPS[tipKey]) + '"';
   const th = (label, tipKey, cls) => '<th' + (tipKey ? t(label, tipKey) : '') + (cls ? ' class="' + cls + '"' : '') + '>' + label + '</th>';
   return '<thead><tr><th class="grp" rowspan="2" data-tip="' + esc(HEADER_TIPS['学段']) + '">' + stage + '</th><th class="grp" colspan="10" data-tip="' + esc(HEADER_TIPS['学段']) + '">资源数量</th><th class="grp" colspan="9" data-tip="' + esc(HEADER_TIPS['学段']) + '">消费数据</th></tr><tr>' +
-    '<th class="grp" data-tip="' + esc(HEADER_TIPS['发布天数']) + '">发布天数</th>' +
     th('all', 'all') + th('前台<br>0下载', '前台\n0下载') + th('占比<br><span class="pct-note">前台 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
     th('B端<br>0下载', 'B端\n0下载') + th('占比<br><span class="pct-note">B端 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
     th('C端<br>0消费', 'C端\n0消费') + th('占比<br><span class="pct-note">C端 0 消费</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
