@@ -194,8 +194,11 @@
   .days-table td.num.hl { color: var(--blue); font-weight: 700; }
   .days-table td.num[data-a][data-b] { cursor: help; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  /* 七、组合筛选表：工具栏 */
-  .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 12px; }
+  /* 七、组合表自适应列宽：table-layout:auto，由内容撑开 */
+  .combo-table.combo-auto { table-layout: auto; width: auto; }
+  .combo-table.combo-auto td, .combo-table.combo-auto th { white-space: nowrap; }
+  /* 七、第一列（学段/品牌/场景/类型）文本居中（默认 rowhead 居左，这里覆盖为居中） */
+  .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
@@ -457,11 +460,11 @@
   <div class="days-wrap"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v22</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v23</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v22';
+const PAGE_VERSION = 'v23';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -809,39 +812,45 @@ function initComboTable() {
 
 // 渲染第七块表：严格按 123.xlsx Sheet1 表头 —— 无占比列、无紫色线、无子类灰色。
 // 每行 = 一个"学段/品牌/场景/类型"组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
+// 排序：学段 小学→初中→高中，品牌/场景/类型 各自 ASC
+const STAGE_ORDER = { '小学': 0, '初中': 1, '高中': 2 };
 function renderComboTable() {
   const wrap = document.getElementById('comboTable');
   if (!wrap) return;
   const list = comboFiltered();   // 全部组合 或 按筛选匹配的组合
-  const tr = list.map((e, i) => {
+  const cmp = (a, b) =>
+    (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
+    String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
+    String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
+    String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN');
+  const rows = [...list].sort(cmp);
+  const tr = rows.map((e, i) => {
     const A = e.all, O = e.over15;
     const L = (v) => '<td class="num">' + fmt(v) + '</td>';
     return '<tr>' +
-      '<td class="rowhead">' + esc(e['学段']) + '</td>' +
-      '<td class="rowhead">' + esc(e['品牌']) + '</td>' +
-      '<td class="rowhead">' + esc(e['场景']) + '</td>' +
-      '<td class="rowhead">' + esc(e['类型']) + '</td>' +
-      // 资源数量_all：前台0 / B端0 / C端0消费
-      L(A.front0) + L(A.b0) + L(A.c0) +
-      // 资源数量_超过15天：前台0 / B端0 / C端0消费
-      L(O.front0) + L(O.b0) + L(O.c0) +
+      '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
+      '<td class="rowhead combo-dim">' + esc(e['品牌']) + '</td>' +
+      '<td class="rowhead combo-dim">' + esc(e['场景']) + '</td>' +
+      '<td class="rowhead combo-dim">' + esc(e['类型']) + '</td>' +
+      // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费
+      L(A.all) + L(A.front0) + L(A.b0) + L(A.c0) +
+      // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费
+      L(O.all) + L(O.front0) + L(O.b0) + L(O.c0) +
       // 消费数据_all：前台下载 / B端下载 / C端消费
       L(A.frontSum) + L(A.bSum) + L(A.cSum) +
       '</tr>';
   }).join('');
-  // 表头严格按 123.xlsx：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)
+  // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4: all|前台0|B端0|C端0消费) | 资源数量_超过15天(4: all|前台0|B端0|C端0消费) | 消费数据_all(3)
   const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
-    '<th class="grp" colspan="3">资源数量_all</th><th class="grp" colspan="3">资源数量_超过15天</th><th class="grp" colspan="3">消费数据_all</th></tr>' +
-    '<tr><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
-    '<th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
+    '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="3">消费数据_all</th></tr>' +
+    '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
+    '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th></tr>';
-  // 列宽：4 个维度列 + 9 个数值列；纯数据表，不用 cp/紫色线样式
-  const cols = '<col class="c1" style="width:100px"><col class="c1" style="width:130px"><col class="c1" style="width:130px"><col class="c1" style="width:110px>' +
-    Array(9).fill('<col style="width:84px">').join('');
-  wrap.innerHTML = '<table class="days-table combo-table" style="width:' + (100 + 130 + 130 + 110 + 9 * 84) + 'px">' +
-    '<colgroup>' + cols + '</colgroup>' +
+  // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
+  wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
+    '<colgroup><col><col><col><col>' + Array(11).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
-    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="13" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + '</tbody></table>';
+    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="15" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + '</tbody></table>';
 }
 
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (allData) { drawCharts(); } });
