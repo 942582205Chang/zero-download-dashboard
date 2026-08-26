@@ -692,8 +692,9 @@ function stageTip(stage) {
 }
 
 // 表头：第一行首列=学段名（小初高/小学/初中/高中），第二行首列=发布天数（不合并）
-function daysHead(stage, overallNote) {
+function daysHead(stage, overallNote, allTip) {
   // overallNote：整体占比备注 —— 一/二用"all/区间天数"，三(课程表)用"all/学科"
+  // allTip：与整体占比备注配套的说明（分档表=各天数区间；课程表=各学科）
   // 首列：学段名(小初高/小学/初中/高中) rowspan=2 合并
   // 表头第二行：前台0 下载 / B端0 下载 / C端0 消费 —— "0"与"下载/消费"绑定在第二行（第一行为学段侧名称）
   // 前台下载/前台下载2字、B 端下载/C 端消费从端后断开 —— 均两行显示（非备注）
@@ -701,7 +702,7 @@ function daysHead(stage, overallNote) {
   const t = (label, tipKey) => ' data-tip="' + esc(HEADER_TIPS[tipKey]) + '"';
   const th = (label, tipKey, cls) => '<th' + (tipKey ? t(label, tipKey) : '') + (cls ? ' class="' + cls + '"' : '') + '>' + label + '</th>';
   return '<thead><tr><th class="grp" rowspan="2" data-tip="' + esc(stageTip(stage)) + '">' + stage + '</th><th class="grp" colspan="10" data-tip="' + esc(stageTip(stage)) + '">资源数量</th><th class="grp" colspan="9" data-tip="' + esc(stageTip(stage)) + '">消费数据</th></tr><tr>' +
-    th('all', 'all') + th('前台<br>0下载', '前台\n0下载') + th('占比<br><span class="pct-note">前台 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
+    '<th class="grp" data-tip="' + esc(allTip) + '">all</th>' + th('前台<br>0下载', '前台\n0下载') + th('占比<br><span class="pct-note">前台 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
     th('B端<br>0下载', 'B端\n0下载') + th('占比<br><span class="pct-note">B端 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
     th('C端<br>0消费', 'C端\n0消费') + th('占比<br><span class="pct-note">C端 0 消费</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
     th('前台<br>下载', '前台\n下载') + th('占比<br><span class="pct-note">前台下载</span>', '整体占比') + th('平均值<br><span class="pct-note">前台下载</span>', '平均值') +
@@ -766,10 +767,13 @@ function renderDaysTable(containerId, rows, stage, courseMode) {
   const cols = DAY_COLS.map(c => '<col class="' + c[0] + '" style="width:' + c[1] + 'px">').join('');
   // 整体占比备注：一/二(分档表)用"all/区间天数"，三(课程表)用"all/学科"
   const overallNote = courseMode ? 'all/学科' : 'all/区间天数';
+  const allTip = courseMode
+    ? '全部资源总数（份）。\n本表（三、各课程数据）中，整体占比的分母为各课程（学科）的资源数。'
+    : '全部资源总数（份）。\n本表（一/二、分档表）中，整体占比的分母为各发布天数区间（16-30天等）的资源数。';
   const table = wrap.ownerDocument.createElement('table');
   table.className = 'days-table' + (courseMode ? ' course-table' : '');
   table.style.width = totalW + 'px';   // 表格宽度自动写死 = 列宽总和，保证各表精确对齐
-  table.innerHTML = '<colgroup>' + cols + '</colgroup>' + daysHead(stage, overallNote) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody>';
+  table.innerHTML = '<colgroup>' + cols + '</colgroup>' + daysHead(stage, overallNote, allTip) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody>';
   wrap.innerHTML = '';
   wrap.appendChild(table);
 }
