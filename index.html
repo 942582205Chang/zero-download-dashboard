@@ -438,11 +438,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v16</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v17</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v16';
+const PAGE_VERSION = 'v17';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -631,7 +631,7 @@ function dayRowsHtml(rows, courseMode) {
     const bi = rows.indexOf(base);                    // 分母所在行号（绿色行 或 整体行）
     const overallDenRow = isChild ? i : 0;            // 整体占比分母：--行用该行 all，其余用整体行 all
     const cls = i === 0 ? 'total-row' : '';
-    const label = (isChild ? ' -- ' : '') + r.label;   // 子类行第一列前缀：一个空格 + 一个 - + 一个空格
+    const label = (isChild ? ' -- ' : '') + r.label;   // 子类行第一列前缀：一个空格 + 一个 - + 一个空格（一~六统一）
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
     // 数值单元格：data-k="行号:列名" 供占比/平均值气泡精确定位；data-num 存格式化文本
     const ncell = (v, k, extra) => `<td class="num${extra || ''}" data-k="${i}:${k}" data-num="${fmt(v)}">${fmt(v)}</td>`;
