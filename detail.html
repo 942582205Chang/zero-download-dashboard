@@ -89,16 +89,17 @@
   .bar .count { color: var(--muted); font-size: 14px; }
   .bar .count b { color: var(--ink); }
 
-  /* 表头 / 首列统计说明气泡（悬浮显示） */
+  /* 表头 / 首列统计说明气泡（悬浮显示）——文字天蓝色，可选中复制 */
   .hint-tip {
-    position: fixed; z-index: 1200; pointer-events: none;
+    position: fixed; z-index: 1200; pointer-events: auto;
     max-width: 380px; padding: 10px 13px;
     background: var(--surface-solid);
     border: 1px solid var(--separator);
     border-radius: 12px; box-shadow: var(--shadow-lg);
-    font-size: 12.5px; line-height: 1.55; color: var(--ink);
+    font-size: 12.5px; line-height: 1.55; color: var(--teal);
     white-space: pre-line; opacity: 0; visibility: hidden;
     transition: opacity .12s ease, visibility .12s;
+    user-select: text; -webkit-user-select: text;
   }
   .hint-tip.show { opacity: 1; visibility: visible; }
   #detailTable [data-tip] { cursor: help; }
@@ -558,7 +559,7 @@ function render() {
   const tip = document.getElementById('hintTip');
   if (!tip) return;
   let target = null, showTimer = null, hideTimer = null;
-  const MIN_DELAY = 250, HIDE_DELAY = 100;
+  const MIN_DELAY = 250, HIDE_DELAY = 150;   // 气泡可选中复制，延迟稍长便于停留
   function show() {
     if (!target) return;
     const txt = (target.getAttribute('data-tip') || '').replace(/\s*\n\s*/g, '\n');
@@ -576,10 +577,13 @@ function render() {
     if (x + tw > window.innerWidth - 8) x = Math.max(8, window.innerWidth - tw - 8);
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   }
+  let hoverOnTip = false;
   document.addEventListener('mouseover', e => {
-    const el = e.target.closest('[data-tip]');
+    if (e.target.closest && e.target.closest('#hintTip')) { hoverOnTip = true; return; }
+    const el = e.target.closest ? e.target.closest('[data-tip]') : null;
     if (el) {
       target = el;
+      hoverOnTip = false;
       clearTimeout(hideTimer);
       if (showTimer) clearTimeout(showTimer);
       showTimer = setTimeout(show, 50);
@@ -589,7 +593,11 @@ function render() {
     }
   });
   document.addEventListener('mouseout', e => {
-    if (!e.relatedTarget || (e.relatedTarget.closest && !e.relatedTarget.closest('[data-tip]'))) {
+    const to = e.relatedTarget;
+    const toInTip = to && to.closest && to.closest('#hintTip');
+    const toInTarget = to && to.closest && to.closest('[data-tip]') === target;
+    if (toInTip || toInTarget) return;
+    if (e.target.closest && e.target.closest('[data-tip]') === target) {
       clearTimeout(showTimer);
       hideTimer = setTimeout(hide, HIDE_DELAY);
     }
