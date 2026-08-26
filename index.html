@@ -190,9 +190,9 @@
   .days-table thead .grp { font-size: 14px; font-weight: 700; }
   .days-table td.rowhead { font-weight: 600; text-align: left; }
   .days-table td.green { color: var(--std-green); }   /* 已超过15天行：整体占比(all)用标准绿 */
-  /* 占比气泡：参与计算的数字所在单元格临时标红（移开即恢复） */
-  .days-table td.num.hl { color: var(--red); font-weight: 700; }
-  .days-table td.num.pct[data-pct] { cursor: help; }
+  /* 气泡：参与计算的数字所在单元格临时高亮为气泡文字同色（蓝色，移开即恢复） */
+  .days-table td.num.hl { color: var(--blue); font-weight: 700; }
+  .days-table td.num[data-a][data-b] { cursor: help; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
@@ -259,7 +259,6 @@
     cursor: text;
   }
   .hint-tip.show { opacity: 1; visibility: visible; }
-  .days-table td.num.pct[data-pct] { cursor: help; }   /* 有公式的占比单元格显示问号光标 */
 
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; }
@@ -433,11 +432,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v10</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v11</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v10';
+const PAGE_VERSION = 'v11';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -628,13 +627,14 @@ function dayRowsHtml(rows, courseMode) {
     const cls = i === 0 ? 'total-row' : '';
     const label = (isChild ? '  -- ' : '') + r.label;   // 展开子行第一列前加两个空格+--
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
-    // 数值单元格：data-k="行号:列名" 供占比气泡精确定位；data-num 存格式化文本
+    // 数值单元格：data-k="行号:列名" 供占比/平均值气泡精确定位；data-num 存格式化文本
     const ncell = (v, k, extra) => `<td class="num${extra || ''}" data-k="${i}:${k}" data-num="${fmt(v)}">${fmt(v)}</td>`;
     // 占比单元格：data-a=分子(本行k列)，data-b=分母(base行k列)  → 占比（分母=同列base行）
     const pcellA = (k) => `<td class="num pct" data-a="${i}:${k}" data-b="${bi}:${k}">${pct(r[k], base[k])}</td>`;
     // 整体占比单元格：data-b=分母(overallDenRow 行的 all 列)
     const pcellB = (k) => `<td class="num pct" data-a="${i}:${k}" data-b="${overallDenRow}:all">${pct(r[k], overallDenRow === i ? r.all : tot.all)}</td>`;
-    const acell = (a, n) => `<td class="num avg">${avg(a, n)}</td>`;
+    // 平均值单元格：data-a=分子(本行合计列)，data-b=分母(本行 all 列) → 平均值（分母=本行资源数）
+    const acell = (a, n) => `<td class="num avg" data-a="${i}:${a}" data-b="${i}:all">${avg(r[a], r.all)}</td>`;
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(label)}</td>` +
     ncell(r.all, 'all') +
@@ -645,11 +645,11 @@ function dayRowsHtml(rows, courseMode) {
     ncell(r.c0, 'c0') +
     pcellA('c0') + pcellB('c0') +
     ncell(r.frontSum, 'frontSum') +
-    pcellA('frontSum') + acell(r.frontSum, r.all) +
+    pcellA('frontSum') + acell('frontSum') +
     ncell(r.bSum, 'bSum') +
-    pcellA('bSum') + acell(r.bSum, r.all) +
+    pcellA('bSum') + acell('bSum') +
     ncell(r.cSum, 'cSum') +
-    pcellA('cSum') + acell(r.cSum, r.all) +
+    pcellA('cSum') + acell('cSum') +
     `</tr>`;
   }).join('');
 }
@@ -820,10 +820,12 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const b = Number(bTd.getAttribute('data-num').replace(/,/g, '')) || 0;
     // 分母为 0 / 非有限数 → 该格显示 '-'（不参与计算）；结果为 0% → 也不弹公式
     if (b <= 0 || !isFinite(b)) { hide(); return; }
-    const res = a / b * 100;
-    if (!(res > 0)) { hide(); return; }   // 0%（含 0/0）不显示气泡
-    // 气泡文案：具体公式，不带 ×100%（结果直接是百分比）
-    tip.textContent = aTd.textContent.trim() + ' ÷ ' + bTd.textContent.trim() + ' = ' + res.toFixed(2) + '%';
+    // 平均值：公式为 合计 ÷ 本行资源数，结果保留 1 位小数；占比：结果为百分比（不带 ×100%）
+    const isAvg = target.classList.contains('avg');
+    const res = a / b;
+    if (!(res > 0)) { hide(); return; }   // 0（含 0/0）不显示气泡
+    // 气泡文案：具体公式（平均值保留 1 位小数；占比为百分比）
+    tip.textContent = aTd.textContent.trim() + ' ÷ ' + bTd.textContent.trim() + ' = ' + (isAvg ? res.toFixed(1) : (res * 100).toFixed(2) + '%');
     tip.classList.add('show');
     position();
     // 高亮参与计算的数字：只标分子、分母两个单元格（按 data-k 精确定位，限制在本表内）
@@ -843,7 +845,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   }
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
-    const el = e.target.closest ? e.target.closest('td.num.pct[data-a][data-b]') : null;
+    const el = e.target.closest ? e.target.closest('td.num[data-a][data-b]') : null;
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
@@ -860,7 +862,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   });
   document.addEventListener('mouseout', e => {
     const to = e.relatedTarget;
-    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num.pct[data-a][data-b]') === target)) return;
+    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num[data-a][data-b]') === target)) return;
     if (tip.classList.contains('show')) {
       clearTimeout(showTimer);
       hideTimer = setTimeout(hide, HIDE_DELAY);
