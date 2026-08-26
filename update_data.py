@@ -231,19 +231,20 @@ def main():
         type_stages.append({"stage": st, "rows": rows})
 
     # 七、组合筛选表：维度取值（动态取自数据表，不写死）
-    # 学段 = 课程前2字；品牌/场景/类型 = 对应列去重（非空，升序）
+    # 学段 = 课程前2字；品牌/场景/类型 = 对应列去重（非空，升序）；课程 = 课程列去重（自带学段前缀）
+    df["学段"] = df["课程"].astype(str).str[:2]
     combo_dims = {
-        "学段": sorted(df["课程"].astype(str).str[:2].unique().tolist()),
+        "学段": sorted(df["学段"].unique().tolist()),
         "品牌": [str(v) for v in sorted(df["品牌"].astype(str).unique()) if str(v) != "nan"],
         "场景": [str(v) for v in sorted(df["场景"].astype(str).unique()) if str(v) != "nan"],
         "类型": [str(v) for v in sorted(df["类型"].astype(str).unique()) if str(v) != "nan"],
+        "课程": [str(v) for v in sorted(df["课程"].astype(str).unique()) if str(v) != "nan"],
     }
-    # 按 (学段,品牌,场景,类型) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
+    # 按 (学段,品牌,场景,类型,课程) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
     # 只传聚合结果，不传全量行 → data.json 保持 KB/MB 级，30万+ 行也扛得住（重活在 pandas 后端完成）
     # 金额求和用 round(sum)（比 int() 截断更接近真实，见 C端消费 int=2082444 → round=2082548 的口径差）
-    df["学段"] = df["课程"].astype(str).str[:2]
     combo_stats = []
-    for (st, brand, scene, typ), g in df.groupby(["学段", "品牌", "场景", "类型"], dropna=False):
+    for (st, brand, scene, typ, course), g in df.groupby(["学段", "品牌", "场景", "类型", "课程"], dropna=False):
         def agg(sub):
             return {
                 "all": int(len(sub)),
@@ -257,7 +258,7 @@ def main():
         a_all = agg(g)
         a_over = agg(g[g["发布天数"] > 15])
         combo_stats.append({
-            "学段": str(st), "品牌": str(brand), "场景": str(scene), "类型": str(typ),
+            "学段": str(st), "品牌": str(brand), "场景": str(scene), "类型": str(typ), "课程": str(course),
             "all": a_all, "over15": a_over,
         })
     # 让"全部组合之和"与一/二的全量口径对齐：round 逐组进位可能造成±几元的偏差，
