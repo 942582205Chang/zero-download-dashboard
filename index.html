@@ -249,8 +249,8 @@
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  /* 七、汇总行样式：加粗，浅色底，独立于数据行；合计行不画紫色分隔线（避免与数据行紫线错位） */
-  .combo-table .combo-total td { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
+  /* 七、汇总行样式：整行（含"合计"格与所有数值格）加粗，浅色底；合计行不画紫色分隔线 */
+  .combo-table .combo-total td, .combo-table .combo-total td .num { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .combo-table .combo-total td:nth-child(4),
   .combo-table .combo-total td:nth-child(8),
   .combo-table .combo-total td:nth-child(12) { border-right: none !important; }
