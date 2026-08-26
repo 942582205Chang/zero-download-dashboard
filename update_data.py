@@ -153,7 +153,7 @@ def main():
         # 该学段全部课程名（去学段前缀后取学科名），按主学科顺序排序，其余按字母 ASC 放最后
         subj = sorted(set(sub["课程"].astype(str).str[2:]))
         subj.sort(key=lambda s: (COURSE_ORDER.index(s) if s in COURSE_ORDER else len(COURSE_ORDER), s))
-        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 仅保留 整体/已超过15天
+        rows = build_day_table(sub, "整体")[:3]   # 整体/不超过15天/已超过15天 三行
         for sname in subj:
             # 该课程"已超过 15 天"的子集数据
             go = sub[(sub["课程"].astype(str).str[2:] == sname) & (sub["发布天数"] > 15)]
@@ -169,13 +169,13 @@ def main():
             })
         course_stages.append({"stage": st, "rows": rows})
 
-    # 四、各项目数据（品牌系列）：每学段一张表，参照三、课程表——前三行=整体/已超过15天，
+    # 四、各项目数据（品牌系列）：每学段一张表，参照三、课程表——前三行=整体/不超过15天/已超过15天，
     # 其后每行 = 该学段内一个"品牌"的 发布超15天 子集（仅统计审核通过超15天的资源）
     brand_stages = []
     for st in ["小学", "初中", "高中"]:
         sub = df[df["课程"].astype(str).str.startswith(st)]
         brands = [b for b in sorted(sub["品牌"].astype(str).unique()) if str(b) != "nan"]
-        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 整体/已超过15天
+        rows = build_day_table(sub, "整体")[:3]   # 整体/不超过15天/已超过15天 三行
         for bname in brands:
             go = sub[(sub["品牌"].astype(str) == bname) & (sub["发布天数"] > 15)]
             rows.append({
@@ -195,7 +195,7 @@ def main():
     for st in ["小学", "初中", "高中"]:
         sub = df[df["课程"].astype(str).str.startswith(st)]
         scenes = [s for s in sorted(sub["场景"].astype(str).unique()) if str(s) != "nan"]
-        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 整体/已超过15天
+        rows = build_day_table(sub, "整体")[:3]   # 整体/不超过15天/已超过15天 三行
         for sname in scenes:
             go = sub[(sub["场景"].astype(str) == sname) & (sub["发布天数"] > 15)]
             rows.append({
@@ -215,7 +215,7 @@ def main():
     for st in ["小学", "初中", "高中"]:
         sub = df[df["课程"].astype(str).str.startswith(st)]
         types = [t for t in sorted(sub["类型"].astype(str).unique()) if str(t) != "nan"]
-        rows = [build_day_table(sub, "整体")[0], build_day_table(sub, "整体")[2]]   # 整体/已超过15天
+        rows = build_day_table(sub, "整体")[:3]   # 整体/不超过15天/已超过15天 三行
         for tname in types:
             go = sub[(sub["类型"].astype(str) == tname) & (sub["发布天数"] > 15)]
             rows.append({
