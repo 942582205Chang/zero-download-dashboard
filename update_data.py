@@ -230,6 +230,36 @@ def main():
             })
         type_stages.append({"stage": st, "rows": rows})
 
+    # 七、组合筛选表：维度取值（动态取自数据表，不写死）
+    # 学段 = 课程前2字；品牌/场景/类型 = 对应列去重（非空，升序）
+    combo_dims = {
+        "学段": sorted(df["课程"].astype(str).str[:2].unique().tolist()),
+        "品牌": [str(v) for v in sorted(df["品牌"].astype(str).unique()) if str(v) != "nan"],
+        "场景": [str(v) for v in sorted(df["场景"].astype(str).unique()) if str(v) != "nan"],
+        "类型": [str(v) for v in sorted(df["类型"].astype(str).unique()) if str(v) != "nan"],
+    }
+    # 按 (学段,品牌,场景,类型) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
+    # 只传聚合结果，不传全量行 → data.json 保持 KB/MB 级，30万+ 行也扛得住（重活在 pandas 后端完成）
+    df["学段"] = df["课程"].astype(str).str[:2]
+    combo_stats = []
+    for (st, brand, scene, typ), g in df.groupby(["学段", "品牌", "场景", "类型"], dropna=False):
+        def agg(sub):
+            return {
+                "all": int(len(sub)),
+                "front0": int((sub["前台下载"] == 0).sum()),
+                "b0": int((sub["b端下载"] == 0).sum()),
+                "c0": int((sub["c端消费"] == 0).sum()),
+                "frontSum": int(sub["前台下载"].sum()),
+                "bSum": int(sub["b端下载"].sum()),
+                "cSum": int(sub["c端消费"].sum()),
+            }
+        a_all = agg(g)
+        a_over = agg(g[g["发布天数"] > 15])
+        combo_stats.append({
+            "学段": str(st), "品牌": str(brand), "场景": str(scene), "类型": str(typ),
+            "all": a_all, "over15": a_over,
+        })
+
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "source": os.path.basename(csv_path),
@@ -280,7 +310,10 @@ def main():
         # 五、各场景数据：每学段一张表，其后每行 = 场景"已超过 15 天"子集
         "bySceneStages": scene_stages,
         # 六、各资源类型数据：每学段一张表，其后每行 = 类型"已超过 15 天"子集
-        "byTypeStages": type_stages
+        "byTypeStages": type_stages,
+        # 七、组合筛选表：维度取值（动态）+ 各组合预聚合统计（整体/超过15天）
+        "comboDims": combo_dims,
+        "comboStats": combo_stats
     }
 
     # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
