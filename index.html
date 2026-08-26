@@ -242,6 +242,20 @@
   /* 首列合并后：第一行首列(rowspan=2)的右紫线；第二行首格(all)左边紧邻首列，无多余线 */
   .days-table thead tr:first-child th:first-child { border-bottom: 1px solid var(--separator); }
 
+  /* 表头 / 首列统计说明气泡（悬浮显示） */
+  .hint-tip {
+    position: fixed; z-index: 1200; pointer-events: none;
+    max-width: 380px; padding: 10px 13px;
+    background: var(--surface-solid);
+    border: 1px solid var(--separator);
+    border-radius: 12px; box-shadow: var(--shadow-lg);
+    font-size: 12.5px; line-height: 1.55; color: var(--ink);
+    white-space: pre-line; opacity: 0; visibility: hidden;
+    transition: opacity .12s ease, visibility .12s;
+  }
+  .hint-tip.show { opacity: 1; visibility: visible; }
+  .days-table [data-tip] { cursor: help; }   /* 有说明的单元格显示问号光标，提示可悬浮 */
+
   /* Sections */
   .section { margin-top: 28px; margin-bottom: 14px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; }
   .section h2 { font-size: 20px; font-weight: 800; }
@@ -335,6 +349,7 @@
 </div>
 
 <div class="side-nav" id="sideNav"></div>
+<div class="hint-tip" id="hintTip"></div>
 <div class="page">
   <header>
     <div class="brand">
@@ -622,6 +637,53 @@ function updateKPI() {
   document.getElementById('detailCount').textContent = fmt(s.zeroFront);
 }
 
+// 表头 / 首列统计说明气泡（悬浮显示）：
+// 表头列名 / 首列（学段名、-- 子行标签）命中 key → 悬浮显示对应的统计说明（含统计维度与计算方法）
+const HEADER_TIPS = {
+  '学段': '统计维度：该学段全部资源（含未发布、未超过15天观察期等全部状态）。\n数值单位：份（资源条数）。',
+  '整体占比': '统计维度：本表格全部资源。\n计算：本行 0 下载资源数 ÷ 表格全部资源数 × 100%。\n——"资源数量组"下为 前台0下载/总资源；"消费数据组"下为 消费0/总资源。',
+  'all': '统计维度：本表格全部资源。\n计算：全部资源总数（份）。\n备注（子行）："all/区间天数" 指 16到30天 等子行使用该行（全部资源）作占比分母。',
+  '前台\n0下载': '统计维度：资源数量。\n判定：前台下载次数 = 0 的资源（含发布 15 天以内未过观察期的资源）。\n计算：本行前台下载为 0 的资源条数。',
+  '前台0下载': '统计维度：资源数量。\n判定：前台下载次数 = 0 的资源（含发布 15 天以内未过观察期的资源）。\n计算：本行前台下载为 0 的资源条数。',
+  'B端\n0下载': '统计维度：资源数量。\n判定：B 端下载次数 = 0 的资源。\n计算：本行 B 端下载为 0 的资源条数。',
+  'B端0下载': '统计维度：资源数量。\n判定：B 端下载次数 = 0 的资源。\n计算：本行 B 端下载为 0 的资源条数。',
+  'C端\n0消费': '统计维度：资源数量。\n判定：C 端消费金额 = 0 的资源。\n计算：本行 C 端消费为 0 的资源条数。',
+  'C端0消费': '统计维度：资源数量。\n判定：C 端消费金额 = 0 的资源。\n计算：本行 C 端消费为 0 的资源条数。',
+  '前台\n下载': '统计维度：本行资源前台下载次数的合计。\n计算：本行全部资源的前台下载次数之和（份）。',
+  '前台下载': '统计维度：本行资源前台下载次数的合计。\n计算：本行全部资源的前台下载次数之和（份）。',
+  'B 端\n下载': '统计维度：本行资源 B 端下载次数的合计。\n计算：本行全部资源的 B 端下载次数之和（份）。',
+  'B 端下载': '统计维度：本行资源 B 端下载次数的合计。\n计算：本行全部资源的 B 端下载次数之和（份）。',
+  'C 端\n消费': '统计维度：本行资源 C 端消费金额的合计。\n计算：本行全部资源的 C 端消费金额之和（元）。',
+  'C 端消费': '统计维度：本行资源 C 端消费金额的合计。\n计算：本行全部资源的 C 端消费金额之和（元）。',
+  '平均值': '统计维度：本行资源。\n计算：合计值 ÷ 本行资源总数，保留 1 位小数（份/份或元/份）。',
+  '占比': '统计维度：本行资源中"满足条件"的部分。\n计算：本行满足条件的资源数 ÷ 本行资源总数 × 100%。\n——请以悬浮"整体占比"为准判断整体口径；"占比"列以所在行的全部资源为分母。',
+  '小初高': '统计维度：小初高全部资源（含未发布、未超过15天观察期等全部状态）。\n数值单位：份（资源条数）。',
+  '小学': '统计维度：小学学段全部资源。\n数值单位：份（资源条数）。',
+  '初中': '统计维度：初中学段全部资源。\n数值单位：份（资源条数）。',
+  '高中': '统计维度：高中学段全部资源。\n数值单位：份（资源条数）。',
+  '已超过 15 天': '统计维度：发布（审核通过）超过 15 天的资源。\n判定：发布天数 = 当前时间 − 审核时间 > 15 天。\n用途：0 下载预警口径——仅统计"发布超 15 天仍前台 0 下载"的资源。',
+  '整体': '统计维度：该表格的全部资源（整体行）。\n用途：作为后续各行占比的参考分母。',
+  '整体\n（全部资源）': '统计维度：该表格的全部资源（整体行）。\n用途：作为后续各行占比的参考分母。',
+  '发布天数': '统计维度：本表格全部资源。\n计算：发布天数 = 当前时间 − 审核时间（向下取整天数）。\n"不超过 15 天"= 天数 ≤ 15；"已超过 15 天"= 天数 > 15。',
+};
+// 表头第二行首列（发布天数）无提示（有说明 cell 不触发提示）
+const HEADER_TIPS_KEY = {
+  '学段': '学段', 'all': 'all', '整体占比': '整体占比',
+  '前台\n0下载': '前台\n0下载', '前台0下载': '前台0下载', '占比': '占比',
+  'B端\n0下载': 'B端\n0下载', 'B端0下载': 'B端0下载',
+  'C端\n0消费': 'C端\n0消费', 'C端0消费': 'C端0消费',
+  '前台\n下载': '前台\n下载', '前台下载': '前台下载',
+  'B 端\n下载': 'B 端\n下载', 'B 端下载': 'B 端下载',
+  'C 端\n消费': 'C 端\n消费', 'C 端消费': 'C 端消费',
+  '平均值': '平均值', '小初高': '小初高', '小学': '小学', '初中': '初中', '高中': '高中',
+  '已超过 15 天': '已超过 15 天', '整体': '整体', '整体\n（全部资源）': '整体\n（全部资源）',
+};
+const DAY_ROW_TIP_KEYS = ['整体', '整体\n（全部资源）', '已超过 15 天', '小初高', '小学', '初中', '高中'];
+function tipFor(el) {
+  const tip = el.getAttribute('data-tip');
+  return tip ? tip : (el.textContent || '').trim();
+}
+
 // 表头：第一行首列=学段名（小初高/小学/初中/高中），第二行首列=发布天数（不合并）
 function daysHead(stage, overallNote) {
   // overallNote：整体占比备注 —— 一/二用"all/区间天数"，三(课程表)用"all/学科"
@@ -629,7 +691,17 @@ function daysHead(stage, overallNote) {
   // 表头第二行：前台0 下载 / B端0 下载 / C端0 消费 —— "0"与"下载/消费"绑定在第二行（第一行为学段侧名称）
   // 前台下载/前台下载2字、B 端下载/C 端消费从端后断开 —— 均两行显示（非备注）
   const on = overallNote || 'all';
-  return '<thead><tr><th class="grp" rowspan="2">' + stage + '</th><th class="grp" colspan="10">资源数量</th><th class="grp" colspan="9">消费数据</th></tr><tr><th>all</th><th>前台<br>0下载</th><th>占比<br><span class="pct-note">前台 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>B端<br>0下载</th><th>占比<br><span class="pct-note">B端 0 下载</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>C端<br>0消费</th><th>占比<br><span class="pct-note">C端 0 消费</span></th><th>整体占比<br><span class="pct-note">' + on + '</span></th><th>前台<br>下载</th><th>占比<br><span class="pct-note">前台下载</span></th><th>平均值<br><span class="pct-note">前台下载</span></th><th>B 端<br>下载</th><th>占比<br><span class="pct-note">B 端下载</span></th><th>平均值<br><span class="pct-note">B 端下载</span></th><th>C 端<br>消费</th><th>占比<br><span class="pct-note">C 端消费</span></th><th>平均值<br><span class="pct-note">C 端消费</span></th></tr></thead>';
+  const t = (label, tipKey) => ' data-tip="' + esc(HEADER_TIPS[tipKey]) + '"';
+  const th = (label, tipKey, cls) => '<th' + (tipKey ? t(label, tipKey) : '') + (cls ? ' class="' + cls + '"' : '') + '>' + label + '</th>';
+  return '<thead><tr><th class="grp" rowspan="2" data-tip="' + esc(HEADER_TIPS['学段']) + '">' + stage + '</th><th class="grp" colspan="10" data-tip="' + esc(HEADER_TIPS['学段']) + '">资源数量</th><th class="grp" colspan="9" data-tip="' + esc(HEADER_TIPS['学段']) + '">消费数据</th></tr><tr>' +
+    '<th class="grp" data-tip="' + esc(HEADER_TIPS['发布天数']) + '">发布天数</th>' +
+    th('all', 'all') + th('前台<br>0下载', '前台\n0下载') + th('占比<br><span class="pct-note">前台 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
+    th('B端<br>0下载', 'B端\n0下载') + th('占比<br><span class="pct-note">B端 0 下载</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
+    th('C端<br>0消费', 'C端\n0消费') + th('占比<br><span class="pct-note">C端 0 消费</span>', '整体占比') + th('整体占比<br><span class="pct-note">' + on + '</span>', '整体占比') +
+    th('前台<br>下载', '前台\n下载') + th('占比<br><span class="pct-note">前台下载</span>', '整体占比') + th('平均值<br><span class="pct-note">前台下载</span>', '平均值') +
+    th('B 端<br>下载', 'B 端\n下载') + th('占比<br><span class="pct-note">B 端下载</span>', '整体占比') + th('平均值<br><span class="pct-note">B 端下载</span>', '平均值') +
+    th('C 端<br>消费', 'C 端\n消费') + th('占比<br><span class="pct-note">C 端消费</span>', '整体占比') + th('平均值<br><span class="pct-note">C 端消费</span>', '平均值') +
+    '</tr></thead>';
 }
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
@@ -647,8 +719,9 @@ function dayRowsHtml(rows, courseMode) {
     const cls = i === 0 ? 'total-row' : '';
     const label = (isChild ? '  -- ' : '') + r.label;   // 展开子行第一列前加两个空格+--
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
+    const tip = HEADER_TIPS[r.label] ? ' data-tip="' + esc(HEADER_TIPS[r.label]) + '"' : '';   // 首列标签说明
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
-    `<td class="rowhead">${esc(label)}</td>` +
+    `<td class="rowhead"${tip}>${esc(label)}</td>` +
     `<td class="num">${fmt(r.all)}</td>` +
     `<td class="num${g15}">${fmt(r.front0)}</td>` +
     `<td class="num pct">${pct(r.front0, base.front0)}</td>` +
@@ -812,6 +885,54 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
       items.forEach((a, i) => { if (targets[i]) a.classList.toggle('active', targets[i] === cur); });
     }
   }, { passive: true });
+})();
+
+// ===== 表头 / 首列统计说明气泡（悬浮显示）=====
+(function initHintTip() {
+  const tip = document.getElementById('hintTip');
+  if (!tip) return;
+  let target = null, showTimer = null, hideTimer = null;
+  const MIN_DELAY = 250;     // 悬浮最少时长，防快速移动误触发
+  const HIDE_DELAY = 100;    // 移出后延迟隐藏，防在提示框上误抖
+  function textOf(el) { return (el.getAttribute('data-tip') || '').replace(/\s*\n\s*/g, '\n'); }
+  function show() {
+    if (!target) return;
+    const txt = textOf(target);
+    if (!txt) { hide(); return; }
+    tip.textContent = txt;
+    tip.classList.add('show');
+    position();
+  }
+  function hide() { tip.classList.remove('show'); }
+  function position() {
+    const r = target.getBoundingClientRect();
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = r.left, y = r.top - th - 8;
+    if (y < 8) y = r.bottom + 8;                                  // 上方放不下 → 放下方
+    if (x + tw > window.innerWidth - 8) x = Math.max(8, window.innerWidth - tw - 8);
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) {
+      target = el;
+      clearTimeout(hideTimer);
+      if (showTimer) clearTimeout(showTimer);
+      showTimer = setTimeout(show, 50);
+      tip.classList.remove('show');   // 移入新目标先隐藏，等 show() 重新定位显示
+    } else if (!tip.classList.contains('show')) {
+      target = null;
+    }
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('[data-tip]') === target && !e.relatedTarget || (e.relatedTarget && !e.relatedTarget.closest('[data-tip]'))) {
+      if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[data-tip]')) return;
+      clearTimeout(showTimer);
+      hideTimer = setTimeout(hide, HIDE_DELAY);
+    }
+  });
+  window.addEventListener('scroll', () => { if (tip.classList.contains('show')) position(); }, { passive: true });
+  window.addEventListener('resize', () => { if (tip.classList.contains('show')) position(); });
 })();
 </script>
 </body>
