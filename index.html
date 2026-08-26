@@ -433,11 +433,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v9</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v10</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v9';
+const PAGE_VERSION = 'v10';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -810,8 +810,11 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const aK = target.getAttribute('data-a');   // 分子 "行号:列名"
     const bK = target.getAttribute('data-b');   // 分母 "行号:列名"
     if (!aK || !bK) { hide(); return; }
-    const aTd = document.querySelector('[data-k="' + aK + '"]');
-    const bTd = document.querySelector('[data-k="' + bK + '"]');
+    // 必须在同一张表内定位分子/分母（跨表同名 data-k 会串表，导致公式/标红跑到别的表）
+    const table = target.closest('.days-table');
+    if (!table) { hide(); return; }
+    const aTd = table.querySelector('[data-k="' + aK + '"]');
+    const bTd = table.querySelector('[data-k="' + bK + '"]');
     if (!aTd || !bTd) { hide(); return; }
     const a = Number(aTd.getAttribute('data-num').replace(/,/g, '')) || 0;
     const b = Number(bTd.getAttribute('data-num').replace(/,/g, '')) || 0;
@@ -823,7 +826,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     tip.textContent = aTd.textContent.trim() + ' ÷ ' + bTd.textContent.trim() + ' = ' + res.toFixed(2) + '%';
     tip.classList.add('show');
     position();
-    // 高亮参与计算的数字：只标分子、分母两个单元格（按 data-k 精确定位）
+    // 高亮参与计算的数字：只标分子、分母两个单元格（按 data-k 精确定位，限制在本表内）
     clearHl();
     aTd.classList.add('hl'); bTd.classList.add('hl');
   }
@@ -831,9 +834,11 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   function position() {
     const r = target.getBoundingClientRect();
     const tw = tip.offsetWidth, th = tip.offsetHeight;
-    let x = r.left, y = r.top - th - 8;
-    if (y < 8) y = r.bottom + 8;
+    // 气泡显示在当前数字单元格的正后方（右侧）；右侧放不下则放左侧，再放不下放下方
+    let x = r.right + 8, y = r.top;
+    if (x + tw > window.innerWidth - 8) x = Math.max(8, r.left - tw - 8);
     if (x + tw > window.innerWidth - 8) x = Math.max(8, window.innerWidth - tw - 8);
+    if (y + th > window.innerHeight - 8) y = Math.max(8, window.innerHeight - th - 8);
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   }
   document.addEventListener('mouseover', e => {
