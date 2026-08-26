@@ -922,8 +922,7 @@ function initComboTable() {
 
 // 渲染第七块表：严格按 123.xlsx Sheet1 表头 —— 无占比列、无紫色线、无子类灰色。
 // 每行 = 一个"学段/品牌/场景/类型"组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
-// 排序：学段 小学→初中→高中，品牌/场景/类型 各自 ASC
-const STAGE_ORDER = { '小学': 0, '初中': 1, '高中': 2 };
+// 排序：学段 小学→初中→高中，品牌/场景/类型 各自 ASC（STAGE_ORDER 已在筛选联动上方定义）
 function renderComboTable() {
   const wrap = document.getElementById('comboTable');
   if (!wrap) return;
