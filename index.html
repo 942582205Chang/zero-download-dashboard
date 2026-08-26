@@ -413,30 +413,36 @@
     <div class="days-wrap"><div id="courseTable3"></div></div>
   </div>
 
-  <!-- 三、各项目数据 -->
-  <div class="section"><h2>四、各项目数据</h2><p>  --按项目维度拆解 0 下载指标</p></div>
-  <div class="chart-grid" id="projectGrid">
-    <!-- 待填充 -->
+  <!-- 四、各项目数据（品牌系列） -->
+  <div class="section"><h2>四、各项目数据</h2><p>  --品牌系列（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 品牌</p></div>
+  <div id="brandGrid">
+    <div class="days-wrap"><div id="brandTable1"></div></div>
+    <div class="days-wrap"><div id="brandTable2"></div></div>
+    <div class="days-wrap"><div id="brandTable3"></div></div>
   </div>
 
-  <!-- 四、各场景数据 -->
-  <div class="section"><h2>五、各场景数据</h2><p>  --按使用场景拆解 0 下载指标</p></div>
-  <div class="chart-grid" id="sceneGrid">
-    <!-- 待填充 -->
+  <!-- 五、各场景数据 -->
+  <div class="section"><h2>五、各场景数据</h2><p>  --场景（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 场景</p></div>
+  <div id="sceneGrid2">
+    <div class="days-wrap"><div id="sceneTable1"></div></div>
+    <div class="days-wrap"><div id="sceneTable2"></div></div>
+    <div class="days-wrap"><div id="sceneTable3"></div></div>
   </div>
 
-  <!-- 五、各资源类型数据 -->
-  <div class="section"><h2>六、各资源类型数据</h2><p>  --按资源类型拆解 0 下载指标</p></div>
-  <div class="chart-grid" id="typeGrid">
-    <!-- 待填充 -->
+  <!-- 六、各资源类型数据 -->
+  <div class="section"><h2>六、各资源类型数据</h2><p>  --资源类型（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 资源类型</p></div>
+  <div id="typeGrid">
+    <div class="days-wrap"><div id="typeTable1"></div></div>
+    <div class="days-wrap"><div id="typeTable2"></div></div>
+    <div class="days-wrap"><div id="typeTable3"></div></div>
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v12</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v13</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v12';
+const PAGE_VERSION = 'v13';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -693,6 +699,17 @@ function renderCourseTables() {
   });
 }
 
+// 通用：按数据字段渲染"每学段一张表"（四/五/六 复用，参照三、课程表）
+// dataKey：data.json 里的字段名（byBrandStages / bySceneStages / byTypeStages）
+// prefix：表格容器 id 前缀（brandTable / sceneTable / typeTable）
+function renderSubStages(dataKey, prefix) {
+  const stages = allData && allData[dataKey];
+  if (!stages || !stages.length) return;
+  stages.forEach((s, idx) => {
+    renderDaysTable(prefix + (idx + 1), s.rows, s.stage, true);
+  });
+}
+
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function loadData() {
@@ -706,6 +723,9 @@ function loadData() {
     renderDaysTable('daysTable1', allData.byDays, '小初高');   // 发布天数分档统计表（一、小初高整体）
     renderStageTables();
     renderCourseTables();
+    renderSubStages('byBrandStages', 'brandTable');   // 四、各项目数据（品牌系列）
+    renderSubStages('bySceneStages', 'sceneTable');   // 五、各场景数据
+    renderSubStages('byTypeStages', 'typeTable');     // 六、各资源类型数据
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
