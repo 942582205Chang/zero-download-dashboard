@@ -473,7 +473,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v24</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v25</b>（2026-08-26）</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -492,7 +492,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v24';
+const PAGE_VERSION = 'v25';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -926,8 +926,8 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 // ===== 左侧简略导航：返回顶部 / 各区块标签 / 返回底部，滚动自动高亮 =====
 (function initSideNav() {
   const box = document.getElementById('sideNav');
-  const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '返回底部'];
-  const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', null];
+  const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '七、学段/品牌/场景/类型', '返回底部'];
+  const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '七、学段/品牌/场景/类型', null];
   // 收起/展开按钮（第一个）：文本随状态切换
   const toggle = document.createElement('button');
   toggle.className = 'nav-toggle';
