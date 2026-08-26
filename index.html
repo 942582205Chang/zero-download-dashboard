@@ -242,16 +242,17 @@
   /* 首列合并后：第一行首列(rowspan=2)的右紫线；第二行首格(all)左边紧邻首列，无多余线 */
   .days-table thead tr:first-child th:first-child { border-bottom: 1px solid var(--separator); }
 
-  /* 表头 / 首列统计说明气泡（悬浮显示） */
+  /* 表头 / 首列统计说明气泡（悬浮显示）——文字天蓝色，可选中复制 */
   .hint-tip {
-    position: fixed; z-index: 1200; pointer-events: none;
+    position: fixed; z-index: 1200; pointer-events: auto;
     max-width: 380px; padding: 10px 13px;
     background: var(--surface-solid);
     border: 1px solid var(--separator);
     border-radius: 12px; box-shadow: var(--shadow-lg);
-    font-size: 12.5px; line-height: 1.55; color: var(--ink);
+    font-size: 12.5px; line-height: 1.55; color: var(--teal);
     white-space: pre-line; opacity: 0; visibility: hidden;
     transition: opacity .12s ease, visibility .12s;
+    user-select: text; -webkit-user-select: text;
   }
   .hint-tip.show { opacity: 1; visibility: visible; }
   .days-table [data-tip] { cursor: help; }   /* 有说明的单元格显示问号光标，提示可悬浮 */
@@ -892,7 +893,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   if (!tip) return;
   let target = null, showTimer = null, hideTimer = null;
   const MIN_DELAY = 250;     // 悬浮最少时长，防快速移动误触发
-  const HIDE_DELAY = 100;    // 移出后延迟隐藏，防在提示框上误抖
+  const HIDE_DELAY = 150;    // 移出后延迟隐藏（气泡可选中复制，需保留一点停留时间）
   function textOf(el) { return (el.getAttribute('data-tip') || '').replace(/\s*\n\s*/g, '\n'); }
   function show() {
     if (!target) return;
@@ -911,10 +912,13 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     if (x + tw > window.innerWidth - 8) x = Math.max(8, window.innerWidth - tw - 8);
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   }
+  let hoverOnTip = false;
   document.addEventListener('mouseover', e => {
-    const el = e.target.closest('[data-tip]');
+    if (e.target.closest && e.target.closest('#hintTip')) { hoverOnTip = true; return; }
+    const el = e.target.closest ? e.target.closest('[data-tip]') : null;
     if (el) {
       target = el;
+      hoverOnTip = false;
       clearTimeout(hideTimer);
       if (showTimer) clearTimeout(showTimer);
       showTimer = setTimeout(show, 50);
@@ -924,8 +928,12 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     }
   });
   document.addEventListener('mouseout', e => {
-    if (e.target.closest('[data-tip]') === target && !e.relatedTarget || (e.relatedTarget && !e.relatedTarget.closest('[data-tip]'))) {
-      if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[data-tip]')) return;
+    const to = e.relatedTarget;
+    const toInTip = to && to.closest && to.closest('#hintTip');
+    const toInTarget = to && to.closest && to.closest('[data-tip]') === target;
+    // 移入气泡本身或原目标 → 不隐藏（支持选中复制）；移出到其它地方才隐藏
+    if (toInTip || toInTarget) return;
+    if (e.target.closest && e.target.closest('[data-tip]') === target) {
       clearTimeout(showTimer);
       hideTimer = setTimeout(hide, HIDE_DELAY);
     }
