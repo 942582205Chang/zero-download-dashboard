@@ -431,22 +431,12 @@
     <!-- 待填充 -->
   </div>
 
-  <!-- 明细入口 -->
-  <div class="detail-card">
-    <div class="head">
-      <div>
-        <h3>发布超15天仍0下载 资源明细</h3>
-        <div class="count">当前共 <span id="detailCount">--</span> 条，点右上角"📊 查看明细"进入完整列表</div>
-      </div>
-    </div>
-  </div>
-
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v3</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v4</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v3';
+const PAGE_VERSION = 'v4';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
