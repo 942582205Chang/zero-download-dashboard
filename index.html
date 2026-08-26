@@ -262,7 +262,6 @@
   .section { margin-top: 28px; margin-bottom: 14px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; }
   .section h2 { font-size: 20px; font-weight: 800; }
   .section p { font-size: 14px; color: var(--muted); }
-  .section .table-note { font-size: 12.5px; color: var(--blue); }
 
   /* Charts */
   .chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
@@ -393,7 +392,6 @@
 
   <!-- 发布天数分档统计表 -->
   <div class="section"><h2>一、小初高整体</h2><p>  --按发布天数分档统计资源数量与消费情况</p>
-    <p class="table-note">提示：鼠标悬停任意表头/首列行名可看该列统计口径；悬停“不超过 15 天 / 已超过 15 天”行可看“两行相加 = 整体”的说明。</p>
   </div>
   <div class="days-wrap"><div id="daysTable1"></div></div>
 
@@ -432,11 +430,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v4</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v5</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v4';
+const PAGE_VERSION = 'v5';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
