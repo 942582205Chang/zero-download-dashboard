@@ -838,7 +838,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   }
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
-    const el = e.target.closest ? e.target.closest('td.num.pct[data-pct]') : null;
+    const el = e.target.closest ? e.target.closest('td.num.pct') : null;
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
@@ -855,7 +855,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   });
   document.addEventListener('mouseout', e => {
     const to = e.relatedTarget;
-    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num.pct[data-pct]') === target)) return;
+    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num.pct') === target)) return;
     if (tip.classList.contains('show')) {
       clearTimeout(showTimer);
       hideTimer = setTimeout(hide, HIDE_DELAY);
