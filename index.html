@@ -245,18 +245,18 @@
   /* 首列合并后：第一行首列(rowspan=2)的右紫线；第二行首格(all)左边紧邻首列，无多余线 */
   .days-table thead tr:first-child th:first-child { border-bottom: 1px solid var(--separator); }
 
-  /* 占比单元格气泡（悬停）——文字蓝色，可选中复制（气泡不随鼠标消失，便于选择） */
+  /* 占比/平均值单元格气泡（悬停）——轻快跟随，无需复制 */
   .hint-tip {
-    position: fixed; z-index: 1200; pointer-events: auto;
-    max-width: 420px; padding: 10px 13px;
+    position: fixed; z-index: 1200; pointer-events: none;
+    max-width: 420px; padding: 8px 12px;
     background: var(--surface-solid);
     border: 1px solid var(--separator);
-    border-radius: 12px; box-shadow: var(--shadow-lg);
-    font-size: 12.5px; line-height: 1.55; color: var(--blue);
-    white-space: pre-line; opacity: 0; visibility: hidden;
-    transition: opacity .12s ease, visibility .12s;
-    user-select: text; -webkit-user-select: text;
-    cursor: text;
+    border-radius: 10px; box-shadow: var(--shadow-md);
+    font-size: 12.5px; line-height: 1.5; color: var(--blue);
+    white-space: nowrap; opacity: 0; visibility: hidden;
+    transition: opacity .08s ease;
+    user-select: none; -webkit-user-select: none;
+    cursor: default;
   }
   .hint-tip.show { opacity: 1; visibility: visible; }
 
@@ -432,11 +432,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v11</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v12</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v11';
+const PAGE_VERSION = 'v12';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -797,12 +797,12 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 })();
 
 // ===== 百分比单元格气泡：悬停占比/整体占比单元格 → 给出该格的具体公式（分子 ÷ 分母 = 结果），
-// ===== 同时把参与计算的两个数字所在单元格标红（data-a/data-b 按行:列 精确定位，避免同名数字误标红），移开即恢复
+// ===== 百分比/平均值单元格气泡：悬停 → 给出该格的具体公式（分子 ÷ 分母 = 结果），
+// ===== 同时把参与计算的两个数字所在单元格高亮为气泡同色（蓝），移开即恢复。轻快跟随，无需复制
 (function initPctTip() {
   const tip = document.getElementById('hintTip');
   if (!tip) return;
-  let target = null, showTimer = null, hideTimer = null;
-  const HIDE_DELAY = 300;
+  let target = null, hideTimer = null;
   function clearHl() {
     document.querySelectorAll('.days-table td.num.hl').forEach(td => td.classList.remove('hl'));
   }
@@ -810,7 +810,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const aK = target.getAttribute('data-a');   // 分子 "行号:列名"
     const bK = target.getAttribute('data-b');   // 分母 "行号:列名"
     if (!aK || !bK) { hide(); return; }
-    // 必须在同一张表内定位分子/分母（跨表同名 data-k 会串表，导致公式/标红跑到别的表）
+    // 必须在同一张表内定位分子/分母（跨表同名 data-k 会串表，导致公式/高亮跑到别的表）
     const table = target.closest('.days-table');
     if (!table) { hide(); return; }
     const aTd = table.querySelector('[data-k="' + aK + '"]');
@@ -818,7 +818,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     if (!aTd || !bTd) { hide(); return; }
     const a = Number(aTd.getAttribute('data-num').replace(/,/g, '')) || 0;
     const b = Number(bTd.getAttribute('data-num').replace(/,/g, '')) || 0;
-    // 分母为 0 / 非有限数 → 该格显示 '-'（不参与计算）；结果为 0% → 也不弹公式
+    // 分母为 0 / 非有限数 → 该格显示 '-'（不参与计算）；结果为 0 → 也不弹气泡
     if (b <= 0 || !isFinite(b)) { hide(); return; }
     // 平均值：公式为 合计 ÷ 本行资源数，结果保留 1 位小数；占比：结果为百分比（不带 ×100%）
     const isAvg = target.classList.contains('avg');
@@ -836,37 +836,29 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   function position() {
     const r = target.getBoundingClientRect();
     const tw = tip.offsetWidth, th = tip.offsetHeight;
-    // 气泡显示在当前数字单元格的正后方（右侧）；右侧放不下则放左侧，再放不下放下方
-    let x = r.right + 8, y = r.top;
-    if (x + tw > window.innerWidth - 8) x = Math.max(8, r.left - tw - 8);
-    if (x + tw > window.innerWidth - 8) x = Math.max(8, window.innerWidth - tw - 8);
-    if (y + th > window.innerHeight - 8) y = Math.max(8, window.innerHeight - th - 8);
+    // 气泡显示在当前数字单元格的正后方（右侧）；右侧放不下则放左侧，再放不下限制在视口内
+    let x = r.right + 6, y = r.top;
+    if (x + tw > window.innerWidth - 6) x = Math.max(6, r.left - tw - 6);
+    if (x + tw > window.innerWidth - 6) x = Math.max(6, window.innerWidth - tw - 6);
+    if (y + th > window.innerHeight - 6) y = Math.max(6, window.innerHeight - th - 6);
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   }
+  // 移入任意可算单元格立即显示；移出到其它地方立即消失（无延迟、无 timer，跟随鼠标）
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
     const el = e.target.closest ? e.target.closest('td.num[data-a][data-b]') : null;
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
-      if (showTimer) clearTimeout(showTimer);
-      showTimer = setTimeout(show, 40);
+      show();
     } else if (!el) {
-      // 移出到非占比格/非气泡 → 延迟隐藏
-      if (tip.classList.contains('show')) {
-        clearTimeout(showTimer);
-        hideTimer = setTimeout(hide, HIDE_DELAY);
-      }
+      hide();
       target = null;
     }
   });
+  // 鼠标从目标格移出 → 立即隐藏（pointer-events:none 的气泡不会挡住后续 hover）
   document.addEventListener('mouseout', e => {
-    const to = e.relatedTarget;
-    if (to && to.closest && (to.closest('#hintTip') || to.closest('td.num[data-a][data-b]') === target)) return;
-    if (tip.classList.contains('show')) {
-      clearTimeout(showTimer);
-      hideTimer = setTimeout(hide, HIDE_DELAY);
-    }
+    if (e.target.closest && e.target.closest('td.num[data-a][data-b]') === target) hide();
   });
   window.addEventListener('scroll', () => { if (tip.classList.contains('show')) position(); }, { passive: true });
   window.addEventListener('resize', () => { if (tip.classList.contains('show')) position(); });
