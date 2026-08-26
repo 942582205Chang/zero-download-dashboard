@@ -224,16 +224,18 @@
   .combo-export { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; }
   /* 七、组合筛选表：工具栏（居中） */
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
-  /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见 */
+  /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  /* 七、表头两行全部吸顶（第一列含表头也一并吸顶固定）：
-     thead 整体 sticky top:0 → 两行表头一起吸顶；首列 th/td sticky left:0 固定列头 */
+  /* 表头两行整体吸顶 + 首列固定；合计行吸底（表内 sticky bottom） */
   .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
   .combo-scroll .combo-table thead th { background: var(--grid); }
   .combo-scroll .combo-table thead th:first-child,
   .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
   .combo-scroll .combo-table thead th:first-child { z-index: 4; background: var(--grid); }
   .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
+  /* 合计行吸附在滚动容器底部（sticky bottom），始终可见 */
+  .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
+  .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   /* 七、汇总行样式：加粗，浅色底，独立于数据行 */
   .combo-table .combo-total td { font-weight: 700; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
@@ -493,7 +495,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v29</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v30</b></footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -512,7 +514,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v29';
+const PAGE_VERSION = 'v30';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -835,7 +837,19 @@ function refreshComboOptions() {
     else sel.value = '';
     // 选中值颜色：全部=黑色/普通，设置了筛选值=蓝色
     sel.classList.toggle('has-val', !!comboState[k]);
+    syncComboSelLabel(sel, k);
   });
+}
+// 下拉显示文案：未选=「学段：全部」；选中=「学段：选中的值」（title 悬停+选中文字均按此）
+function syncComboSelLabel(sel, k) {
+  const v = comboState[k];
+  const txt = v ? (k + '：' + v) : (k + '：全部');
+  // 把下拉选中项文字也改为「学段：xx」（保留原值在 data-v）
+  if (sel.selectedIndex > -1) {
+    const opt = sel.options[sel.selectedIndex];
+    if (opt) { opt.setAttribute('data-v', opt.textContent); opt.textContent = txt; }
+  }
+  sel.title = txt;
 }
 
 function initComboTable() {
@@ -845,7 +859,7 @@ function initComboTable() {
     if (!sel) return;
     sel.addEventListener('change', () => {
       comboState[k] = sel.value;
-      refreshComboOptions();   // 联动：其它维度可选项收缩
+      refreshComboOptions();   // 联动：其它维度可选项收缩（含文案同步）
       renderComboTable();
     });
   });
@@ -874,25 +888,25 @@ function renderComboTable() {
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
     String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN');
   const rows = [...list].sort(cmp);
-  // C端单份消费 = 该组合 C端消费 ÷ 该组合 资源数量_all 的 all 列（保留 2 位小数）
+  // C端单份消费 = 该组合 C端消费 ÷ 该组合 资源数量_all 的 all 列（保留 1 位小数）
   const cAvg = (e) => e.all.all ? (e.all.cSum / e.all.all) : null;
   const tr = rows.map((e, i) => {
     const A = e.all, O = e.over15;
-    const L = (v) => '<td class="num">' + fmt(v) + '</td>';
     const ca = cAvg(e);
+    // 给本行数值单元格打 data-k="行号:列名"（供气泡按 data-a/data-b 精确定位高亮）
+    const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
     return '<tr>' +
-      // 第一列(学段)居中；第二三四列(品牌/场景/类型)居左
       '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['类型']) + '</td>' +
       // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费
-      L(A.all) + L(A.front0) + L(A.b0) + L(A.c0) +
+      ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncell(A.b0, 'b0') + ncell(A.c0, 'c0') +
       // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费
-      L(O.all) + L(O.front0) + L(O.b0) + L(O.c0) +
-      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费
-      L(A.frontSum) + L(A.bSum) + L(A.cSum) +
-      '<td class="num">' + (ca === null ? '-' : ca.toFixed(2)) + '</td>' +
+      ncell(O.all, 'oall') + ncell(O.front0, 'ofront0') + ncell(O.b0, 'ob0') + ncell(O.c0, 'oc0') +
+      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费（带气泡公式）
+      ncell(A.frontSum, 'frontSum') + ncell(A.bSum, 'bSum') + ncell(A.cSum, 'cSum') +
+      '<td class="num pct" data-a="' + i + ':cSum" data-b="' + i + ':all">' + (ca === null ? '-' : ca.toFixed(1)) + '</td>' +
       '</tr>';
   }).join('');
   // 汇总行：当前筛选结果（无筛选=全部）下，第5列到最后一列(共12个数值列)的合计
@@ -909,7 +923,7 @@ function renderComboTable() {
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead" colspan="4" style="text-align:center;font-weight:700">合计</td>' +
     ttl.map(v => '<td class="num" style="font-weight:700">' + fmt(v) + '</td>').join('') +
-    '<td class="num" style="font-weight:700">' + (sumAll ? (sumC / sumAll).toFixed(2) : '-') + '</td>' +
+    '<td class="num" style="font-weight:700">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
   // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
   const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
