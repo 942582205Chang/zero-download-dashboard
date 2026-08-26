@@ -433,11 +433,11 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v7</b>（2026-08-26）</footer>
+  <footer class="footer-version">看板版本 <b>v8</b>（2026-08-26）</footer>
 </div>
 <script>
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v7';
+const PAGE_VERSION = 'v8';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -611,49 +611,45 @@ function daysHead(stage, overallNote) {
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
 // courseMode：课程表模式 —— 课程行(第3行起，即"已超过15天"的展开)灰字 + -- 前缀 + 居右，分母用已超过15天行
-// 占比单元格：data-pct 记录"分子/分母"两个原始值（不分先后），悬停时气泡给出 分子 ÷ 分母 = 结果，
-// 同时高亮参与计算的两个数字所在单元格（data-num 标记数值来源，红色闪烁）。——2026-08-26 新方案
+// 占比单元格：data-a / data-b 记录参与计算的 "行号:列名"，悬停时气泡给出 分子 ÷ 分母 = 结果，
+// 并精确高亮分子、分母两个数字所在单元格（按 data-k 定位，不再按文本匹配，避免同名数字误标红）。
+// —— 2026-08-26 新方案
 function dayRowsHtml(rows, courseMode) {
   const tot = rows[0]; // 整体行：整体占比分母
   const green = rows.find(r => r.label === '已超过 15 天'); // 超过15天行：展开子行的占比分母
   const pct = (a, b) => b ? (a / b * 100).toFixed(2) + '%' : '-';
   const avg = (n, a) => a ? (n / a).toFixed(1) : '-';
-  const num = (v) => typeof v === 'number' ? v : null;   // 数值来源标记用
   return rows.map((r, i) => {
     const childStart = courseMode ? 2 : 3;   // 课程表：课程行(第3行)起为"已超过15天"展开；分档表：16-30天(第4行)起
     const isChild = i >= childStart;          // 带 -- 的行（展开子级）
     const base = (isChild && green) ? green : tot;   // 占比分母：展开行用绿色行，其余用整体行
-    const overallDen = isChild ? r.all : tot.all;    // 整体占比分母：仅带 -- 行用该行 all；其余行仍用整体 all
+    const bi = rows.indexOf(base);                    // 分母所在行号（绿色行 或 整体行）
+    const overallDenRow = isChild ? i : 0;            // 整体占比分母：--行用该行 all，其余用整体行 all
     const cls = i === 0 ? 'total-row' : '';
     const label = (isChild ? '  -- ' : '') + r.label;   // 展开子行第一列前加两个空格+--
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
-    // 数值单元格：data-num 记录原始值，供占比气泡高亮对应数字
-    const ncell = (v, extra) => `<td class="num${extra || ''}" data-num="${fmt(v)}">${fmt(v)}</td>`;
-    // 占比单元格：data-pct 记录 "分子|分母"，供悬停气泡生成公式
-    const pcell = (a, b) => `<td class="num pct" data-pct="${a}|${b}">${pct(a, b)}</td>`;
-    // 平均值（非百分比，不参与气泡）
+    // 数值单元格：data-k="行号:列名" 供占比气泡精确定位；data-num 存格式化文本
+    const ncell = (v, k, extra) => `<td class="num${extra || ''}" data-k="${i}:${k}" data-num="${fmt(v)}">${fmt(v)}</td>`;
+    // 占比单元格：data-a=分子(本行k列)，data-b=分母(base行k列)  → 占比（分母=同列base行）
+    const pcellA = (k) => `<td class="num pct" data-a="${i}:${k}" data-b="${bi}:${k}">${pct(r[k], base[k])}</td>`;
+    // 整体占比单元格：data-b=分母(overallDenRow 行的 all 列)
+    const pcellB = (k) => `<td class="num pct" data-a="${i}:${k}" data-b="${overallDenRow}:all">${pct(r[k], overallDenRow === i ? r.all : tot.all)}</td>`;
     const acell = (a, n) => `<td class="num avg">${avg(a, n)}</td>`;
     return `<tr${cls ? ' class="' + cls + '"' : ''}>` +
     `<td class="rowhead">${esc(label)}</td>` +
-    ncell(r.all) +
-    ncell(r.front0, g15) +
-    pcell(r.front0, base.front0) +
-    pcell(r.front0, overallDen) +
-    ncell(r.b0) +
-    pcell(r.b0, base.b0) +
-    pcell(r.b0, overallDen) +
-    ncell(r.c0) +
-    pcell(r.c0, base.c0) +
-    pcell(r.c0, overallDen) +
-    ncell(r.frontSum) +
-    pcell(r.frontSum, base.frontSum) +
-    acell(r.frontSum, r.all) +
-    ncell(r.bSum) +
-    pcell(r.bSum, base.bSum) +
-    acell(r.bSum, r.all) +
-    ncell(r.cSum) +
-    pcell(r.cSum, base.cSum) +
-    acell(r.cSum, r.all) +
+    ncell(r.all, 'all') +
+    ncell(r.front0, 'front0', g15) +
+    pcellA('front0') + pcellB('front0') +
+    ncell(r.b0, 'b0') +
+    pcellA('b0') + pcellB('b0') +
+    ncell(r.c0, 'c0') +
+    pcellA('c0') + pcellB('c0') +
+    ncell(r.frontSum, 'frontSum') +
+    pcellA('frontSum') + acell(r.frontSum, r.all) +
+    ncell(r.bSum, 'bSum') +
+    pcellA('bSum') + acell(r.bSum, r.all) +
+    ncell(r.cSum, 'cSum') +
+    pcellA('cSum') + acell(r.cSum, r.all) +
     `</tr>`;
   }).join('');
 }
@@ -801,7 +797,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 })();
 
 // ===== 百分比单元格气泡：悬停占比/整体占比单元格 → 给出该格的具体公式（分子 ÷ 分母 = 结果），
-// ===== 同时把参与计算的两个数字所在单元格标红（data-num 按文本匹配），移开即恢复 —— 2026-08-26 新方案
+// ===== 同时把参与计算的两个数字所在单元格标红（data-a/data-b 按行:列 精确定位，避免同名数字误标红），移开即恢复
 (function initPctTip() {
   const tip = document.getElementById('hintTip');
   if (!tip) return;
@@ -811,26 +807,25 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     document.querySelectorAll('.days-table td.num.hl').forEach(td => td.classList.remove('hl'));
   }
   function show() {
-    const pct = target.getAttribute('data-pct');   // "分子|分母"（原始值）
-    if (!pct) { hide(); return; }
-    const [a, b] = pct.split('|').map(s => Number(s));
+    const aK = target.getAttribute('data-a');   // 分子 "行号:列名"
+    const bK = target.getAttribute('data-b');   // 分母 "行号:列名"
+    if (!aK || !bK) { hide(); return; }
+    const aTd = document.querySelector('[data-k="' + aK + '"]');
+    const bTd = document.querySelector('[data-k="' + bK + '"]');
+    if (!aTd || !bTd) { hide(); return; }
+    const a = Number(aTd.getAttribute('data-num').replace(/,/g, '')) || 0;
+    const b = Number(bTd.getAttribute('data-num').replace(/,/g, '')) || 0;
     // 分母为 0 / 非有限数 → 该格显示 '-'（不参与计算）；结果为 0% → 也不弹公式
-    if (!isFinite(b) || b === 0) { hide(); return; }
+    if (b <= 0 || !isFinite(b)) { hide(); return; }
     const res = a / b * 100;
     if (!(res > 0)) { hide(); return; }   // 0%（含 0/0）不显示气泡
     // 气泡文案：具体公式，不带 ×100%（结果直接是百分比）
-    tip.textContent = fmt(a) + ' ÷ ' + fmt(b) + ' = ' + res.toFixed(2) + '%';
+    tip.textContent = aTd.textContent.trim() + ' ÷ ' + bTd.textContent.trim() + ' = ' + res.toFixed(2) + '%';
     tip.classList.add('show');
     position();
-    // 高亮参与计算的数字：在同一表格里找与分子/分母文本一致的数值单元格
-    const table = target.closest('.days-table');
-    if (table) {
-      clearHl();
-      table.querySelectorAll('td.num[data-num]').forEach(td => {
-        const v = td.getAttribute('data-num');
-        if (v === fmt(a) || v === fmt(b)) td.classList.add('hl');
-      });
-    }
+    // 高亮参与计算的数字：只标分子、分母两个单元格（按 data-k 精确定位）
+    clearHl();
+    aTd.classList.add('hl'); bTd.classList.add('hl');
   }
   function hide() { tip.classList.remove('show'); clearHl(); }
   function position() {
