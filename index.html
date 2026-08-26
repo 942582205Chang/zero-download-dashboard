@@ -198,6 +198,8 @@
   .combo-table { border-left: none !important; }
   .combo-table .days-table-bd, .combo-table td, .combo-table th { border-left: none !important; }
   .combo-table tbody tr:nth-child(n+4) td { color: var(--ink) !important; font-weight: 400 !important; }
+  /* 高亮必须压过第4行起的 !important 黑色（否则第4行起气泡高亮失效） */
+  .combo-table td.num.hl { color: var(--blue) !important; font-weight: 700 !important; }
   .combo-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: normal; font-size: 13px; }
   /* 学段列右侧无线（覆盖通用 first-child 紫线） */
   .combo-table tbody td:first-child,
@@ -513,7 +515,11 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v34</b></footer>
+  <footer class="footer-version">看板版本 <b>v36</b></footer>
+</div>
+<!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
+<div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
+  <div id="pageLoadingBar" style="height:100%;width:0%;background:var(--blue,#0a84ff);transition:width .3s ease"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
@@ -532,7 +538,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v34';
+const PAGE_VERSION = 'v36';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
