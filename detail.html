@@ -604,7 +604,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     const c = ws.getCell(1, i + 1);
     c.value = colLabel(h);
     c.font = { name: '微软雅黑', size: 10, bold: true };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBBDEFB' } };
     c.alignment = { horizontal: 'left', vertical: 'center' };
   });
   ws.getRow(1).height = 16.5;
