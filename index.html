@@ -237,13 +237,18 @@
   .combo-table tbody td:nth-child(5),
   .combo-table tbody td:nth-child(10),
   .combo-table tbody td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
-  /* 合计行（首格 colspan=4 占视觉1~4，其余 12 格 = 视觉5~16）紫色 + 灰色 */
+  /* 合计行（首格 colspan=4 占视觉1~4，其余 12 格 = 视觉5~16）紫色 + 灰色
+     表头/表体：紫色 vis4/8/12、灰色 vis5/10/14
+     合计行首格 colspan=4 → 视觉第 n 列 = DOM 第 n-3 格：
+       紫色：视觉4(合计右) = DOM1；视觉8(C端0消费) = DOM5；视觉12(超15·C端0消费) = DOM9
+       灰色：视觉5(all) = DOM2；视觉9(超15·all) = DOM6；视觉13(前台下载) = DOM10
+     —— 视觉7/11/15 均无独立分隔线（前次把 7/11 误写成紫色/灰色，已修正） */
   .combo-table .combo-total td:first-child,
   .combo-table .combo-total td:nth-child(5),
   .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table .combo-total td:nth-child(2),
-  .combo-table .combo-total td:nth-child(7),
-  .combo-table .combo-total td:nth-child(11) { border-right: 1px solid var(--separator) !important; }
+  .combo-table .combo-total td:nth-child(6),
+  .combo-table .combo-total td:nth-child(10) { border-right: 1px solid var(--separator) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 维度下拉标签固化（2026-08-27 简化）：标签用纯文本 span 固定在 select 左侧，
@@ -536,7 +541,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v49</b></footer>
+  <footer class="footer-version">看板版本 <b>v50</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
