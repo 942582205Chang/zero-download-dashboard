@@ -231,6 +231,8 @@
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
   .combo-toolbar select.has-val { color: var(--blue); font-weight: 600; }
+  /* 第七块已选值（如"学段：小学"）仅作按钮提示，不写入 option → 下拉永远只显示 全部+可选项，无重复 */
+  .combo-toolbar select option { color: var(--ink); }
   .combo-clear { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--red); color: #fff; cursor: pointer; }
   .combo-export { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; }
   /* 七、组合筛选表：工具栏（居中） */
@@ -276,6 +278,9 @@
     border-right: 1px solid var(--purple-soft);   /* 第一列右侧浅紫分隔线 */
   }
   .days-table thead tr:first-child th:first-child { background: var(--grid); }
+  /* 一、小初高整体表：表头（含首列）统一浅绿 #e8f5e9 */
+  #daysTable1 .days-table thead th { background: #e8f5e9; }
+  #daysTable1 .days-table thead tr:first-child th:first-child { background: #e8f5e9; }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   /* 浅紫线：前台下载左(消费组边界) + B端0/C端0/B端下载/C端消费 左线（指标分隔） */
   /* 首列已 rowspan 合并，表头第二行从 all(第2列) 开始 */
@@ -881,29 +886,19 @@ function refreshComboOptions(changedKey) {
     sel.innerHTML = '';
     sel.appendChild(new Option('全部', ''));
     vals.forEach(v => sel.appendChild(new Option(v, v)));
-    if (old && vals.indexOf(old) > -1) sel.value = old;
-    else sel.value = '';
-    sel.classList.toggle('has-val', !!comboState[k]);
-    syncComboSelLabel(sel, k);
+    if (old && vals.indexOf(old) > -1) { sel.value = old; sel.classList.add('has-val'); }
+    else { sel.value = ''; sel.classList.remove('has-val'); }
+    sel.title = comboState[k] ? (k + '：' + comboState[k]) : (k + '：全部');
   });
   // 课程→学段 自动联动：选中课程时，若学段为空则锁定为课程前2字
   if (comboState['课程'] && !comboState['学段']) {
     const st = comboState['课程'].slice(0, 2);
     comboState['学段'] = st;
     const selSt = document.getElementById('cf-学段');
-    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); syncComboSelLabel(selSt, '学段'); }
+    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); selSt.title = '学段：' + st; }
   }
 }
-// 下拉显示文案：未选=「学段：全部」；选中=「学段：选中的值」（title 悬停+选中文字均按此）
-function syncComboSelLabel(sel, k) {
-  const v = comboState[k];
-  const txt = v ? (k + '：' + v) : (k + '：全部');
-  if (sel.selectedIndex > -1) {
-    const opt = sel.options[sel.selectedIndex];
-    if (opt) { opt.setAttribute('data-v', opt.textContent); opt.textContent = txt; }
-  }
-  sel.title = txt;
-}
+// 下拉显示文案统一为 title 悬停提示：未选=「学段：全部」；选中=「学段：选中的值」（不写入 option 文本，避免下拉出现重复值）
 
 function initComboTable() {
   if (!allData.comboDims) return;
