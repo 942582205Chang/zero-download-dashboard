@@ -249,13 +249,13 @@
   .combo-scroll .combo-table thead th:first-child { z-index: 4; background: #FDD5B5; }
   .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
   /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
-  /* 合计行也用长石色 #FDD5B5（用户指定，2026-08-27） */
-  .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: #FDD5B5; }
-  .combo-scroll .combo-table .combo-total td { background: #FDD5B5; }
-  .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: #FDD5B5; }
-  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），长石色底 */
+  /* 合计行恢复浅灰底（用户 2026-08-27 要求改回灰色，表头仍长石色） */
+  .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
+  .combo-scroll .combo-table .combo-total td { background: var(--grid); }
+  .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
+  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅灰底 */
   .combo-scroll .combo-table .combo-total td,
-  .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: #FDD5B5; color: var(--ink); border-top: 2px solid var(--separator); }
+  .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .combo-table .combo-total td:nth-child(4),
   .combo-table .combo-total td:nth-child(8),
   .combo-table .combo-total td:nth-child(12) { border-right: none !important; }
@@ -276,13 +276,25 @@
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 第一列（学段名）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
+  /* 注意：组合表(七/八)首列表头已用长石色，此处默认灰需排除组合表，否则覆盖 */
   .days-table thead tr:first-child th:first-child,
   .days-table td:first-child {
     position: sticky; left: 0; z-index: 2;
     background: var(--surface-solid);
     border-right: 1px solid var(--purple-soft);   /* 第一列右侧浅紫分隔线 */
   }
-  .days-table thead tr:first-child th:first-child { background: var(--grid); }
+  .days-table:not(.combo-table) thead tr:first-child th:first-child { background: var(--grid); }
+  .combo-table thead tr:first-child th:first-child { background: #FDD5B5; }   /* 组合表首列表头跟随长石色 */
+  /* 一、小初高整体：表头（含首列）长石色 #FDD5B5（用户指定 2026-08-27） */
+  .days-table.small-high thead th,
+  .days-table.small-high thead tr:first-child th:first-child { background: #FDD5B5; color: var(--ink); }
+  /* 二~六 按学段着色表头（含首列）：小学 浅蓝 / 初中 浅粉 / 高中 浅紫（用户指定 2026-08-27） */
+  .days-table.stage-xiaoxue thead th,
+  .days-table.stage-xiaoxue thead tr:first-child th:first-child { background: #caf0f8; color: var(--ink); }
+  .days-table.stage-chuzhong thead th,
+  .days-table.stage-chuzhong thead tr:first-child th:first-child { background: #fcd5ce; color: var(--ink); }
+  .days-table.stage-gaozhong thead th,
+  .days-table.stage-gaozhong thead tr:first-child th:first-child { background: #e0b0ff; color: var(--ink); }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   /* 浅紫线：前台下载左(消费组边界) + B端0/C端0/B端下载/C端消费 左线（指标分隔） */
   /* 首列已 rowspan 合并，表头第二行从 all(第2列) 开始 */
@@ -536,7 +548,7 @@
   <div class="combo-scroll combo8" id="combo2Scroll"><div id="combo2Table"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v39</b></footer>
+  <footer class="footer-version">看板版本 <b>v40</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -559,7 +571,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v39';
+const PAGE_VERSION = 'v40';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -733,6 +745,8 @@ function daysHead(stage, overallNote) {
 
 // 发布天数分档统计表：占比分母 —— 从16到30天起的细分档用"超过 15 天"(绿)行，其余用整体行
 // courseMode：课程表模式 —— 课程行(第3行起，即"已超过15天"的展开)灰字 + -- 前缀 + 居右，分母用已超过15天行
+// stageCls：学段着色类名（'stage-xiaoxue'/'stage-chuzhong'/'stage-gaozhong'/'small-high'）→ 表头(含首列)按学段配色；
+//           空则表头保持默认浅灰
 // 占比单元格：data-a / data-b 记录参与计算的 "行号:列名"，悬停时气泡给出 分子 ÷ 分母 = 结果，
 // 并精确高亮分子、分母两个数字所在单元格（按 data-k 定位，不再按文本匹配，避免同名数字误标红）。
 // —— 2026-08-26 新方案
@@ -777,7 +791,7 @@ function dayRowsHtml(rows, courseMode) {
   }).join('');
 }
 
-function renderDaysTable(containerId, rows, stage, courseMode) {
+function renderDaysTable(containerId, rows, stage, courseMode, stageCls) {
   if (!rows || !rows.length) return;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
@@ -793,7 +807,7 @@ function renderDaysTable(containerId, rows, stage, courseMode) {
   // 整体占比备注：一/二(分档表)用"all/区间天数"，三(课程表)用"all/学科"
   const overallNote = courseMode ? 'all/学科' : 'all/区间天数';
   const table = wrap.ownerDocument.createElement('table');
-  table.className = 'days-table' + (courseMode ? ' course-table' : '');
+  table.className = 'days-table' + (courseMode ? ' course-table' : '') + (stageCls ? ' ' + stageCls : '');
   table.style.width = totalW + 'px';   // 表格宽度自动写死 = 列宽总和，保证各表精确对齐
   table.innerHTML = '<colgroup>' + cols + '</colgroup>' + daysHead(stage, overallNote) + '<tbody>' + dayRowsHtml(rows, courseMode) + '</tbody>';
   wrap.innerHTML = '';
@@ -804,7 +818,9 @@ function renderStageTables() {
   const stages = allData && allData.byDaysStages;
   if (!stages || !stages.length) return;
   stages.forEach((s, idx) => {
-    renderDaysTable('daysTable' + (idx + 2), s.rows, s.stage);
+    // 二、各学段数据：按学段名着色表头（小学/初中/高中）
+    const cls = { '小学': 'stage-xiaoxue', '初中': 'stage-chuzhong', '高中': 'stage-gaozhong' }[s.stage] || '';
+    renderDaysTable('daysTable' + (idx + 2), s.rows, s.stage, false, cls);
   });
 }
 
@@ -812,7 +828,9 @@ function renderCourseTables() {
   const stages = allData && allData.byCourseStages;
   if (!stages || !stages.length) return;
   stages.forEach((s, idx) => {
-    renderDaysTable('courseTable' + (idx + 1), s.rows, s.stage, true);
+    // 三、各课程数据：按学段名着色表头（小学/初中/高中）
+    const cls = { '小学': 'stage-xiaoxue', '初中': 'stage-chuzhong', '高中': 'stage-gaozhong' }[s.stage] || '';
+    renderDaysTable('courseTable' + (idx + 1), s.rows, s.stage, true, cls);
   });
 }
 
@@ -823,7 +841,9 @@ function renderSubStages(dataKey, prefix) {
   const stages = allData && allData[dataKey];
   if (!stages || !stages.length) return;
   stages.forEach((s, idx) => {
-    renderDaysTable(prefix + (idx + 1), s.rows, s.stage, true);
+    // 四/五/六：按学段名着色表头（小学/初中/高中）
+    const cls = { '小学': 'stage-xiaoxue', '初中': 'stage-chuzhong', '高中': 'stage-gaozhong' }[s.stage] || '';
+    renderDaysTable(prefix + (idx + 1), s.rows, s.stage, true, cls);
   });
 }
 
@@ -837,7 +857,7 @@ function loadData() {
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
     drawCharts();
     updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
-    renderDaysTable('daysTable1', allData.byDays, '小初高');   // 发布天数分档统计表（一、小初高整体）
+    renderDaysTable('daysTable1', allData.byDays, '小初高', false, 'small-high');   // 一、小初高整体（表头长石色）
     renderStageTables();
     renderCourseTables();
     renderSubStages('byBrandStages', 'brandTable');   // 四、各项目数据（品牌系列）
