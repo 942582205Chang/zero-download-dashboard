@@ -537,7 +537,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v46</b></footer>
+  <footer class="footer-version">看板版本 <b>v47</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -882,13 +882,59 @@ function comboStatsArr() {
 function setDetailData(d) { _detailLoaded = true; _comboStatsCache = (d && d.comboStats) || []; }
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
-// 按当前筛选过滤预聚合结果（未筛选维度忽略）
-// 特殊：课程→学段 天然一致，若已选学段但课程未选，课程过滤跳过（避免"改了学段但课程残留旧学段"导致空结果）
+// ===== 组合统计数据（comboStats）=====
+// 数据源是"学段/品牌/场景/类型/课程"五维预聚合（comboStats 每行带 course 字段，同四列会有多行按课程拆）。
+// 展示语义（2026-08-27 用户定）：课程是"筛选条件"不是"表行列"——
+//   · 未选课程：一个四列组合显示一行（= 该组合下全部课程的数值合计）
+//   · 选了课程：行数不变（仍是四维组合），每行数值 = 只统计所选课程
+// 因此所有取数/去重/联动都基于"四列组合聚合后"的池子，课程只参与数值过滤。
+const DIM4 = ['学段', '品牌', '场景', '类型'];   // 展示维度（表行维度）
+function dim4Key(s) { return DIM4.map(k => String(s[k] || '')).join(''); }
+function aggRow(list) {
+  // 把同四列的多行（按课程拆）聚合为一行：数值逐字段求和
+  const mk = () => ({ all: 0, front0: 0, b0: 0, c0: 0, frontSum: 0, bSum: 0, cSum: 0 });
+  const A = mk(), O = mk();
+  for (const s of list) {
+    for (const f in A) A[f] += s.all[f] || 0;
+    for (const f in O) O[f] += s.over15[f] || 0;
+  }
+  const r = { 学段: list[0]['学段'], 品牌: list[0]['品牌'], 场景: list[0]['场景'], 类型: list[0]['类型'], all: A, over15: O };
+  return r;
+}
+// 核心：把五维 comboStats 变成"四列组合一行"的池子；若传了课程过滤，每行数值只统计该课程
+function comboPool() {
+  const c = comboState['课程'];
+  let rows = comboStatsArr();
+  if (c) rows = rows.filter(s => String(s['课程'] || '') === c);
+  const map = {};
+  rows.forEach(s => {
+    const k = dim4Key(s);
+    (map[k] = map[k] || []).push(s);
+  });
+  return Object.values(map).map(aggRow);
+}
+
+// 按当前筛选（学段/品牌/场景/类型，不含课程）过滤聚合后的四列组合
 function comboFiltered() {
   const q = comboState;
-  const act = COMBO_KEYS.filter(k => q[k]);
-  if (!act.length) return comboStatsArr();
-  return comboStatsArr().filter(s => act.every(k => String(s[k] || '') === q[k]));
+  const act = DIM4.filter(k => q[k]);
+  const pool = comboPool();
+  if (!act.length) return pool;
+  return pool.filter(s => act.every(k => String(s[k] || '') === q[k]));
+}
+
+// 联动候选池：与 comboPool 一致（课程参与数值过滤），供各维度取值收缩；忽略本维度自身筛选
+function comboPoolFor(k) {
+  const q = { ...comboState }; q[k] = '';
+  const c = q['课程'];
+  let rows = comboStatsArr();
+  if (c) rows = rows.filter(s => String(s['课程'] || '') === c);
+  const act = DIM4.filter(x => q[x]);
+  let pool = rows;
+  if (act.length) pool = pool.filter(s => act.every(x => String(s[x] || '') === q[x]));
+  const map = {};
+  pool.forEach(s => { const kk = dim4Key(s); (map[kk] = map[kk] || []).push(s); });
+  return Object.values(map).map(aggRow);
 }
 
 // 学段排序：小学→初中→高中；课程排序：先学段(小初高)再学科
@@ -912,9 +958,7 @@ function refreshComboOptions(changedKey) {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
     // 该维度的候选池：忽略本维度自身的筛选（否则选了学段后，学段下拉只剩自己，改不回全部）
-    const q = { ...comboState }; q[k] = '';
-    const act = COMBO_KEYS.filter(x => q[x]);
-    const pool = act.length ? comboStatsArr().filter(s => act.every(x => String(s[x] || '') === q[x])) : comboStatsArr();
+    const pool = comboPoolFor(k);
     const old = comboState[k];
     const avail = [...new Set(pool.map(s => String(s[k] || '')))];
     // 排序：学段按 小初高；课程按 学段+学科；其余 ASC
@@ -999,7 +1043,7 @@ function loadComboFromDetail() {
 function renderComboTable() {
   const wrap = document.getElementById('comboTable');
   if (!wrap) return;
-  const list = comboFiltered();   // 全部组合 或 按筛选匹配的组合
+  const list = comboFiltered();   // 四列组合聚合后的行（课程只是数值过滤条件，不进表）
   if (!list || !list.length) {
     // 未加载完成（detail.json 未到）或空结果：区分"加载中"与"无匹配"，避免误显示空表
     wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto"><thead><tr><th>学段</th><th>品牌</th><th>场景</th><th>类型</th><th colspan="12">…</th></tr></thead><tbody><tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">' +
