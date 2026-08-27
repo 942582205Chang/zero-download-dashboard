@@ -194,7 +194,7 @@
   .days-table td.num.hl { color: var(--blue); font-weight: 700; }
   .days-table td.num[data-a][data-b] { cursor: help; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  /* 七、组合表：彻底去除紫色线/子类灰色/首列合并右紫线（独立表，不与一~六共用这些样式） */
+  /* 二/三、组合表：彻底去除紫色线/子类灰色/首列合并右紫线（独立表，不与一、四~八共用这些样式） */
   .combo-table { border-left: none !important; }
   .combo-table .days-table-bd, .combo-table td, .combo-table th { border-left: none !important; }
   .combo-table tbody tr:nth-child(n+4) td { color: var(--ink) !important; font-weight: 400 !important; }
@@ -205,12 +205,12 @@
   .combo-table tbody td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
 
-  /* 七、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左；前4列不加粗（覆盖 rowhead 600） */
+  /* 二、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左；前4列不加粗（覆盖 rowhead 600） */
   .combo-table.combo-auto td.combo-dim,
   .combo-table.combo-auto td.combo-dim-l { font-weight: 400; }
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
-  /* 七、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
+  /* 二/三、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
      资源数量_超过15天 的 C端0消费(第12列) 右侧淡紫线
      灰色右边框补充：资源数量_all 的 all(第5列)、资源数量_超过15天 的 B端0下载(第10列)、消费数据_all 的 B端下载(第14列) */
   .combo-table thead tr:first-child th:first-child,
@@ -233,11 +233,11 @@
   .combo-toolbar select.has-val { color: var(--blue); font-weight: 600; }
   .combo-clear { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--red); color: #fff; cursor: pointer; }
   .combo-export { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; }
-  /* 七、组合筛选表：工具栏（居中） */
+  /* 二/三、组合筛选表：工具栏（居中） */
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
-  /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
+  /* 二/三、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  /* 七、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
+  /* 二/三、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
   .combo-scroll { width: 88%; margin: 0 auto; }
   .combo-scroll .combo-table { width: 100% !important; table-layout: auto; }
   /* 表头两行整体吸顶 + 首列固定；合计行吸底（表内 sticky bottom） */
@@ -253,15 +253,15 @@
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅灰底 */
+  /* 二/三、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅灰底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .combo-table .combo-total td:nth-child(4),
   .combo-table .combo-total td:nth-child(8),
   .combo-table .combo-total td:nth-child(12) { border-right: none !important; }
-  /* 八、第二个组合筛选表：结构与七完全一致，只新成长度维度（首列=学段）加宽首列，避免表头换行/截断 */
+  /* 三、第二个组合筛选表：结构与二完全一致，只新成长度维度（首列=学段）加宽首列，避免表头换行/截断 */
   .combo-scroll.combo8 .combo-table thead tr:first-child th:first-child { min-width: 52px; }
-  /* 八、版本末位重排：含年份/学制/括号的后缀版本排到末尾（如 人教版(2012)/北师大版（五四学制）） */
+  /* 三、版本末位重排：含年份/学制/括号的后缀版本排到末尾（如 人教版(2012)/北师大版（五四学制）） */
   .combo-dim-ver { display: none; }
   .combo8 .combo-dim-ver { display: inline; }
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
@@ -276,7 +276,7 @@
   /* 从第4行（不超过 15 天）起，各分档行数字加大 */
   .days-table tbody tr:not(:first-child) td.num { font-size: 14px; }
   /* 第一列（学段名）固定：横向滚动时保持可见（separate 模式下 sticky 才生效） */
-  /* 注意：组合表(七/八)首列表头已用浅蓝，此处默认灰需排除组合表，否则覆盖 */
+  /* 注意：组合表(二/三)首列表头已用浅蓝，此处默认灰需排除组合表，否则覆盖 */
   .days-table thead tr:first-child th:first-child,
   .days-table td:first-child {
     position: sticky; left: 0; z-index: 2;
@@ -762,7 +762,7 @@ function dayRowsHtml(rows, courseMode) {
     const bi = rows.indexOf(base);                    // 分母所在行号（绿色行 或 整体行）
     const overallDenRow = isChild ? i : 0;            // 整体占比分母：--行用该行 all，其余用整体行 all
     const cls = i === 0 ? 'total-row' : '';
-    const label = (isChild ? ' - ' : '') + r.label;   // 子类行第一列前缀：一个空格 + 一个 - + 一个空格（一~六统一）
+    const label = (isChild ? ' - ' : '') + r.label;   // 子类行第一列前缀：一个空格 + 一个 - + 一个空格（一、四~八统一）
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
     // 数值单元格：data-k="行号:列名" 供占比/平均值气泡精确定位；data-num 存格式化文本
     const ncell = (v, k, extra) => `<td class="num${extra || ''}" data-k="${i}:${k}" data-num="${fmt(v)}">${fmt(v)}</td>`;
@@ -871,7 +871,7 @@ function loadData() {
   });
 }
 
-// ===== 七、学段/品牌/场景/类型 组合筛选表 =====
+// ===== 二、学段/品牌/场景/类型 组合筛选表 =====
 // 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(3列)|资源数量_超过15天(3列)|消费数据_all(3列)；
 // 第二行列：学段|品牌|场景|类型 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；5 个下拉联动（选中某维后其它维可选项收缩）
@@ -1107,7 +1107,7 @@ function versionSort(a, b) {
   return String(a).localeCompare(String(b), 'zh-Hans-CN');
 }
 
-// ===== 七、学段/品牌/场景/类型 =====（品牌→场景→类型；课程保留；维度取值动态）
+// ===== 二、学段/品牌/场景/类型 =====（品牌→场景→类型；课程保留；维度取值动态）
 const comboA = makeCombo({
   dataKey: 'comboStats', dimsKey: 'comboDims',
   selPrefix: 'cf-', clearId: 'cfClear', exportId: 'cfExport', tableId: 'comboTable',
@@ -1116,7 +1116,7 @@ const comboA = makeCombo({
 });
 function initComboTable() { comboA.init(); }
 
-// ===== 八、学段/年级/版本/地区 =====（与七一一对应：品牌→年级、场景→版本、类型→地区；课程保留）
+// ===== 三、学段/年级/版本/地区 =====（与二一一对应：品牌→年级、场景→版本、类型→地区；课程保留）
 const comboB = makeCombo({
   dataKey: 'combo2Stats', dimsKey: 'combo2Dims',
   selPrefix: 'cf2-', clearId: 'cf2Clear', exportId: 'cf2Export', tableId: 'combo2Table',
