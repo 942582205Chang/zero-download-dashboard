@@ -515,7 +515,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v38</b></footer>
+  <footer class="footer-version">看板版本 <b>v39</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -878,6 +878,7 @@ function refreshComboOptions(changedKey) {
     else if (k === '课程') avail.sort(courseSort);
     else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));
     const vals = avail.length ? avail : comboDimVals(k);
+    restoreOptionLabels(sel);   // 重建前先把 label 恢复为原始值（防止陈旧 data-v 污染选中显示）
     sel.innerHTML = '';
     sel.appendChild(new Option('全部', ''));
     vals.forEach(v => sel.appendChild(new Option(v, v)));
@@ -895,12 +896,24 @@ function refreshComboOptions(changedKey) {
   }
 }
 // 下拉显示文案：未选=「学段：全部」；选中=「学段：选中的值」（title 悬停+选中文字均按此）
+// 重置时把非选中项 label 恢复为原始值：它们被 sync 时曾存到 data-v（`品牌：全部`），
+// 若不恢复，后续再次读到这些旧 data-v 会把"选中的品牌"误显示成"全部"（历史 bug，2026-08-27 修）
+function restoreOptionLabels(sel) {
+  [...sel.options].forEach(opt => {
+    const raw = opt.getAttribute('data-v');
+    if (raw != null) { opt.textContent = raw; opt.removeAttribute('data-v'); }
+  });
+}
 function syncComboSelLabel(sel, k) {
   const v = comboState[k];
   const txt = v ? (k + '：' + v) : (k + '：全部');
   if (sel.selectedIndex > -1) {
     const opt = sel.options[sel.selectedIndex];
-    if (opt) { opt.setAttribute('data-v', opt.textContent); opt.textContent = txt; }
+    if (opt) {
+      const was = opt.getAttribute('data-v');
+      if (was == null) opt.setAttribute('data-v', opt.textContent);
+      opt.textContent = txt;
+    }
   }
   sel.title = txt;
 }
