@@ -534,7 +534,7 @@
 
   <!-- 七、学段/品牌/场景/类型 组合筛选表 -->
   <div class="section"><h2>七、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
-  <div class="combo-toolbar" id="comboFilters">
+  <div class="combo-toolbar" id="comboFilters" style="display:none">
     <span class="combo-label">筛选：</span>
     <select id="cf-学段"></select>
     <select id="cf-品牌"></select>
@@ -544,10 +544,10 @@
     <button type="button" id="cfClear" class="combo-clear">✕ 清除</button>
     <button type="button" id="cfExport" class="combo-export">⬇ 导出 Excel</button>
   </div>
-  <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
+  <div class="combo-scroll" id="comboScroll" style="display:none"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v40</b></footer>
+  <footer class="footer-version">看板版本 <b>v41</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -877,6 +877,7 @@ function loadData() {
 function loadComboData() {
   const wrap = document.getElementById('comboTable');
   const comboWrap = document.getElementById('comboScroll');
+  const comboBar = document.getElementById('comboFilters');
   if (!wrap) return;
   // 无版本号 → 用 Date.now() 恒取最新（后端未写版本时兜底）
   const v = (allData && allData.summary && allData.summary.version) || Date.now();
@@ -885,7 +886,9 @@ function loadComboData() {
       const det = JSON.parse(dec);
       allData.comboDims = det.comboDims;
       allData.comboStats = det.comboStats;
-      if (comboWrap) comboWrap.style.display = '';   // 数据就绪后再显示容器（避免空白占位）
+      // 数据就绪后再显示筛选栏与表格容器（避免空白占位）
+      if (comboBar) comboBar.style.display = '';
+      if (comboWrap) comboWrap.style.display = '';
       initComboTable();
     });
   }).catch(e => {
@@ -988,6 +991,7 @@ function initComboTable() {
 function renderComboTable() {
   const wrap = document.getElementById('comboTable');
   if (!wrap) return;
+  const t0 = performance.now();
   const list = comboFiltered();   // 全部组合 或 按筛选匹配的组合
   const cmp = (a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
@@ -997,25 +1001,33 @@ function renderComboTable() {
   const rows = [...list].sort(cmp);
   // C端单份消费 = 该组合 C端消费 ÷ 该组合 资源数量_all 的 all 列（保留 1 位小数）
   const cAvg = (e) => e.all.all ? (e.all.cSum / e.all.all) : null;
-  const tr = rows.map((e, i) => {
+  // 一次性字符串拼接（不逐个 DOM 操作），并用 __row__ 占位符先拼好，最后一次性替换 → 大幅减少 GC/重排
+  let parts = [];
+  rows.forEach((e, i) => {
     const A = e.all, O = e.over15;
     const ca = cAvg(e);
-    // 给本行数值单元格打 data-k="行号:列名"（供气泡按 data-a/data-b 精确定位高亮）
-    const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
-    return '<tr>' +
+    parts.push(
+      '<tr>' +
       '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['类型']) + '</td>' +
-      // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费
-      ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncell(A.b0, 'b0') + ncell(A.c0, 'c0') +
-      // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费
-      ncell(O.all, 'oall') + ncell(O.front0, 'ofront0') + ncell(O.b0, 'ob0') + ncell(O.c0, 'oc0') +
-      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费（带气泡公式）
-      ncell(A.frontSum, 'frontSum') + ncell(A.bSum, 'bSum') + ncell(A.cSum, 'cSum') +
-      '<td class="num pct cavg" data-a="' + i + ':cSum" data-b="' + i + ':all">' + (ca === null ? '-' : ca.toFixed(1)) + '</td>' +
-      '</tr>';
-  }).join('');
+      '<td class="num" data-num="' + fmt(A.all) + '">' + fmt(A.all) + '</td>' +
+      '<td class="num" data-num="' + fmt(A.front0) + '">' + fmt(A.front0) + '</td>' +
+      '<td class="num" data-num="' + fmt(A.b0) + '">' + fmt(A.b0) + '</td>' +
+      '<td class="num" data-num="' + fmt(A.c0) + '">' + fmt(A.c0) + '</td>' +
+      '<td class="num" data-num="' + fmt(O.all) + '">' + fmt(O.all) + '</td>' +
+      '<td class="num" data-num="' + fmt(O.front0) + '">' + fmt(O.front0) + '</td>' +
+      '<td class="num" data-num="' + fmt(O.b0) + '">' + fmt(O.b0) + '</td>' +
+      '<td class="num" data-num="' + fmt(O.c0) + '">' + fmt(O.c0) + '</td>' +
+      '<td class="num" data-num="' + fmt(A.frontSum) + '">' + fmt(A.frontSum) + '</td>' +
+      '<td class="num" data-num="' + fmt(A.bSum) + '">' + fmt(A.bSum) + '</td>' +
+      '<td class="num" data-num="' + fmt(A.cSum) + '">' + fmt(A.cSum) + '</td>' +
+      '<td class="num">' + (ca === null ? '-' : ca.toFixed(1)) + '</td>' +
+      '</tr>'
+    );
+  });
+  const tr = parts.join('');
   // 汇总行：当前筛选结果（无筛选=全部）下，第5列到最后一列(共12个数值列)的合计
   // 注：C端单份消费是"率"，合计列为该列自身合计（按同口径 C端消费 ÷ all 汇总），非直接求和
   const sumAll = rows.reduce((s, e) => s + e.all.all, 0);
@@ -1045,6 +1057,7 @@ function renderComboTable() {
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
   applyComboFrozen(wrap);
+  if (performance.now() - t0 > 100) console.warn('组合表渲染耗时', Math.round(performance.now() - t0), 'ms');
 }
 
 // 七、前4列固定 + 后12列锁定当前实际宽度：
@@ -1259,16 +1272,15 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
     const el = e.target.closest ? e.target.closest('td.num[data-a][data-b]') : null;
-    if (comboWrap && el && comboWrap.contains(el)) return;   // 组合表内一律不弹气泡/不高亮
-    if (el && el !== target) {
+    if (!el) { hide(); target = null; return; }
+    // 组合表内一律不弹气泡/不高亮（其单元格已无 data-a/data-b，此处仅兜底）
+    if (comboWrap && comboWrap.contains(el)) return;
+    if (el !== target) {
       target = el;
       clearTimeout(hideTimer);
       // 用 requestAnimationFrame 延到本轮渲染后再 show：table.innerHTML 重渲染会先清除旧单元格，
       // 若紧跟 mouseover 直接 show 可能拿到被清掉的旧 data-k 定位 → 高亮丢失（前3行以外的行尤其明显）
       requestAnimationFrame(show);
-    } else if (!el) {
-      hide();
-      target = null;
     }
   });
   // 鼠标从目标格移出 → 立即隐藏（pointer-events:none 的气泡不会挡住后续 hover）
