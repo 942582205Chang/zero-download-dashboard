@@ -249,12 +249,13 @@
   .combo-scroll .combo-table thead th:first-child { z-index: 4; background: #FDD5B5; }
   .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
   /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
-  .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
-  .combo-scroll .combo-table .combo-total td { background: var(--grid); }
-  .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
+  /* 合计行也用长石色 #FDD5B5（用户指定，2026-08-27） */
+  .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: #FDD5B5; }
+  .combo-scroll .combo-table .combo-total td { background: #FDD5B5; }
+  .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: #FDD5B5; }
+  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），长石色底 */
   .combo-scroll .combo-table .combo-total td,
-  .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
+  .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: #FDD5B5; color: var(--ink); border-top: 2px solid var(--separator); }
   .combo-table .combo-total td:nth-child(4),
   .combo-table .combo-total td:nth-child(8),
   .combo-table .combo-total td:nth-child(12) { border-right: none !important; }
@@ -535,7 +536,7 @@
   <div class="combo-scroll combo8" id="combo2Scroll"><div id="combo2Table"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v38</b></footer>
+  <footer class="footer-version">看板版本 <b>v39</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -558,7 +559,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v38';
+const PAGE_VERSION = 'v39';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
