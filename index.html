@@ -249,6 +249,8 @@
   .combo-scroll .combo-table thead th:first-child,
   .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
   .combo-scroll .combo-table thead th:first-child { z-index: 4; background: #e3f2fd; }
+  /* 覆盖通用 .days-table 首列表头灰色规则（特异性更高）：第七块组合表首列表头也浅蓝 */
+  .combo-scroll .combo-table.days-table thead tr:first-child th:first-child { background: #e3f2fd; }
   .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
   /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
