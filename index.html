@@ -536,7 +536,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v38</b></footer>
+  <footer class="footer-version">看板版本 <b>v39</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -586,6 +586,18 @@ function decSens(s, key) {
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
     return new TextDecoder('utf-8').decode(bytes);
   } catch (e) { return s; }
+}
+// detail.json 解密后是 gzip 压缩的二进制（字节 → base64 字符串），这里还原为字节并解 gzip
+function decDetail(s, key) {
+  if (!s) return s;
+  const raw = atob(s);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
+  try {
+    const ds = new DecompressionStream('gzip');
+    const stream = new Blob([bytes]).stream().pipeThrough(ds);
+    return new Response(stream).text();
+  } catch (e) { return new TextDecoder('utf-8').decode(bytes); }   // 老浏览器：当明文
 }
 
 // ===== Login =====
@@ -830,8 +842,8 @@ function renderSubStages(dataKey, prefix) {
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function loadData() {
-  // 数据整体加密：登录后才能进到这里。首页只下载 data.json(约5.6KB)即可渲染全部；
-  // 明细(10MB)只在 detail.html 用后台 worker 下载解密，首页不拉取，保持秒开
+  // 数据整体加密：登录后才能进到这里。首页只下载 data.json 即可渲染 KPI + 一~六表；
+  // 第七块组合表的 comboStats 较大，改由 detail.json 懒加载（登录后异步拉取，不阻塞首屏）
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
     allData = JSON.parse(decSens(d.enc, decKey));
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
@@ -843,10 +855,31 @@ function loadData() {
     renderSubStages('byBrandStages', 'brandTable');   // 四、各项目数据（品牌系列）
     renderSubStages('bySceneStages', 'sceneTable');   // 五、各场景数据
     renderSubStages('byTypeStages', 'typeTable');     // 六、各资源类型数据
-    initComboTable();   // 七、学段/品牌/场景/类型 组合筛选表（维度取值动态 + 全量行前端重算）
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
+  });
+  loadComboData();   // 第七块组合表：异步懒加载（detail.json 里的 comboStats）
+}
+
+// 七、第七块组合表数据懒加载：comboStats 随 detail.json（gzip+加密）异步拉取，加载完再渲染筛选与表格
+function loadComboData() {
+  const wrap = document.getElementById('comboTable');
+  const comboWrap = document.getElementById('comboScroll');
+  if (!wrap) return;
+  // 无版本号 → 用 Date.now() 恒取最新（后端未写版本时兜底）
+  const v = (allData && allData.summary && allData.summary.version) || Date.now();
+  fetch('detail.json?v=' + v).then(r => r.json()).then(d => {
+    decDetail(d.enc, decKey).then(dec => {
+      const det = JSON.parse(dec);
+      allData.comboDims = det.comboDims;
+      allData.comboStats = det.comboStats;
+      if (comboWrap) comboWrap.style.display = '';   // 数据就绪后再显示容器（避免空白占位）
+      initComboTable();
+    });
+  }).catch(e => {
+    console.error('组合表数据加载失败', e);
+    if (wrap) wrap.innerHTML = '<div style="padding:16px;color:var(--muted)">组合表数据加载失败</div>';
   });
 }
 
