@@ -257,8 +257,8 @@
   .combo-toolbar select.has-val { color: var(--blue); font-weight: 600; }
   .combo-clear { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--red); color: #fff; cursor: pointer; }
   .combo-export { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; }
-  /* 二、组合筛选表：工具栏（居中） */
-  .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
+  /* 二、组合筛选表：工具栏（居中）——下拉间距 8px→18px，视觉更舒展（2026-08-27） */
+  .combo-toolbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: center; margin: 4px 0 12px; }
   /* 二、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
   /* 二、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
@@ -536,7 +536,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v48</b></footer>
+  <footer class="footer-version">看板版本 <b>v49</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
