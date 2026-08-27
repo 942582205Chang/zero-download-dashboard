@@ -265,6 +265,8 @@
   /* 合计行：与其他 td 一致的格子框线（右/下边框），避免合并格无框线看着"缺线"；上边框加粗已由 .combo-total 提供 */
   .combo-scroll .combo-table .combo-total td { border-right: 1px solid var(--separator); border-bottom: 1px solid var(--separator); }
   .combo-scroll .combo-table .combo-total td:last-child { border-right: none; }
+  /* 合计行合并格(前4列)右侧补线：合并格只画了首格，中间列无右线 → 下一格(第5列)左侧缺线，这里补全 */
+  .combo-scroll .combo-table .combo-total td:first-child { border-right: 1px solid var(--separator); }
   /* 数据行 hover：合计行固定列(前4列合并格)吸左层也同步 hover 色（与数据固定列一致） */
   .combo-scroll .combo-table tbody tr.combo-total:hover td:first-child { background: linear-gradient(rgba(0,122,255,0.06), rgba(0,122,255,0.06)), var(--grid); }
   /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
@@ -1163,8 +1165,8 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 // ===== 百分比/平均值单元格气泡：悬停 → 给出该格的具体公式（分子 ÷ 分母 = 结果），
 // ===== 同时把参与计算的两个数字所在单元格高亮为气泡同色（蓝），移开即恢复。轻快跟随，无需复制
 (function initPctTip() {
-  const tip = document.getElementById('hintTip');
-  if (!tip) return;
+  const comboWrap = document.getElementById('comboTable');   // 第七块组合表不参与气泡/高亮（其 C端单份消费为"率"非占比）
+  // 气泡高亮仅作用于"占比/整体占比/平均值"（一~六分档表），第七块组合表在 mouseover 里统一拦截
   let target = null, hideTimer = null;
   function clearHl() {
     document.querySelectorAll('.days-table td.num.hl').forEach(td => td.classList.remove('hl'));
@@ -1212,6 +1214,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
     const el = e.target.closest ? e.target.closest('td.num[data-a][data-b]') : null;
+    if (comboWrap && el && comboWrap.contains(el)) return;   // 组合表内一律不弹气泡/不高亮
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
