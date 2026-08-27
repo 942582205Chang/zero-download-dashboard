@@ -571,15 +571,17 @@ function fallbackLoad() {
     return fetch('detail.json?v=' + ver);
   }).then(r => r.json()).then(async edet => {
     const det = await parseDetail(edet.enc, decKey);
+    // detail.json 现在是 {detail, comboDims, comboStats} 对象；兼容旧纯数组格式
+    const rows = det.detail || det;
     allDetail = [];
     const step = 400;
     function batch(i) {
-      const end = Math.min(i + step, det.length);
+      const end = Math.min(i + step, rows.length);
       for (; i < end; i++) {
-        allDetail.push(Object.assign({}, det[i]));
+        allDetail.push(Object.assign({}, rows[i]));
       }
-      loading.textContent = '数据解密中 ' + Math.round(end / det.length * 100) + '%…';
-      if (end < det.length) { setTimeout(() => batch(end), 0); }
+      loading.textContent = '数据解密中 ' + Math.round(end / rows.length * 100) + '%…';
+      if (end < rows.length) { setTimeout(() => batch(end), 0); }
       else { done(); }
     }
     batch(0);
