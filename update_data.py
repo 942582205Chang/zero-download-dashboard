@@ -230,52 +230,45 @@ def main():
             })
         type_stages.append({"stage": st, "rows": rows})
 
-    # 七/八、组合筛选表：维度取值（动态取自数据表，不写死）+ 组合预聚合。
-    # 两个组合块都共用 _build_combo：只需声明各自的维度列（首维"学段"固定由课程前2字派生，
-    # 其余 = 对应列去重非空；末维"课程" = 课程列去重自带学段前缀），后续新增维度只改声明即可。
+    # 七、组合筛选表：维度取值（动态取自数据表，不写死）
+    # 学段 = 课程前2字；品牌/场景/类型 = 对应列去重（非空，升序）；课程 = 课程列去重（自带学段前缀）
     df["学段"] = df["课程"].astype(str).str[:2]
-
-    def _build_combo(dim_cols, dims_spec):
-        # dims_spec：{维度名: 来源列}；来源列为 "课程前2字" 时取派生学段列
-        def _vals(col):
-            if col == "课程前2字":
-                return sorted(df["学段"].unique().tolist())
-            return [str(v) for v in sorted(df[col].astype(str).unique()) if str(v) != "nan"]
-        dims = {k: _vals(col) for k, col in dims_spec.items()}
-        # 按组合预聚合（整体 + 超过15天 两组 9 个统计值）。
-        # 只传聚合结果，不传全量行 → data.json 保持 KB/MB 级，30万+ 行也扛得住（重活在 pandas 后端完成）
-        # 金额求和用 round(sum)（比 int() 截断更接近真实，见 C端消费 int=2082444 → round=2082548 的口径差）
-        stats = []
-        for keys, g in df.groupby(dim_cols, dropna=False):
-            def agg(sub):
-                return {
-                    "all": int(len(sub)),
-                    "front0": int((sub["前台下载"] == 0).sum()),
-                    "b0": int((sub["b端下载"] == 0).sum()),
-                    "c0": int((sub["c端消费"] == 0).sum()),
-                    "frontSum": round(sub["前台下载"].sum()),
-                    "bSum": round(sub["b端下载"].sum()),
-                    "cSum": round(sub["c端消费"].sum()),
-                }
-            a_all = agg(g)
-            a_over = agg(g[g["发布天数"] > 15])
-            rec = {k: str(v) for k, v in zip(dim_cols, keys)}
-            rec["all"] = a_all
-            rec["over15"] = a_over
-            stats.append(rec)
-        # 让"全部组合之和"与一/二的全量口径对齐：round 逐组进位可能造成±几元的偏差，
-        # 把偏差修正到组合数最大的那组上，保证无筛选时合计 == 一的全量合计
-        if stats:
-            _want = int(df["c端消费"].sum())
-            _cur = sum(e["all"]["cSum"] for e in stats)
-            if _cur != _want:
-                _max = max(stats, key=lambda e: e["all"]["all"])
-                _max["all"]["cSum"] += (_want - _cur)
-        return dims, stats
-
-    combo_dims, combo_stats = _build_combo(
-        ["学段", "品牌", "场景", "类型", "课程"],
-        {"学段": "课程前2字", "品牌": "品牌", "场景": "场景", "类型": "类型", "课程": "课程"})
+    combo_dims = {
+        "学段": sorted(df["学段"].unique().tolist()),
+        "品牌": [str(v) for v in sorted(df["品牌"].astype(str).unique()) if str(v) != "nan"],
+        "场景": [str(v) for v in sorted(df["场景"].astype(str).unique()) if str(v) != "nan"],
+        "类型": [str(v) for v in sorted(df["类型"].astype(str).unique()) if str(v) != "nan"],
+        "课程": [str(v) for v in sorted(df["课程"].astype(str).unique()) if str(v) != "nan"],
+    }
+    # 按 (学段,品牌,场景,类型,课程) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
+    # 只传聚合结果，不传全量行 → data.json 保持 KB/MB 级，30万+ 行也扛得住（重活在 pandas 后端完成）
+    # 金额求和用 round(sum)（比 int() 截断更接近真实，见 C端消费 int=2082444 → round=2082548 的口径差）
+    combo_stats = []
+    for (st, brand, scene, typ, course), g in df.groupby(["学段", "品牌", "场景", "类型", "课程"], dropna=False):
+        def agg(sub):
+            return {
+                "all": int(len(sub)),
+                "front0": int((sub["前台下载"] == 0).sum()),
+                "b0": int((sub["b端下载"] == 0).sum()),
+                "c0": int((sub["c端消费"] == 0).sum()),
+                "frontSum": round(sub["前台下载"].sum()),
+                "bSum": round(sub["b端下载"].sum()),
+                "cSum": round(sub["c端消费"].sum()),
+            }
+        a_all = agg(g)
+        a_over = agg(g[g["发布天数"] > 15])
+        combo_stats.append({
+            "学段": str(st), "品牌": str(brand), "场景": str(scene), "类型": str(typ), "课程": str(course),
+            "all": a_all, "over15": a_over,
+        })
+    # 让"全部组合之和"与一/二的全量口径对齐：round 逐组进位可能造成±几元的偏差，
+    # 把偏差修正到组合数最大的那组上，保证无筛选时七的合计 == 一的全量合计
+    if combo_stats:
+        _want = int(df["c端消费"].sum())
+        _cur = sum(e["all"]["cSum"] for e in combo_stats)
+        if _cur != _want:
+            _max = max(combo_stats, key=lambda e: e["all"]["all"])
+            _max["all"]["cSum"] += (_want - _cur)
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -329,15 +322,13 @@ def main():
         # 六、各资源类型数据：每学段一张表，其后每行 = 类型"已超过 15 天"子集
         "byTypeStages": type_stages,
         # 七、组合筛选表：维度取值（动态）+ 各组合预聚合统计（整体/超过15天）
-        # comboStats 已挪到 detail.json 懒加载（data.json 只留维度取值 comboDims，2026-08-27）
-        "comboDims": combo_dims
+        "comboDims": combo_dims,
+        "comboStats": combo_stats
     }
 
-    # 全量明细 + 第七块组合表数据：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
-    # 第七块 comboStats(约250KB) 从 data.json 挪到 detail.json 懒加载，data.json 首屏秒出（2026-08-27）
+    # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
     detail = zero_df.fillna("").to_dict("records")
-    detail_json = json.dumps({"detail": detail, "comboDims": combo_dims, "comboStats": combo_stats},
-                             ensure_ascii=False)
+    detail_json = json.dumps(detail, ensure_ascii=False)
     detail_bytes = detail_json.encode("utf-8")
     # 明细内容哈希作为版本号：内容不变版本不变 → 浏览器可命中缓存秒开；数据更新版本变化 → 自动取新数据
     data["summary"]["version"] = hashlib.sha1(detail_bytes).hexdigest()[:12]
