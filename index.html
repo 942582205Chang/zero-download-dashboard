@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>0 下载 · 预警看板</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<!-- 第三方库懒加载（2026-08-27）：echarts 已无图表使用、exceljs 仅导出时用，均不再首屏同步阻塞。
+     避免 jsdelivr 卡顿拖慢首屏；导出 Excel 时按需动态注入脚本。 -->
 <style>
   :root {
     color-scheme: light;
@@ -515,13 +516,24 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v39</b></footer>
+  <footer class="footer-version">看板版本 <b>v40</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
   <div id="pageLoadingBar" style="height:100%;width:0%;background:var(--blue,#0a84ff);transition:width .3s ease"></div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
+<script>
+function loadExcelJS() {
+  return new Promise((resolve, reject) => {
+    if (window.ExcelJS) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload = () => resolve(); s.onerror = () => reject(new Error('Excel 导出库加载失败'));
+    document.head.appendChild(s);
+  });
+}
+</script>
 <script>
 // ===== 屏蔽右键菜单/审查元素快捷键（尽力而为，无法彻底防止高手）=====
 (function blockDevTools() {
@@ -822,7 +834,8 @@ function loadData() {
     renderSubStages('byBrandStages', 'brandTable');   // 五、各项目数据（品牌系列）
     renderSubStages('bySceneStages', 'sceneTable');   // 六、各场景数据
     renderSubStages('byTypeStages', 'typeTable');     // 七、各资源类型数据
-    initComboTable();   // 二、学段/品牌/场景/类型 组合筛选表（维度取值动态 + 全量行前端重算）
+    initComboTable();   // 二、学段/品牌/场景/类型 组合筛选表（维度取值动态；组合行数据懒加载自 detail.json）
+    loadComboFromDetail();   // 首页登录后拉 detail.json（含 comboStats），完成后重渲染组合表
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
@@ -835,7 +848,17 @@ function loadData() {
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；5 个下拉联动（选中某维后其它维可选项收缩）
 let comboState = { '学段': '', '品牌': '', '场景': '', '类型': '', '课程': '' };
 const COMBO_KEYS = ['学段', '品牌', '场景', '类型', '课程'];
-function comboStatsArr() { return allData.comboStats || []; }
+// 组合统计（comboStats）不在 data.json 首屏，而在 detail.json 里（登录后随明细懒加载，2026-08-27）
+// comboStatsArr 因此需要 detailData.comboStats；若尚未加载（detail 未到），返回空，renderComboTable 会显示"加载中"
+let _comboStatsCache = null;                 // detail.json 加载完成后的 comboStats 缓存（含空数组）
+let _detailLoaded = false;                   // detail.json 是否已下载并解密完成
+function comboStatsArr() {
+  if (_comboStatsCache !== null) return _comboStatsCache;
+  const d = window.detailData;
+  return (d && d.comboStats) || [];
+}
+// 记录 detail.json 加载完成（在 initComboTable 之前把缓存填上，首次渲染即出全量）
+function setDetailData(d) { _detailLoaded = true; _comboStatsCache = (d && d.comboStats) || []; }
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
 // 按当前筛选过滤预聚合结果（未筛选维度忽略）
@@ -940,6 +963,28 @@ function initComboTable() {
   renderComboTable();
 }
 
+// 首页懒加载 detail.json 的 comboStats（data.json 首屏不含组合统计，2026-08-27 挪到明细侧）
+// detail.json 同样走版本号缓存（data.json 的 summary.version），内容不变秒开、更新自动取新
+function loadComboFromDetail() {
+  if (_detailLoaded) return;
+  fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
+    const d2 = JSON.parse(decSens(d.enc, decKey));
+    const ver = (d2.summary && d2.summary.version) ? d2.summary.version : Date.now();
+    return fetch('detail.json?v=' + ver);
+  }).then(r => r.json()).then(async edet => {
+    // 主线程解析（与 detail.html 同款：先试 JSON，失败走 gzip 解压）——与首页一样不依赖 Worker，简单可靠
+    let plain;
+    try { plain = JSON.parse(decSens(edet.enc, decKey)); }
+    catch (e) {
+      const bytes = b64ToBytes(edet.enc).map((b, i) => b ^ decKey[i % decKey.length]);
+      plain = JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer().then(b => new TextDecoder('utf-8').decode(b)));
+    }
+    window.detailData = plain;
+    setDetailData(plain);
+    if (!window.detailReady) { refreshComboOptions(); renderComboTable(); window.detailReady = true; }
+  }).catch(e => console.warn('组合统计懒加载失败（将只在筛选时展示空表）:', e));
+}
+
 // 渲染第二块表：严格按 123.xlsx Sheet1 表头 —— 无占比列、无紫色线、无子类灰色。
 // 每行 = 一个"学段/品牌/场景/类型"组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
 // 排序：学段 小学→初中→高中，品牌/场景/类型 各自 ASC（STAGE_ORDER 已在筛选联动上方定义）
@@ -947,6 +992,12 @@ function renderComboTable() {
   const wrap = document.getElementById('comboTable');
   if (!wrap) return;
   const list = comboFiltered();   // 全部组合 或 按筛选匹配的组合
+  if (!list || !list.length) {
+    // 未加载完成（detail.json 未到）或空结果：区分"加载中"与"无匹配"，避免误显示空表
+    wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto"><thead><tr><th>学段</th><th>品牌</th><th>场景</th><th>类型</th><th colspan="12">…</th></tr></thead><tbody><tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">' +
+      (_detailLoaded ? '无匹配组合' : '组合统计加载中…') + '</td></tr></tbody></table>';
+    return;
+  }
   const cmp = (a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
     String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
@@ -1006,6 +1057,8 @@ function renderComboTable() {
 // 二、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
 function exportComboExcel() {
   const list = comboFiltered();
+  if (!list || !list.length) { alert('当前筛选结果为空，无需导出'); return; }
+  loadExcelJS().then(() => {
   const rows = [...list].sort((a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
     String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
@@ -1037,11 +1090,11 @@ function exportComboExcel() {
   } else {
     alert('Excel 导出库未加载，请联网后重试');
   }
+  }).catch(e => alert(e.message));
 }
 
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (allData) { drawCharts(); } });
 window.addEventListener('resize', () => charts.forEach(c => c.resize()));
-
 // ===== 左侧简略导航：返回顶部 / 各区块标签 / 返回底部，滚动自动高亮 =====
 (function initSideNav() {
   const box = document.getElementById('sideNav');
