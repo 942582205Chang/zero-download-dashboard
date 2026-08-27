@@ -57,8 +57,8 @@
   .tag button { background: none; border: none; color: #fff; font-size: 14px; cursor: pointer; line-height: 1; padding: 0; }
   .table-wrap { background: var(--surface); border: 1px solid var(--separator); border-radius: 16px; box-shadow: var(--shadow-md); overflow: auto; max-height: 70vh; }
   table { border-collapse: separate; border-spacing: 0; font-size: 13px; width: 100%; min-width: 2000px; }
-  thead th { position: sticky; top: 0; z-index: 2; background: #BBDEFB; color: var(--ink); font-weight: 700; font-size: 14px; padding: 9px 10px; white-space: nowrap; cursor: pointer; user-select: none; border-bottom: 1px solid var(--separator); }
-  thead th:hover { background: #9CC8F4; }
+  thead th { position: sticky; top: 0; z-index: 2; background: #FFFBE6; color: var(--ink); font-weight: 700; font-size: 14px; padding: 9px 10px; white-space: nowrap; cursor: pointer; user-select: none; border-bottom: 1px solid var(--separator); }
+  thead th:hover { background: #FFF3B0; }
   thead th .arr { color: var(--blue); margin-left: 3px; }
   tbody td { padding: 2px 10px; border-bottom: 1px solid var(--separator); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
   tbody tr.band td { background: rgba(0,122,255,0.06); }   /* 每5行浅蓝填充，便于横向对读 */
@@ -571,17 +571,15 @@ function fallbackLoad() {
     return fetch('detail.json?v=' + ver);
   }).then(r => r.json()).then(async edet => {
     const det = await parseDetail(edet.enc, decKey);
-    // detail.json 现在是 {detail, comboDims, comboStats} 对象；兼容旧纯数组格式
-    const rows = det.detail || det;
     allDetail = [];
     const step = 400;
     function batch(i) {
-      const end = Math.min(i + step, rows.length);
+      const end = Math.min(i + step, det.length);
       for (; i < end; i++) {
-        allDetail.push(Object.assign({}, rows[i]));
+        allDetail.push(Object.assign({}, det[i]));
       }
-      loading.textContent = '数据解密中 ' + Math.round(end / rows.length * 100) + '%…';
-      if (end < rows.length) { setTimeout(() => batch(end), 0); }
+      loading.textContent = '数据解密中 ' + Math.round(end / det.length * 100) + '%…';
+      if (end < det.length) { setTimeout(() => batch(end), 0); }
       else { done(); }
     }
     batch(0);
@@ -606,7 +604,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     const c = ws.getCell(1, i + 1);
     c.value = colLabel(h);
     c.font = { name: '微软雅黑', size: 10, bold: true };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBBDEFB' } };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
     c.alignment = { horizontal: 'left', vertical: 'center' };
   });
   ws.getRow(1).height = 16.5;
