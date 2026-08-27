@@ -297,6 +297,17 @@
   /* 一、小初高整体表：表头（含首列）统一浅蓝 #e3f2fd */
   #daysTable1 .days-table thead th { background: #e3f2fd; }
   #daysTable1 .days-table thead tr:first-child th:first-child { background: #e3f2fd; }
+  /* 二~六 各表（daysTable2~4 / courseTable / brandTable / sceneTable / typeTable）：表头（含首列）统一浅蓝 #e3f2fd */
+  #stageGrid .days-table thead th,
+  #courseGrid .days-table thead th,
+  #brandGrid .days-table thead th,
+  #sceneGrid2 .days-table thead th,
+  #typeGrid .days-table thead th { background: #e3f2fd; }
+  #stageGrid .days-table thead tr:first-child th:first-child,
+  #courseGrid .days-table thead tr:first-child th:first-child,
+  #brandGrid .days-table thead tr:first-child th:first-child,
+  #sceneGrid2 .days-table thead tr:first-child th:first-child,
+  #typeGrid .days-table thead tr:first-child th:first-child { background: #e3f2fd; }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   /* 浅紫线：前台下载左(消费组边界) + B端0/C端0/B端下载/C端消费 左线（指标分隔） */
   /* 首列已 rowspan 合并，表头第二行从 all(第2列) 开始 */
@@ -536,7 +547,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v39</b></footer>
+  <footer class="footer-version">看板版本 <b>v40</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
