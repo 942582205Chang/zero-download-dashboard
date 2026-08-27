@@ -548,7 +548,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v46</b></footer>
+  <footer class="footer-version">看板版本 <b>v47</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -571,7 +571,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v46';
+const PAGE_VERSION = 'v47';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -887,9 +887,12 @@ function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) ||
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；N 个下拉联动（选中某维后其它维可选项收缩）
 // 维度取值全部动态取自 data.json（comboDims/combo2Dims），不写死 → 后期新增值自动出现。
 function makeCombo(cfg) {
-  const { dataKey, dimsKey, selPrefix, clearId, exportId, tableId, stateInit, keyOrder, dimLabel } = cfg;
+  const { dataKey, dimsKey, selPrefix, clearId, exportId, tableId, stateInit, keyOrder, dimLabel, displayOnly } = cfg;
   const state = stateInit();
   const keys = keyOrder || Object.keys(state);
+  // 表格展示维度：displayOnly=true → 只渲染 stateInit 里的维度（不含课程，恢复昨天状态）；
+  // 否则全部维度（含课程）都显示成列
+  const displayKeys = displayOnly ? keys.filter(k => k !== '课程') : keys;
   const statsArr = () => allData[dataKey] || [];
   const dimVals = (k) => (allData[dimsKey] && allData[dimsKey][k]) || [];
   const filtered = () => {
@@ -938,8 +941,9 @@ function makeCombo(cfg) {
   }
   // 渲染表格：每行 = 一个组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
   // 排序：学段 小学→初中→高中，其余维度按各自排序（STAGE_ORDER/COURSE_ORDER 在筛选联动上方定义）
+  // 渲染表格：每行 = 一个组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
+  // 排序：学段 小学→初中→高中，其余维度按各自排序（STAGE_ORDER/COURSE_ORDER 在筛选联动上方定义）
   // 表格列只渲染展示维度（不含课程）：课程仅参与筛选下拉/联动/后台聚合，不显示成列（2026-08-27 修复）
-  const displayKeys = keys.filter(k => k !== '课程');
   function renderTable() {
     const wrap = document.getElementById(tableId);
     if (!wrap) return;
@@ -1113,8 +1117,9 @@ function versionSort(a, b) {
 const comboA = makeCombo({
   dataKey: 'comboStats', dimsKey: 'comboDims',
   selPrefix: 'cf-', clearId: 'cfClear', exportId: 'cfExport', tableId: 'comboTable',
-  stateInit: () => ({ '学段': '', '品牌': '', '场景': '', '类型': '', '课程': '' }),
+  stateInit: () => ({ '学段': '', '品牌': '', '场景': '', '类型': '' }),   // 表格列不含课程（恢复昨天状态，2026-08-27）
   dimLabel: '学段品牌场景类型_组合统计',
+  displayOnly: true,   // 二 专用：表格只渲染 4 个维度列，课程仅参与筛选/联动/聚合（不占列）
 });
 function initComboTable() { comboA.init(); }
 
