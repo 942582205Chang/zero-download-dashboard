@@ -32,8 +32,12 @@ async function gunzip(bytes) {
 // 解密 detail：兼容旧格式（未压缩明文）与新格式（gzip 压缩）
 async function parseDetail(enc, key) {
   const dec = decBytes(enc, key);
-  try { return JSON.parse(new TextDecoder('utf-8').decode(dec)); }
-  catch (e) { return JSON.parse(await gunzip(dec)); }
+  let obj;
+  try { obj = JSON.parse(new TextDecoder('utf-8').decode(dec)); }
+  catch (e) { obj = JSON.parse(await gunzip(dec)); }
+  // 2026-08-27：detail.json 顶层从纯数组升级为 {detail, comboDims, comboStats}。
+  // 这里向下兼容：取 obj.detail 数组；旧纯数组格式原样返回。
+  return (obj && Array.isArray(obj.detail)) ? obj.detail : obj;
 }
 
 self.onmessage = e => {
