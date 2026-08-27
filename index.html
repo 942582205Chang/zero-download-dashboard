@@ -541,7 +541,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v50</b></footer>
+  <footer class="footer-version">看板版本 <b>v51</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -630,7 +630,7 @@ async function handleLogin() {
   } catch (e) { err.textContent = e.message; }
 }
 function logout() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(SESS_KEY); decKey = null; lock(); }
-// ===== IP 地区限制：仅 郑州 / 北京 地区可访问 =====
+// ===== IP 地区限制：仅 郑州 / 北京 / 江苏 地区可访问 =====
 const REGION_API = 'https://whois.pconline.com.cn/ipJson.jsp';
 function checkRegion() {
   return new Promise(resolve => {
@@ -648,7 +648,7 @@ function checkRegion() {
 function regionAllowed(geo) {
   if (!geo || !geo.city) return true;                         // 接口异常 → 放行，避免误伤
   const city = String(geo.city || '');
-  return city.indexOf('郑州') > -1 || city.indexOf('北京') > -1;
+  return city.indexOf('郑州') > -1 || city.indexOf('北京') > -1 || city.indexOf('江苏') > -1;
 }
 (function gate() {
   const ov = document.getElementById('regionOverlay');
@@ -660,7 +660,7 @@ function regionAllowed(geo) {
         decKey = b64ToBytes(localStorage.getItem(SESS_KEY)); unlock();
       } else lock();
     } else {
-      document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 地区），禁止访问本看板。';
+      document.getElementById('regionMsg').innerHTML = '当前访问地区不在允许范围（仅限 郑州 / 北京 / 江苏 地区），禁止访问本看板。';
     }
   });
 })();
