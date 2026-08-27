@@ -262,6 +262,11 @@
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   /* 合计行前4列合并(1格)：吸底时同时吸左，盖住横向滚动内容 */
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
+  /* 合计行：与其他 td 一致的格子框线（右/下边框），避免合并格无框线看着"缺线"；上边框加粗已由 .combo-total 提供 */
+  .combo-scroll .combo-table .combo-total td { border-right: 1px solid var(--separator); border-bottom: 1px solid var(--separator); }
+  .combo-scroll .combo-table .combo-total td:last-child { border-right: none; }
+  /* 数据行 hover：合计行固定列(前4列合并格)吸左层也同步 hover 色（与数据固定列一致） */
+  .combo-scroll .combo-table tbody tr.combo-total:hover td:first-child { background: linear-gradient(rgba(0,122,255,0.06), rgba(0,122,255,0.06)), var(--grid); }
   /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
@@ -989,32 +994,41 @@ function renderComboTable() {
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
   // 前4列(学段/品牌/场景/类型)固定不随横向滚动（sticky left，见 CSS），其余列随容器滚动
-  wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto;table-layout:auto">' +
-    '<colgroup><col><col><col><col><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"></colgroup>' +
+  wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
+    '<colgroup><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
   applyComboFrozen(wrap);
 }
 
-// 七、前4列固定：按实际列宽累计注入 sticky left 偏移（表头+数据行+合计行），列宽随内容变化自动适配
+// 七、前4列固定 + 后12列锁定当前实际宽度：
+// 首轮渲染后读取浏览器算好的实际列宽（前4列=内容自适应宽度），
+// 把后12列写死为该实际宽度（像素），并把前4列 sticky 偏移注入——列宽从此固定，不再随内容跳动
+const COMBO_FROZEN = 4;   // 前4列(学段/品牌/场景/类型)
 function applyComboFrozen(wrap) {
   const table = wrap.querySelector('table');
   if (!table) return;
   const thead = table.querySelector('thead');
   const tbody = table.querySelector('tbody');
   if (!thead || !tbody) return;
-  const N = 4;   // 固定列数
   const firstRow = thead.querySelectorAll('tr')[1] || thead.querySelector('tr');
   const cells = firstRow ? [...firstRow.children] : [];
+  // 1) 后12列（第5列起）写死当前实际宽度
+  const cols = table.querySelectorAll('col');
+  for (let i = COMBO_FROZEN; i < cells.length && i - COMBO_FROZEN < cols.length - COMBO_FROZEN; i++) {
+    const w = cells[i].offsetWidth;
+    if (w > 0) cols[i].style.width = w + 'px';
+  }
+  // 2) 前4列 sticky left 偏移（按当前实际宽度累计）
   let acc = 0;
-  for (let i = 0; i < N && i < cells.length; i++) {
+  for (let i = 0; i < COMBO_FROZEN && i < cells.length; i++) {
     cells[i].style.left = acc + 'px';
     acc += cells[i].offsetWidth;
   }
   tbody.querySelectorAll('tr').forEach(r => {
     const c = [...r.children];
     let a = 0;
-    for (let i = 0; i < N && i < c.length; i++) { c[i].style.left = a + 'px'; a += c[i].offsetWidth; }
+    for (let i = 0; i < COMBO_FROZEN && i < c.length; i++) { c[i].style.left = a + 'px'; a += c[i].offsetWidth; }
   });
 }
 
