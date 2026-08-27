@@ -323,12 +323,14 @@ def main():
         "byTypeStages": type_stages,
         # 七、组合筛选表：维度取值（动态）+ 各组合预聚合统计（整体/超过15天）
         "comboDims": combo_dims,
-        "comboStats": combo_stats
     }
 
-    # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
+    # 全量明细 + 第七块组合表数据：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
+    # 第七块 comboStats 从 data.json 挪到 detail.json 懒加载（前端在登录后拉 detail 时一并取用），
+    # data.json 首屏只留维度取值 comboDims（2026-08-27）
     detail = zero_df.fillna("").to_dict("records")
-    detail_json = json.dumps(detail, ensure_ascii=False)
+    detail_json = json.dumps({"detail": detail, "comboDims": combo_dims, "comboStats": combo_stats},
+                             ensure_ascii=False)
     detail_bytes = detail_json.encode("utf-8")
     # 明细内容哈希作为版本号：内容不变版本不变 → 浏览器可命中缓存秒开；数据更新版本变化 → 自动取新数据
     data["summary"]["version"] = hashlib.sha1(detail_bytes).hexdigest()[:12]
