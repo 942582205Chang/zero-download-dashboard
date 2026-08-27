@@ -198,7 +198,7 @@
   .combo-table { border-left: none !important; }
   .combo-table .days-table-bd, .combo-table td, .combo-table th { border-left: none !important; }
   .combo-table tbody tr:nth-child(n+4) td { color: var(--ink) !important; font-weight: 400 !important; }
-  /* 高亮必须压过第4行起的 !important 黑色（否则第4行起气泡高亮失效） */
+  /* 气泡高亮不再作用于第七块组合表（comboWrap 拦截）；此条仅兼容历史，无实际作用 */
   .combo-table td.num.hl { color: var(--blue) !important; font-weight: 700 !important; }
   .combo-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: normal; font-size: 13px; }
   /* 学段列右侧无线（覆盖通用 first-child 紫线） */
@@ -536,7 +536,7 @@
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v37</b></footer>
+  <footer class="footer-version">看板版本 <b>v38</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -1175,6 +1175,7 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const aK = target.getAttribute('data-a');   // 分子 "行号:列名"
     const bK = target.getAttribute('data-b');   // 分母 "行号:列名"
     if (!aK || !bK) { hide(); return; }
+    if (comboWrap && comboWrap.contains(target)) { hide(); return; }   // 组合表内一律不弹
     // 必须在同一张表内定位分子/分母（跨表同名 data-k 会串表，导致公式/高亮跑到别的表）
     const table = target.closest('.days-table');
     if (!table) { hide(); return; }
