@@ -541,7 +541,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v51</b></footer>
+  <footer class="footer-version">看板版本 <b>v52</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -942,12 +942,17 @@ function comboPoolFor(k) {
 }
 
 // 课程下拉候选（单独逻辑）：课程是"筛选条件"不是表行列，不能用 comboPool（它会按课程过滤后聚合，破坏四列池）。
-// 课程候选 = 当前四维筛选下，五维数据里实际出现过的课程（不按四列聚合，直接取课程去重）；
-// 特别：忽略学段自身筛选但尊重其它三维 + 课程自身保留全量（否则选了某课程后课程框只剩自己）。
+// 课程候选 = 当前学段（含自动锁定）+ 品牌/场景/类型 过滤下的课程（不按四列聚合，直接取课程去重）。
+// 2026-08-27 修正：课程名自带学段前缀，选了某课程后学段被锁定为其前2字 → 课程候选收缩到该学段，
+// 不再出现小学/高中课程（用户明确要求：学段=初中时课程只列初中的）。
+// 课程自身保留全量（忽略自身筛选），但尊重学段锁定。
 function comboCourseOptions() {
   const q = { ...comboState }; q['课程'] = '';
-  const act = DIM4.filter(x => q[x]);
-  const rows = act.length ? comboStatsArr().filter(s => act.every(x => String(s[x] || '') === q[x])) : comboStatsArr();
+  const st = q['学段'];   // 已含"课程→学段 自动锁定"后的值
+  let rows = comboStatsArr();
+  if (st) rows = rows.filter(s => String(s['学段'] || '') === st);   // 只保留当前学段
+  const act = DIM4.filter(x => q[x] && x !== '学段');                 // 其余三维（品牌/场景/类型）参与过滤
+  if (act.length) rows = rows.filter(s => act.every(x => String(s[x] || '') === q[x]));
   return [...new Set(rows.map(s => String(s['课程'] || '')))].sort(courseSort);
 }
 
