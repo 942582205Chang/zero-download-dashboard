@@ -548,7 +548,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v45</b></footer>
+  <footer class="footer-version">看板版本 <b>v46</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -571,7 +571,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v45';
+const PAGE_VERSION = 'v46';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -938,6 +938,8 @@ function makeCombo(cfg) {
   }
   // 渲染表格：每行 = 一个组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
   // 排序：学段 小学→初中→高中，其余维度按各自排序（STAGE_ORDER/COURSE_ORDER 在筛选联动上方定义）
+  // 表格列只渲染展示维度（不含课程）：课程仅参与筛选下拉/联动/后台聚合，不显示成列（2026-08-27 修复）
+  const displayKeys = keys.filter(k => k !== '课程');
   function renderTable() {
     const wrap = document.getElementById(tableId);
     if (!wrap) return;
@@ -957,7 +959,7 @@ function makeCombo(cfg) {
       const ca = cAvg(e);
       // 给本行数值单元格打 data-k="行号:列名"（供气泡按 data-a/data-b 精确定位高亮）
       const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
-      const dimTds = keys.map((k, di) => {
+      const dimTds = displayKeys.map((k, di) => {
         const isFirst = di === 0;
         const cls = 'rowhead combo-dim' + (isFirst ? '' : '-l') + (k === '版本' ? ' combo-dim-ver' : '');
         return '<td class="' + cls + '">' + esc(e[k]) + '</td>';
@@ -984,29 +986,29 @@ function makeCombo(cfg) {
       return acc;
     }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     const totalRow = '<tr class="combo-total">' +
-      '<td class="rowhead" colspan="' + keys.length + '" style="text-align:center;font-weight:700">合计</td>' +
+      '<td class="rowhead" colspan="' + displayKeys.length + '" style="text-align:center;font-weight:700">合计</td>' +
       ttl.map(v => '<td class="num" style="font-weight:700">' + fmt(v) + '</td>').join('') +
       '<td class="num" style="font-weight:700">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
       '</tr>';
-    // 表头：第一行 维度1|维度2|维度3|维度4(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
-    const dimThs = keys.map(k => '<th class="grp" rowspan="2">' + k + '</th>').join('');
+    // 表头：第一行 维度1|维度2|维度3|维度4(各1列，不含课程) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
+    const dimThs = displayKeys.map(k => '<th class="grp" rowspan="2">' + k + '</th>').join('');
     const head = '<tr>' + dimThs +
       '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
       '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
       '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
       '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
-    // 列宽固定：七按线上实测值写死（学段40|品牌161|场景122|类型109 + 12个数值列）
-    // 八与七每一列完全同宽：维度列按各自位置取值（七 品牌161/场景122/类型109 → 八 年级161/版本122/地区109）
-    // 课程104，12个数值列两表完全一致 —— 2026-08-27 用户要求：每一列都一样
-    const dimW = { '学段': 40, '品牌': 161, '场景': 122, '类型': 109, '年级': 161, '版本': 122, '地区': 109, '课程': 104 };
+    // 列宽固定：二按线上实测值写死（学段40|品牌161|场景122|类型109 + 12个数值列）
+    // 三与二每一列完全同宽：维度列按各自位置取值（二 品牌161/场景122/类型109 → 三 年级161/版本122/地区109）
+    // 课程不显示成列，不占列宽 —— 2026-08-27 用户要求：每一列都一样
+    const dimW = { '学段': 40, '品牌': 161, '场景': 122, '类型': 109, '年级': 161, '版本': 122, '地区': 109 };
     const NUM_W = [57, 70, 58, 67, 57, 67, 54, 64, 65, 84, 76, 72];
-    const colWidths = keys.map(k => dimW[k] ?? 104).concat(NUM_W);
+    const colWidths = displayKeys.map(k => dimW[k] ?? 104).concat(NUM_W);
     const cg = colWidths.map(w => '<col style="width:' + w + 'px">').join('');
     const totalW = colWidths.reduce((s, w) => s + w, 0);
     wrap.innerHTML = '<table class="days-table combo-table" style="width:' + totalW + 'px;table-layout:fixed">' +
       '<colgroup>' + cg + '</colgroup>' +
       '<thead>' + head + '</thead>' +
-      '<tbody>' + (tr || '<tr><td class="rowhead" colspan="' + (keys.length + 12) + '" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
+      '<tbody>' + (tr || '<tr><td class="rowhead" colspan="' + (displayKeys.length + 12) + '" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
   }
   // 导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
   function exportExcel() {
