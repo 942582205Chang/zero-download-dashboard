@@ -860,8 +860,8 @@ function comboStatsArr() { return allData.comboStats || []; }
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
 // ===== 通用组合筛选表引擎（七/八 共用）=====
-// 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(3列)|资源数量_超过15天(3列)|消费数据_all(3列)；
-// 第二行列：维度1|维度2|维度3|维度4 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费
+// 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(4列)|资源数量_超过15天(4列)|消费数据_all(4列)；
+// 第二行列：维度1|维度2|维度3|维度4 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费|C端单份消费
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；N 个下拉联动（选中某维后其它维可选项收缩）
 // 维度取值全部动态取自 data.json（comboDims/combo2Dims），不写死 → 后期新增值自动出现。
 function makeCombo(cfg) {
@@ -1095,7 +1095,6 @@ const comboB = makeCombo({
   dimLabel: '学段年级版本地区_组合统计',
 });
 function initComboTable2() { comboB.init(); }
-
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (allData) { drawCharts(); } });
 window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 
