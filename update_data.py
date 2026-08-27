@@ -276,9 +276,6 @@ def main():
     combo_dims, combo_stats = _build_combo(
         ["学段", "品牌", "场景", "类型", "课程"],
         {"学段": "课程前2字", "品牌": "品牌", "场景": "场景", "类型": "类型", "课程": "课程"})
-    combo2_dims, combo2_stats = _build_combo(
-        ["学段", "年级", "版本", "地区", "课程"],
-        {"学段": "课程前2字", "年级": "年级", "版本": "版本", "地区": "地区", "课程": "课程"})
 
     data = {
         "updateTime": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -332,16 +329,15 @@ def main():
         # 六、各资源类型数据：每学段一张表，其后每行 = 类型"已超过 15 天"子集
         "byTypeStages": type_stages,
         # 七、组合筛选表：维度取值（动态）+ 各组合预聚合统计（整体/超过15天）
-        "comboDims": combo_dims,
-        "comboStats": combo_stats,
-        # 八、组合筛选表（学段/年级/版本/地区/课程）：结构同七，仅维度一一对应替换
-        "combo2Dims": combo2_dims,
-        "combo2Stats": combo2_stats
+        # comboStats 已挪到 detail.json 懒加载（data.json 只留维度取值 comboDims，2026-08-27）
+        "comboDims": combo_dims
     }
 
-    # 全量明细：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
+    # 全量明细 + 第七块组合表数据：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
+    # 第七块 comboStats(约250KB) 从 data.json 挪到 detail.json 懒加载，data.json 首屏秒出（2026-08-27）
     detail = zero_df.fillna("").to_dict("records")
-    detail_json = json.dumps(detail, ensure_ascii=False)
+    detail_json = json.dumps({"detail": detail, "comboDims": combo_dims, "comboStats": combo_stats},
+                             ensure_ascii=False)
     detail_bytes = detail_json.encode("utf-8")
     # 明细内容哈希作为版本号：内容不变版本不变 → 浏览器可命中缓存秒开；数据更新版本变化 → 自动取新数据
     data["summary"]["version"] = hashlib.sha1(detail_bytes).hexdigest()[:12]
