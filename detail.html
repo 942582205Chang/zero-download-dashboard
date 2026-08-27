@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>0 下载 · 资源明细</title>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<!-- ExcelJS 懒加载（2026-08-27）：导出按钮默认隐藏，仅需要导出时动态注入，避免首屏同步阻塞 -->
+<script>
+function loadExcelJS() {
+  return new Promise((resolve, reject) => {
+    if (window.ExcelJS) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload = () => resolve(); s.onerror = () => reject(new Error('Excel 导出库加载失败'));
+    document.head.appendChild(s);
+  });
+}
+</script>
 <style>
   :root {
     color-scheme: light;
@@ -592,11 +603,13 @@ document.getElementById('nextBtn').addEventListener('click', () => { if (state.p
 document.getElementById('perPage').addEventListener('change', e => { state.per = Number(e.target.value); state.page = 1; render(); });
 
 // ===== 导出 Excel（复用格式：发布天数在审核人前 + 排序）=====
+// 懒加载 exceljs（2026-08-27）：导出按钮默认隐藏（备用功能），点导出时才动态注入库，避免首屏阻塞
 const EXPORT_WIDTHS = [11, 8, 44.5, 12.875, 11.125, 12.25, 6.875, 11.25, 9, 8.625, 9, 8.625, 14.625, 11.25, 10.75, 6.625, 6.875, 6.75, null, null, 10.375, null, null, null, null, null, 11];
 document.getElementById('exportBtn').addEventListener('click', () => {
   const rows = filtered.slice();
   const btn = document.getElementById('exportBtn');
   btn.textContent = '⏳ 生成中…'; btn.disabled = true;
+  loadExcelJS().then(() => {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('发布15天0下载明细');
   ws.views = [{ state: 'frozen', xSplit: 8, ySplit: 1 }];
@@ -629,6 +642,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     URL.revokeObjectURL(a.href);
     btn.textContent = '⬇ 导出 Excel'; btn.disabled = false;
   }).catch(e => { btn.textContent = '⬇ 导出 Excel'; btn.disabled = false; alert('导出失败：' + e.message); });
+  }).catch(e => { btn.textContent = '⬇ 导出 Excel'; btn.disabled = false; alert('导出库加载失败：' + e.message); });
 });
 </script>
 </body>
