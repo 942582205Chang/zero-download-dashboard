@@ -548,7 +548,7 @@
   <div class="combo-scroll combo8" id="combo2Scroll"><div id="combo2Table"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v41</b></footer>
+  <footer class="footer-version">看板版本 <b>v42</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -571,7 +571,7 @@
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v41';
+const PAGE_VERSION = 'v42';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -996,9 +996,9 @@ function makeCombo(cfg) {
       '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
       '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
     // 列宽固定：七按线上实测值写死（学段40|品牌161|场景122|类型109 + 12个数值列）
-    // 八维度列：学段40|年级52|版本236|地区400|课程104（地区放宽避免截断），数值列与七完全一致
-    // —— 2026-08-27 用户要求：七固定当前列宽，八同宽（数值列同宽，地区放宽）
-    const dimW = { '学段': 40, '品牌': 161, '场景': 122, '类型': 109, '年级': 52, '版本': 236, '地区': 400, '课程': 104 };
+    // 八与七每一列完全同宽：维度列按各自位置取值（七 品牌161/场景122/类型109 → 八 年级161/版本122/地区109）
+    // 课程104，12个数值列两表完全一致 —— 2026-08-27 用户要求：每一列都一样
+    const dimW = { '学段': 40, '品牌': 161, '场景': 122, '类型': 109, '年级': 161, '版本': 122, '地区': 109, '课程': 104 };
     const NUM_W = [57, 70, 58, 67, 57, 67, 54, 64, 65, 84, 76, 72];
     const colWidths = keys.map(k => dimW[k] ?? 104).concat(NUM_W);
     const cg = colWidths.map(w => '<col style="width:' + w + 'px">').join('');
