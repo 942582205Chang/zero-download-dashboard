@@ -194,7 +194,7 @@
   .days-table td.num.hl { color: var(--blue); font-weight: 700; }
   .days-table td.num[data-a][data-b] { cursor: help; }
   .days-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  /* 七、组合表：彻底去除紫色线/子类灰色/首列合并右紫线（独立表，不与一~六共用这些样式） */
+  /* 二、组合表：彻底去除紫色线/子类灰色/首列合并右紫线（独立表，不与其余分档表共用这些样式） */
   .combo-table { border-left: none !important; }
   .combo-table .days-table-bd, .combo-table td, .combo-table th { border-left: none !important; }
   .combo-table tbody tr:nth-child(n+4) td { color: var(--ink) !important; font-weight: 400 !important; }
@@ -205,12 +205,12 @@
   .combo-table tbody td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
 
-  /* 七、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左；前4列不加粗（覆盖 rowhead 600） */
+  /* 二、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左；前4列不加粗（覆盖 rowhead 600） */
   .combo-table.combo-auto td.combo-dim,
   .combo-table.combo-auto td.combo-dim-l { font-weight: 400; }
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
-  /* 七、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
+  /* 二、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
      资源数量_超过15天 的 C端0消费(第12列) 右侧淡紫线
      灰色右边框补充：资源数量_all 的 all(第5列)、资源数量_超过15天 的 B端0下载(第10列)、消费数据_all 的 B端下载(第14列) */
   .combo-table thead tr:first-child th:first-child,
@@ -233,11 +233,11 @@
   .combo-toolbar select.has-val { color: var(--blue); font-weight: 600; }
   .combo-clear { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--red); color: #fff; cursor: pointer; }
   .combo-export { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; }
-  /* 七、组合筛选表：工具栏（居中） */
+  /* 二、组合筛选表：工具栏（居中） */
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 12px; }
-  /* 七、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
+  /* 二、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  /* 七、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
+  /* 二、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
   .combo-scroll { width: 88%; margin: 0 auto; }
   .combo-scroll .combo-table { width: 100% !important; table-layout: auto; }
   /* 表头两行整体吸顶 + 首列固定；合计行吸底（表内 sticky bottom） */
@@ -251,7 +251,7 @@
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
+  /* 二、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
   .combo-table .combo-total td:nth-child(4),
@@ -460,48 +460,8 @@
   </div>
   <div class="days-wrap"><div id="daysTable1"></div></div>
 
-  <!-- 二、各学段数据 -->
-  <div class="section"><h2>二、各学段数据</h2><p>  --按发布天数分档统计资源数量与消费情况（按小学/初中/高中 拆解）</p></div>
-  <div id="stageGrid">
-    <div class="days-wrap"><div id="daysTable2"></div></div>
-    <div class="days-wrap"><div id="daysTable3"></div></div>
-    <div class="days-wrap"><div id="daysTable4"></div></div>
-  </div>
-
-  <!-- 三、各课程数据 -->
-  <div class="section"><h2>三、各课程数据</h2><p>  --按课程拆解发布天数分档（已超过 15 天展开）</p></div>
-  <div id="courseGrid">
-    <div class="days-wrap"><div id="courseTable1"></div></div>
-    <div class="days-wrap"><div id="courseTable2"></div></div>
-    <div class="days-wrap"><div id="courseTable3"></div></div>
-  </div>
-
-  <!-- 四、各项目数据（品牌系列） -->
-  <div class="section"><h2>四、各项目数据</h2><p>  --品牌系列（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 品牌</p></div>
-  <div id="brandGrid">
-    <div class="days-wrap"><div id="brandTable1"></div></div>
-    <div class="days-wrap"><div id="brandTable2"></div></div>
-    <div class="days-wrap"><div id="brandTable3"></div></div>
-  </div>
-
-  <!-- 五、各场景数据 -->
-  <div class="section"><h2>五、各场景数据</h2><p>  --场景（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 场景</p></div>
-  <div id="sceneGrid2">
-    <div class="days-wrap"><div id="sceneTable1"></div></div>
-    <div class="days-wrap"><div id="sceneTable2"></div></div>
-    <div class="days-wrap"><div id="sceneTable3"></div></div>
-  </div>
-
-  <!-- 六、各资源类型数据 -->
-  <div class="section"><h2>六、各资源类型数据</h2><p>  --资源类型（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 资源类型</p></div>
-  <div id="typeGrid">
-    <div class="days-wrap"><div id="typeTable1"></div></div>
-    <div class="days-wrap"><div id="typeTable2"></div></div>
-    <div class="days-wrap"><div id="typeTable3"></div></div>
-  </div>
-
-  <!-- 七、学段/品牌/场景/类型 组合筛选表 -->
-  <div class="section"><h2>七、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
+  <!-- 二、学段/品牌/场景/类型 组合筛选表 -->
+  <div class="section"><h2>二、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
   <div class="combo-toolbar" id="comboFilters">
     <span class="combo-label">筛选：</span>
     <select id="cf-学段"></select>
@@ -514,8 +474,48 @@
   </div>
   <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
+  <!-- 三、各学段数据 -->
+  <div class="section"><h2>三、各学段数据</h2><p>  --按发布天数分档统计资源数量与消费情况（按小学/初中/高中 拆解）</p></div>
+  <div id="stageGrid">
+    <div class="days-wrap"><div id="daysTable2"></div></div>
+    <div class="days-wrap"><div id="daysTable3"></div></div>
+    <div class="days-wrap"><div id="daysTable4"></div></div>
+  </div>
+
+  <!-- 四、各课程数据 -->
+  <div class="section"><h2>四、各课程数据</h2><p>  --按课程拆解发布天数分档（已超过 15 天展开）</p></div>
+  <div id="courseGrid">
+    <div class="days-wrap"><div id="courseTable1"></div></div>
+    <div class="days-wrap"><div id="courseTable2"></div></div>
+    <div class="days-wrap"><div id="courseTable3"></div></div>
+  </div>
+
+  <!-- 五、各项目数据（品牌系列） -->
+  <div class="section"><h2>五、各项目数据</h2><p>  --品牌系列（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 品牌</p></div>
+  <div id="brandGrid">
+    <div class="days-wrap"><div id="brandTable1"></div></div>
+    <div class="days-wrap"><div id="brandTable2"></div></div>
+    <div class="days-wrap"><div id="brandTable3"></div></div>
+  </div>
+
+  <!-- 六、各场景数据 -->
+  <div class="section"><h2>六、各场景数据</h2><p>  --场景（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 场景</p></div>
+  <div id="sceneGrid2">
+    <div class="days-wrap"><div id="sceneTable1"></div></div>
+    <div class="days-wrap"><div id="sceneTable2"></div></div>
+    <div class="days-wrap"><div id="sceneTable3"></div></div>
+  </div>
+
+  <!-- 七、各资源类型数据 -->
+  <div class="section"><h2>七、各资源类型数据</h2><p>  --资源类型（学段）拆解：前三行为整体/已超过 15 天，其后每行 = 资源类型</p></div>
+  <div id="typeGrid">
+    <div class="days-wrap"><div id="typeTable1"></div></div>
+    <div class="days-wrap"><div id="typeTable2"></div></div>
+    <div class="days-wrap"><div id="typeTable3"></div></div>
+  </div>
+
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v37</b></footer>
+  <footer class="footer-version">看板版本 <b>v38</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -727,7 +727,7 @@ function dayRowsHtml(rows, courseMode) {
     const bi = rows.indexOf(base);                    // 分母所在行号（绿色行 或 整体行）
     const overallDenRow = isChild ? i : 0;            // 整体占比分母：--行用该行 all，其余用整体行 all
     const cls = i === 0 ? 'total-row' : '';
-    const label = (isChild ? ' - ' : '') + r.label;   // 子类行第一列前缀：一个空格 + 一个 - + 一个空格（一~六统一）
+    const label = (isChild ? ' - ' : '') + r.label;   // 子类行第一列前缀：一个空格 + 一个 - + 一个空格（各分档表统一）
     const g15 = (r.label === '已超过 15 天') ? ' green' : '';   // 已超过15天行：前台0下载+其整体占比 标绿
     // 数值单元格：data-k="行号:列名" 供占比/平均值气泡精确定位；data-num 存格式化文本
     const ncell = (v, k, extra) => `<td class="num${extra || ''}" data-k="${i}:${k}" data-num="${fmt(v)}">${fmt(v)}</td>`;
@@ -795,7 +795,7 @@ function renderCourseTables() {
   });
 }
 
-// 通用：按数据字段渲染"每学段一张表"（四/五/六 复用，参照三、课程表）
+// 通用：按数据字段渲染"每学段一张表"（五/六/七 复用，参照四、课程表）
 // dataKey：data.json 里的字段名（byBrandStages / bySceneStages / byTypeStages）
 // prefix：表格容器 id 前缀（brandTable / sceneTable / typeTable）
 function renderSubStages(dataKey, prefix) {
@@ -819,17 +819,17 @@ function loadData() {
     renderDaysTable('daysTable1', allData.byDays, '小初高');   // 发布天数分档统计表（一、小初高整体）
     renderStageTables();
     renderCourseTables();
-    renderSubStages('byBrandStages', 'brandTable');   // 四、各项目数据（品牌系列）
-    renderSubStages('bySceneStages', 'sceneTable');   // 五、各场景数据
-    renderSubStages('byTypeStages', 'typeTable');     // 六、各资源类型数据
-    initComboTable();   // 七、学段/品牌/场景/类型 组合筛选表（维度取值动态 + 全量行前端重算）
+    renderSubStages('byBrandStages', 'brandTable');   // 五、各项目数据（品牌系列）
+    renderSubStages('bySceneStages', 'sceneTable');   // 六、各场景数据
+    renderSubStages('byTypeStages', 'typeTable');     // 七、各资源类型数据
+    initComboTable();   // 二、学段/品牌/场景/类型 组合筛选表（维度取值动态 + 全量行前端重算）
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
   });
 }
 
-// ===== 七、学段/品牌/场景/类型 组合筛选表 =====
+// ===== 二、学段/品牌/场景/类型 组合筛选表 =====
 // 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(3列)|资源数量_超过15天(3列)|消费数据_all(3列)；
 // 第二行列：学段|品牌|场景|类型 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；5 个下拉联动（选中某维后其它维可选项收缩）
@@ -927,7 +927,7 @@ function initComboTable() {
   renderComboTable();
 }
 
-// 渲染第七块表：严格按 123.xlsx Sheet1 表头 —— 无占比列、无紫色线、无子类灰色。
+// 渲染第二块表：严格按 123.xlsx Sheet1 表头 —— 无占比列、无紫色线、无子类灰色。
 // 每行 = 一个"学段/品牌/场景/类型"组合；列 = 资源数量_all(3) | 资源数量_超过15天(3) | 消费数据_all(3)，均为原始数值
 // 排序：学段 小学→初中→高中，品牌/场景/类型 各自 ASC（STAGE_ORDER 已在筛选联动上方定义）
 function renderComboTable() {
@@ -990,7 +990,7 @@ function renderComboTable() {
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
 }
 
-// 七、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
+// 二、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
 function exportComboExcel() {
   const list = comboFiltered();
   const rows = [...list].sort((a, b) =>
@@ -1032,8 +1032,8 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 // ===== 左侧简略导航：返回顶部 / 各区块标签 / 返回底部，滚动自动高亮 =====
 (function initSideNav() {
   const box = document.getElementById('sideNav');
-  const labels = ['返回顶部', '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '七、学段/品牌/场景/类型', '返回底部'];
-  const targets = [null, '一、小初高整体', '二、各学段数据', '三、各课程数据', '四、各项目数据', '五、各场景数据', '六、各资源类型数据', '七、学段/品牌/场景/类型', null];
+  const labels = ['返回顶部', '一、小初高整体', '二、学段/品牌/场景/类型', '三、各学段数据', '四、各课程数据', '五、各项目数据', '六、各场景数据', '七、各资源类型数据', '返回底部'];
+  const targets = [null, '一、小初高整体', '二、学段/品牌/场景/类型', '三、各学段数据', '四、各课程数据', '五、各项目数据', '六、各场景数据', '七、各资源类型数据', null];
   // 收起/展开按钮（第一个）：文本随状态切换
   const toggle = document.createElement('button');
   toggle.className = 'nav-toggle';
