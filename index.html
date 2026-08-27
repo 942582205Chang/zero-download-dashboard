@@ -198,7 +198,7 @@
   .combo-table { border-left: none !important; }
   .combo-table .days-table-bd, .combo-table td, .combo-table th { border-left: none !important; }
   .combo-table tbody tr:nth-child(n+4) td { color: var(--ink) !important; font-weight: 400 !important; }
-  /* 气泡高亮不再作用于第七块组合表（comboWrap 拦截）；此条仅兼容历史，无实际作用 */
+  /* 高亮必须压过第4行起的 !important 黑色（否则第4行起气泡高亮失效） */
   .combo-table td.num.hl { color: var(--blue) !important; font-weight: 700 !important; }
   .combo-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: normal; font-size: 13px; }
   /* 学段列右侧无线（覆盖通用 first-child 紫线） */
@@ -231,8 +231,6 @@
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
   .combo-toolbar select.has-val { color: var(--blue); font-weight: 600; }
-  /* 第七块已选值（如"学段：小学"）仅作按钮提示，不写入 option → 下拉永远只显示 全部+可选项，无重复 */
-  .combo-toolbar select option { color: var(--ink); }
   .combo-clear { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--red); color: #fff; cursor: pointer; }
   .combo-export { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; }
   /* 七、组合筛选表：工具栏（居中） */
@@ -242,33 +240,17 @@
   /* 七、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
   .combo-scroll { width: 88%; margin: 0 auto; }
   .combo-scroll .combo-table { width: 100% !important; table-layout: auto; }
-  /* 后12列固定宽 88px；前4列(学段/品牌/场景/类型)由内容自适应（JS 里 colgroup 已写死后12列宽） */
-  /* 表头两行整体吸顶 + 前4列固定；合计行吸底（表内 sticky bottom） */
+  /* 表头两行整体吸顶 + 首列固定；合计行吸底（表内 sticky bottom） */
   .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
-  /* 七、学段/品牌/场景/类型 表头（含首列）浅蓝 #e3f2fd */
-  .combo-scroll .combo-table thead th { background: #e3f2fd; }
-  /* 前4列(学段/品牌/场景/类型)固定不随横向滚动：表头+数据行对应列 sticky（left 偏移由 JS applyComboFrozen 按列宽累计注入） */
-  .combo-scroll .combo-table thead th:nth-child(-n+4),
-  .combo-scroll .combo-table tbody td:nth-child(-n+4) { position: sticky; }
-  .combo-scroll .combo-table thead th:nth-child(-n+4) { z-index: 5; }
-  /* 覆盖通用 .days-table 首列表头灰色规则（特异性更高）：第七块组合表表头（含前4列）也浅蓝 */
-  .combo-scroll .combo-table.days-table thead tr:first-child th:first-child,
-  .combo-scroll .combo-table.days-table thead th:nth-child(-n+4) { background: #e3f2fd; }
-  .combo-scroll .combo-table tbody td:nth-child(-n+4) { z-index: 2; background: var(--surface-solid); }
-  /* 数据行 hover 时固定列保持不透明底（渐变层+不透明底双层，盖住横向滚动内容），同时保留悬停色 */
-  .combo-scroll .combo-table tbody tr:hover td:nth-child(-n+4) { background: linear-gradient(rgba(0,122,255,0.06), rgba(0,122,255,0.06)), var(--surface-solid); }
+  .combo-scroll .combo-table thead th { background: var(--grid); }
+  .combo-scroll .combo-table thead th:first-child,
+  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
+  .combo-scroll .combo-table thead th:first-child { z-index: 4; background: var(--grid); }
+  .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
   /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
-  /* 合计行前4列合并(1格)：吸底时同时吸左，盖住横向滚动内容 */
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
-  /* 合计行：与其他 td 一致的格子框线（右/下边框），避免合并格无框线看着"缺线"；上边框加粗已由 .combo-total 提供 */
-  .combo-scroll .combo-table .combo-total td { border-right: 1px solid var(--separator); border-bottom: 1px solid var(--separator); }
-  .combo-scroll .combo-table .combo-total td:last-child { border-right: none; }
-  /* 合计行合并格(前4列)右侧补线：合并格只画了首格，中间列无右线 → 下一格(第5列)左侧缺线，这里补全 */
-  .combo-scroll .combo-table .combo-total td:first-child { border-right: 1px solid var(--separator); }
-  /* 数据行 hover：合计行固定列(前4列合并格)吸左层也同步 hover 色（与数据固定列一致） */
-  .combo-scroll .combo-table tbody tr.combo-total:hover td:first-child { background: linear-gradient(rgba(0,122,255,0.06), rgba(0,122,255,0.06)), var(--grid); }
   /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
@@ -294,20 +276,6 @@
     border-right: 1px solid var(--purple-soft);   /* 第一列右侧浅紫分隔线 */
   }
   .days-table thead tr:first-child th:first-child { background: var(--grid); }
-  /* 一、小初高整体表：表头（含首列）统一浅蓝 #e3f2fd */
-  #daysTable1 .days-table thead th { background: #e3f2fd; }
-  #daysTable1 .days-table thead tr:first-child th:first-child { background: #e3f2fd; }
-  /* 二~六 各表（daysTable2~4 / courseTable / brandTable / sceneTable / typeTable）：表头（含首列）统一浅蓝 #e3f2fd */
-  #stageGrid .days-table thead th,
-  #courseGrid .days-table thead th,
-  #brandGrid .days-table thead th,
-  #sceneGrid2 .days-table thead th,
-  #typeGrid .days-table thead th { background: #e3f2fd; }
-  #stageGrid .days-table thead tr:first-child th:first-child,
-  #courseGrid .days-table thead tr:first-child th:first-child,
-  #brandGrid .days-table thead tr:first-child th:first-child,
-  #sceneGrid2 .days-table thead tr:first-child th:first-child,
-  #typeGrid .days-table thead tr:first-child th:first-child { background: #e3f2fd; }
   /* 前台下载左侧浅紫线（消费数据组边界）；紫线紧邻侧灰线去掉，避免 separate 下双线 */
   /* 浅紫线：前台下载左(消费组边界) + B端0/C端0/B端下载/C端消费 左线（指标分隔） */
   /* 首列已 rowspan 合并，表头第二行从 all(第2列) 开始 */
@@ -534,7 +502,7 @@
 
   <!-- 七、学段/品牌/场景/类型 组合筛选表 -->
   <div class="section"><h2>七、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
-  <div class="combo-toolbar" id="comboFilters" style="display:none">
+  <div class="combo-toolbar" id="comboFilters">
     <span class="combo-label">筛选：</span>
     <select id="cf-学段"></select>
     <select id="cf-品牌"></select>
@@ -544,10 +512,10 @@
     <button type="button" id="cfClear" class="combo-clear">✕ 清除</button>
     <button type="button" id="cfExport" class="combo-export">⬇ 导出 Excel</button>
   </div>
-  <div class="combo-scroll" id="comboScroll" style="display:none"><div id="comboTable"></div></div>
+  <div class="combo-scroll" id="comboScroll"><div id="comboTable"></div></div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v40</b></footer>
+  <footer class="footer-version">看板版本 <b>v36</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -597,18 +565,6 @@ function decSens(s, key) {
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
     return new TextDecoder('utf-8').decode(bytes);
   } catch (e) { return s; }
-}
-// detail.json 解密后是 gzip 压缩的二进制（字节 → base64 字符串），这里还原为字节并解 gzip
-function decDetail(s, key) {
-  if (!s) return s;
-  const raw = atob(s);
-  const bytes = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
-  try {
-    const ds = new DecompressionStream('gzip');
-    const stream = new Blob([bytes]).stream().pipeThrough(ds);
-    return new Response(stream).text();
-  } catch (e) { return new TextDecoder('utf-8').decode(bytes); }   // 老浏览器：当明文
 }
 
 // ===== Login =====
@@ -853,8 +809,8 @@ function renderSubStages(dataKey, prefix) {
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function loadData() {
-  // 数据整体加密：登录后才能进到这里。首页只下载 data.json 即可渲染 KPI + 一~六表；
-  // 第七块组合表的 comboStats 较大，改由 detail.json 懒加载（登录后异步拉取，不阻塞首屏）
+  // 数据整体加密：登录后才能进到这里。首页只下载 data.json(约5.6KB)即可渲染全部；
+  // 明细(10MB)只在 detail.html 用后台 worker 下载解密，首页不拉取，保持秒开
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
     allData = JSON.parse(decSens(d.enc, decKey));
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
@@ -866,36 +822,10 @@ function loadData() {
     renderSubStages('byBrandStages', 'brandTable');   // 四、各项目数据（品牌系列）
     renderSubStages('bySceneStages', 'sceneTable');   // 五、各场景数据
     renderSubStages('byTypeStages', 'typeTable');     // 六、各资源类型数据
+    initComboTable();   // 七、学段/品牌/场景/类型 组合筛选表（维度取值动态 + 全量行前端重算）
   }).catch(e => {
     document.getElementById('kpiTotal').textContent = '加载失败';
     console.error(e);
-  });
-  loadComboData();   // 第七块组合表：异步懒加载（detail.json 里的 comboStats）
-}
-
-// 七、第七块组合表数据懒加载：comboStats 随 detail.json（gzip+加密）异步拉取，加载完再渲染筛选与表格
-// 注意：detail.json 结构 = {detail, comboDims, comboStats}（comboDims 在 data.json 也有，这里以 detail.json 为准覆盖）
-function loadComboData() {
-  const wrap = document.getElementById('comboTable');
-  const comboWrap = document.getElementById('comboScroll');
-  const comboBar = document.getElementById('comboFilters');
-  if (!wrap) return;
-  // 无版本号 → 用 Date.now() 恒取最新（后端未写版本时兜底）
-  const v = (allData && allData.summary && allData.summary.version) || Date.now();
-  fetch('detail.json?v=' + v).then(r => r.json()).then(d => {
-    decDetail(d.enc, decKey).then(dec => {
-      const det = JSON.parse(dec);
-      allData.comboDims = det.comboDims;
-      allData.comboStats = det.comboStats;
-      if (comboBar) comboBar.style.display = '';   // 筛选栏数据就绪后再显示
-      if (comboWrap) comboWrap.style.display = '';   // 表格容器数据就绪后再显示
-      initComboTable();
-    });
-  }).catch(e => {
-    console.error('组合表数据加载失败', e);
-    if (comboBar) comboBar.style.display = '';
-    if (comboWrap) comboWrap.style.display = '';
-    if (wrap) wrap.innerHTML = '<div style="padding:16px;color:var(--muted)">组合表数据加载失败</div>';
   });
 }
 
@@ -951,19 +881,29 @@ function refreshComboOptions(changedKey) {
     sel.innerHTML = '';
     sel.appendChild(new Option('全部', ''));
     vals.forEach(v => sel.appendChild(new Option(v, v)));
-    if (old && vals.indexOf(old) > -1) { sel.value = old; sel.classList.add('has-val'); }
-    else { sel.value = ''; sel.classList.remove('has-val'); }
-    sel.title = comboState[k] ? (k + '：' + comboState[k]) : (k + '：全部');
+    if (old && vals.indexOf(old) > -1) sel.value = old;
+    else sel.value = '';
+    sel.classList.toggle('has-val', !!comboState[k]);
+    syncComboSelLabel(sel, k);
   });
   // 课程→学段 自动联动：选中课程时，若学段为空则锁定为课程前2字
   if (comboState['课程'] && !comboState['学段']) {
     const st = comboState['课程'].slice(0, 2);
     comboState['学段'] = st;
     const selSt = document.getElementById('cf-学段');
-    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); selSt.title = '学段：' + st; }
+    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); syncComboSelLabel(selSt, '学段'); }
   }
 }
-// 下拉显示文案统一为 title 悬停提示：未选=「学段：全部」；选中=「学段：选中的值」（不写入 option 文本，避免下拉出现重复值）
+// 下拉显示文案：未选=「学段：全部」；选中=「学段：选中的值」（title 悬停+选中文字均按此）
+function syncComboSelLabel(sel, k) {
+  const v = comboState[k];
+  const txt = v ? (k + '：' + v) : (k + '：全部');
+  if (sel.selectedIndex > -1) {
+    const opt = sel.options[sel.selectedIndex];
+    if (opt) { opt.setAttribute('data-v', opt.textContent); opt.textContent = txt; }
+  }
+  sel.title = txt;
+}
 
 function initComboTable() {
   if (!allData.comboDims) return;
@@ -1044,43 +984,10 @@ function renderComboTable() {
     '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
-  // 前4列(学段/品牌/场景/类型)固定不随横向滚动（sticky left，见 CSS），其余列随容器滚动
   wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
     '<colgroup><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
-  applyComboFrozen(wrap);
-}
-
-// 七、前4列固定 + 后12列锁定当前实际宽度：
-// 首轮渲染后读取浏览器算好的实际列宽（前4列=内容自适应宽度），
-// 把后12列写死为该实际宽度（像素），并把前4列 sticky 偏移注入——列宽从此固定，不再随内容跳动
-const COMBO_FROZEN = 4;   // 前4列(学段/品牌/场景/类型)
-function applyComboFrozen(wrap) {
-  const table = wrap.querySelector('table');
-  if (!table) return;
-  const thead = table.querySelector('thead');
-  const tbody = table.querySelector('tbody');
-  if (!thead || !tbody) return;
-  const firstRow = thead.querySelectorAll('tr')[1] || thead.querySelector('tr');
-  const cells = firstRow ? [...firstRow.children] : [];
-  // 1) 后12列（第5列起）写死当前实际宽度
-  const cols = table.querySelectorAll('col');
-  for (let i = COMBO_FROZEN; i < cells.length && i - COMBO_FROZEN < cols.length - COMBO_FROZEN; i++) {
-    const w = cells[i].offsetWidth;
-    if (w > 0) cols[i].style.width = w + 'px';
-  }
-  // 2) 前4列 sticky left 偏移（按当前实际宽度累计）
-  let acc = 0;
-  for (let i = 0; i < COMBO_FROZEN && i < cells.length; i++) {
-    cells[i].style.left = acc + 'px';
-    acc += cells[i].offsetWidth;
-  }
-  tbody.querySelectorAll('tr').forEach(r => {
-    const c = [...r.children];
-    let a = 0;
-    for (let i = 0; i < COMBO_FROZEN && i < c.length; i++) { c[i].style.left = a + 'px'; a += c[i].offsetWidth; }
-  });
 }
 
 // 七、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
@@ -1214,8 +1121,8 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
 // ===== 百分比/平均值单元格气泡：悬停 → 给出该格的具体公式（分子 ÷ 分母 = 结果），
 // ===== 同时把参与计算的两个数字所在单元格高亮为气泡同色（蓝），移开即恢复。轻快跟随，无需复制
 (function initPctTip() {
-  const comboWrap = document.getElementById('comboTable');   // 第七块组合表不参与气泡/高亮（其 C端单份消费为"率"非占比）
-  // 气泡高亮仅作用于"占比/整体占比/平均值"（一~六分档表），第七块组合表在 mouseover 里统一拦截
+  const tip = document.getElementById('hintTip');
+  if (!tip) return;
   let target = null, hideTimer = null;
   function clearHl() {
     document.querySelectorAll('.days-table td.num.hl').forEach(td => td.classList.remove('hl'));
@@ -1224,7 +1131,6 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
     const aK = target.getAttribute('data-a');   // 分子 "行号:列名"
     const bK = target.getAttribute('data-b');   // 分母 "行号:列名"
     if (!aK || !bK) { hide(); return; }
-    if (comboWrap && comboWrap.contains(target)) { hide(); return; }   // 组合表内一律不弹
     // 必须在同一张表内定位分子/分母（跨表同名 data-k 会串表，导致公式/高亮跑到别的表）
     const table = target.closest('.days-table');
     if (!table) { hide(); return; }
@@ -1264,7 +1170,6 @@ window.addEventListener('resize', () => charts.forEach(c => c.resize()));
   document.addEventListener('mouseover', e => {
     if (e.target.closest && e.target.closest('#hintTip')) return;
     const el = e.target.closest ? e.target.closest('td.num[data-a][data-b]') : null;
-    if (comboWrap && el && comboWrap.contains(el)) return;   // 组合表内一律不弹气泡/不高亮
     if (el && el !== target) {
       target = el;
       clearTimeout(hideTimer);
