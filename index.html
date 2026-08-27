@@ -522,7 +522,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v42</b></footer>
+  <footer class="footer-version">看板版本 <b>v43</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -908,18 +908,26 @@ function refreshComboOptions(changedKey) {
     else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));
     const vals = avail.length ? avail : comboDimVals(k);
     const oldLabel = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : null;   // 记住旧"xxx：值"显示，供重建后恢复
+    const hadVal = !!comboState[k];   // 该维度当前是否有选中值（重建后要保住这个值）
     restoreOptionLabels(sel);   // 重建前先把 label 恢复为原始值（防止陈旧 data-v 污染选中显示）
     sel.innerHTML = '';
     sel.appendChild(new Option('全部', ''));
     vals.forEach(v => sel.appendChild(new Option(v, v)));
     if (old && vals.indexOf(old) > -1) sel.value = old;
     else sel.value = '';
-    sel.classList.toggle('has-val', !!comboState[k]);
-    if (oldLabel) {
-      // 未选中时保留旧的「xxx：值」显示（下拉仍记着之前的选中，仅其它维度收缩；恢复"全部"只是隐藏高亮）
-      sel.options[0].setAttribute('data-v', sel.options[0].textContent);
-      sel.options[0].textContent = oldLabel;
-      sel.title = oldLabel;
+    sel.classList.toggle('has-val', hadVal);
+    if (hadVal) {
+      // 该维度确有选中值：让「全部」选项顶格显示「维度：选中值」（语义=仍按该值筛选，只是没列在下拉里）
+      // 注意点：这里只动显示文案，不动 data-v；data-v 永远存"本次选中值的原始文本"，
+      // 下次重建 restoreOptionLabels 会把它恢复成原始文本，避免残留"维度：全部"。
+      const real = old && vals.indexOf(old) > -1 ? old : (comboDimVals(k).indexOf(old) > -1 ? old : '');
+      if (real) {
+        sel.options[0].setAttribute('data-v', sel.options[0].textContent);
+        sel.options[0].textContent = k + '：' + real;
+        sel.title = k + '：' + real;
+      } else {
+        resetUnselectedLabel(sel, k);   // 值不在可选范围内（联动后已不可选）→ 显示还原为"全部"（值仍在 comboState）
+      }
     } else {
       syncComboSelLabel(sel, k);
     }
@@ -942,6 +950,15 @@ function restoreOptionLabels(sel) {
     const raw = opt.getAttribute('data-v');
     if (raw != null) { opt.textContent = raw; opt.removeAttribute('data-v'); }
   });
+}
+// 恢复"未选中"下拉的显示文案：它的"全部"项曾被改成「维度：值」，现在还原成"全部"（值仍在 comboState，选中态由值保持）
+function resetUnselectedLabel(sel, k) {
+  const opt = sel.options[0];
+  if (!opt) return;
+  const raw = opt.getAttribute('data-v');
+  opt.textContent = raw != null ? raw : ('全部');
+  opt.removeAttribute('data-v');
+  sel.title = k + '：全部';
 }
 function syncComboSelLabel(sel, k) {
   const v = comboState[k];
