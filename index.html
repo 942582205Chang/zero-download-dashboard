@@ -485,7 +485,6 @@
   <!-- 二、学段/品牌/场景/类型 组合筛选表 -->
   <div class="section"><h2>二、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
   <div class="combo-toolbar" id="comboFilters">
-    <span class="combo-label">筛选：</span>
     <span class="combo-dim"><span class="dim-tag">学段</span><select id="cf-学段"></select></span>
     <span class="combo-dim"><span class="dim-tag">品牌</span><select id="cf-品牌"></select></span>
     <span class="combo-dim"><span class="dim-tag">场景</span><select id="cf-场景"></select></span>
@@ -537,7 +536,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v47</b></footer>
+  <footer class="footer-version">看板版本 <b>v48</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -937,6 +936,16 @@ function comboPoolFor(k) {
   return Object.values(map).map(aggRow);
 }
 
+// 课程下拉候选（单独逻辑）：课程是"筛选条件"不是表行列，不能用 comboPool（它会按课程过滤后聚合，破坏四列池）。
+// 课程候选 = 当前四维筛选下，五维数据里实际出现过的课程（不按四列聚合，直接取课程去重）；
+// 特别：忽略学段自身筛选但尊重其它三维 + 课程自身保留全量（否则选了某课程后课程框只剩自己）。
+function comboCourseOptions() {
+  const q = { ...comboState }; q['课程'] = '';
+  const act = DIM4.filter(x => q[x]);
+  const rows = act.length ? comboStatsArr().filter(s => act.every(x => String(s[x] || '') === q[x])) : comboStatsArr();
+  return [...new Set(rows.map(s => String(s['课程'] || '')))].sort(courseSort);
+}
+
 // 学段排序：小学→初中→高中；课程排序：先学段(小初高)再学科
 const STAGE_ORDER = { '小学': 0, '初中': 1, '高中': 2 };
 const COURSE_ORDER = { '语文': 0, '数学': 1, '英语': 2, '物理': 3, '化学': 4, '生物': 5, '政治': 6, '道法': 7, '历史': 8, '地理': 9, '科学': 10 };
@@ -957,10 +966,12 @@ function refreshComboOptions(changedKey) {
   COMBO_KEYS.forEach(k => {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
-    // 该维度的候选池：忽略本维度自身的筛选（否则选了学段后，学段下拉只剩自己，改不回全部）
-    const pool = comboPoolFor(k);
+    // 候选池：课程维度用 comboCourseOptions（不按四列聚合、不因自身筛选收缩），其它维度用 comboPoolFor
+    const pool = (k === '课程') ? null : comboPoolFor(k);
     const old = comboState[k];
-    const avail = [...new Set(pool.map(s => String(s[k] || '')))];
+    const avail = (k === '课程')
+      ? comboCourseOptions()
+      : [...new Set(pool.map(s => String(s[k] || '')))];
     // 排序：学段按 小初高；课程按 学段+学科；其余 ASC
     if (k === '学段') avail.sort(stageSort);
     else if (k === '课程') avail.sort(courseSort);
