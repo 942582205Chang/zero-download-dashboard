@@ -211,43 +211,48 @@
   .combo-table.combo-auto td.combo-dim-l { font-weight: 400; }
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
-  /* 二、边线规则：学段列右侧无线；类型列(第4列)右侧淡紫线；第1个与第2个 C端0消费 之间(第8列)右侧淡紫线；
-     资源数量_超过15天 的 C端0消费(第12列) 右侧淡紫线
-     灰色右边框补充：资源数量_all 的 all(第5列)、资源数量_超过15天 的 B端0下载(第10列)、消费数据_all 的 B端下载(第14列) */
+  /* 二、边线规则（紫色主线：视觉4/8/12 = 组边界；灰色辅线：视觉5/10/14 = 组内分隔）
+     表头行1：学段/品牌/场景/类型(rowspan2) + 资源数量_all + 超15 + 消费 三组
+       紫色在 第4格(类型,vis4) / 第5格(资源数量_all右缘,vis8) / 第6格(超15右缘,vis12)
+     表头行2：12 个明细列(视觉5~16) 紫色在 第4格(vis8) / 第8格(vis12)；灰色在 第1格(vis5) / 第6格(vis10) / 第10格(vis14)
+     表体：16 格 = 视觉列 → 紫色第4/8/12格；灰色第5/10/14格
+     合计行：首格 colspan=4(视觉1~4) + 12格(视觉5~16) → 紫色第1(vis4)/5(vis8)/9(vis12)格；灰色第2(vis5)/7(vis10)/11(vis14)格
+     学段列(视觉1)右无线、最右列(视觉16)右无线 */
   .combo-table thead tr:first-child th:first-child,
-  .combo-table tbody td:first-child { border-right: none !important; }
-  // 合计行：首格 colspan=4（占第1~4列），后续 11 个数值格 + 1 个"率"格 = 13 格；
-  // 视觉列→DOM 列映射：视觉第n列 = DOM 第 (n-3) 格（n≥5）。因此：
-  //   视觉第5列(资源数量_all·all) = DOM第2格 → nth-child(2)
-  //   视觉第8列(资源数量_all·C端0消费,紫) = DOM第5格 → nth-child(5)
-  //   视觉第9列(资源数量_超过15天·all) = DOM第6格 → nth-child(6)
-  //   视觉第12列(资源数量_超过15天·C端0消费,紫) = DOM第9格 → nth-child(9)
-  //   视觉第14列(消费数据_all·B端下载) = DOM第11格 → nth-child(11)
-  //   视觉第15列(消费数据_all·C端消费,紫) = DOM第12格 → nth-child(12)
-  //   视觉第16列(C端单份消费,最右) = DOM第13格 → nth-child(13)
+  .combo-table tbody td:first-child { border-right: none !important; }   /* 学段列右无线 */
+  /* 表头行1 紫色（类型 + 资源数量_all/超15 组右缘） */
+  .combo-table thead tr:first-child th:nth-child(4),
+  .combo-table thead tr:first-child th:nth-child(5),
+  .combo-table thead tr:first-child th:nth-child(6) { border-right: 1px solid var(--purple-soft) !important; }
+  /* 表头行2 + 表体 紫色（vis8/vis12 的 C端0消费） */
   .combo-table thead tr:nth-child(2) th:nth-child(4),
-  .combo-table tbody td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(8),
-  .combo-table tbody td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
-  .combo-table thead tr:nth-child(2) th:nth-child(12),
+  .combo-table tbody td:nth-child(4),
+  .combo-table tbody td:nth-child(8),
   .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
-  .combo-table thead tr:nth-child(2) th:nth-child(5),
-  .combo-table tbody td:nth-child(5),
+  /* 表头行2 + 表体 灰色（vis5 all / vis10 前台0 / vis14 B端下载） */
+  .combo-table thead tr:nth-child(2) th:nth-child(1),
+  .combo-table thead tr:nth-child(2) th:nth-child(6),
   .combo-table thead tr:nth-child(2) th:nth-child(10),
+  .combo-table tbody td:nth-child(5),
   .combo-table tbody td:nth-child(10),
-  .combo-table thead tr:nth-child(2) th:nth-child(14),
   .combo-table tbody td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
-  /* 合计行（首格 colspan=4，视觉列→DOM 列偏移 +3）专属边线 */
-  .combo-table .combo-total td:first-child { border-right: 1px solid var(--separator) !important; }   /* 合计格右侧（视觉第4列右） */
-  .combo-table .combo-total td:nth-child(2) { border-right: 1px solid var(--separator) !important; }  /* 视觉第5列 all */
-  .combo-table .combo-total td:nth-child(5) { border-right: 1px solid var(--purple-soft) !important; } /* 视觉第8列 C端0消费(紫) */
-  .combo-table .combo-total td:nth-child(6) { border-right: 1px solid var(--separator) !important; }  /* 视觉第9列 超过15天 all */
-  .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; } /* 视觉第12列 C端0消费(紫) */
-  .combo-table .combo-total td:nth-child(11) { border-right: 1px solid var(--separator) !important; } /* 视觉第14列 B端下载 */
-  .combo-table .combo-total td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }/* 视觉第15列 C端消费(紫) */
-  .combo-table .combo-total td:nth-child(13) { border-right: none !important; }                        /* 视觉第16列 C端单份消费(最右) */
+  /* 合计行（首格 colspan=4 占视觉1~4，其余 12 格 = 视觉5~16）紫色 + 灰色 */
+  .combo-table .combo-total td:first-child,
+  .combo-table .combo-total td:nth-child(5),
+  .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table .combo-total td:nth-child(2),
+  .combo-table .combo-total td:nth-child(7),
+  .combo-table .combo-total td:nth-child(11) { border-right: 1px solid var(--separator) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
+  /* 维度下拉标签固化（2026-08-27 简化）：标签用纯文本 span 固定在 select 左侧，
+     不再依赖"改 option 文本"显示"学段：小学"（那个方案越修越复杂、易残留脏状态）。
+     选中值直接在下拉里选，option 永远是"全部/值"原样，联动只收缩候选、不碰文本 */
+  .combo-toolbar .combo-dim { display: inline-flex; align-items: center; gap: 4px; }
+  .combo-toolbar .combo-dim .dim-tag { font-size: 13px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .combo-toolbar .combo-dim select { width: 160px; }
+  .combo-toolbar .combo-dim select.has-val { color: var(--blue); font-weight: 600; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
   .combo-toolbar select.has-val { color: var(--blue); font-weight: 600; }
   .combo-clear { padding: 7px 12px; font-size: 13px; font-weight: 600; border: none; border-radius: 10px; background: var(--red); color: #fff; cursor: pointer; }
@@ -481,11 +486,11 @@
   <div class="section"><h2>二、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
   <div class="combo-toolbar" id="comboFilters">
     <span class="combo-label">筛选：</span>
-    <select id="cf-学段"></select>
-    <select id="cf-品牌"></select>
-    <select id="cf-场景"></select>
-    <select id="cf-类型"></select>
-    <select id="cf-课程"></select>
+    <span class="combo-dim"><span class="dim-tag">学段</span><select id="cf-学段"></select></span>
+    <span class="combo-dim"><span class="dim-tag">品牌</span><select id="cf-品牌"></select></span>
+    <span class="combo-dim"><span class="dim-tag">场景</span><select id="cf-场景"></select></span>
+    <span class="combo-dim"><span class="dim-tag">类型</span><select id="cf-类型"></select></span>
+    <span class="combo-dim"><span class="dim-tag">课程</span><select id="cf-课程"></select></span>
     <button type="button" id="cfClear" class="combo-clear">✕ 清除</button>
     <button type="button" id="cfExport" class="combo-export">⬇ 导出 Excel</button>
   </div>
@@ -532,7 +537,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v44</b></footer>
+  <footer class="footer-version">看板版本 <b>v45</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -917,71 +922,31 @@ function refreshComboOptions(changedKey) {
     else if (k === '课程') avail.sort(courseSort);
     else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));
     const vals = avail.length ? avail : comboDimVals(k);
-    const oldLabel = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : null;   // 记住旧"xxx：值"显示，供重建后恢复
-    const hadVal = !!comboState[k];   // 该维度当前是否有选中值（重建后要保住这个值）
     restoreOptionLabels(sel);   // 重建前先把 label 恢复为原始值（防止陈旧 data-v 污染选中显示）
     sel.innerHTML = '';
     sel.appendChild(new Option('全部', ''));
     vals.forEach(v => sel.appendChild(new Option(v, v)));
     if (old && vals.indexOf(old) > -1) sel.value = old;
     else sel.value = '';
-    sel.classList.toggle('has-val', hadVal);
-    if (hadVal) {
-      // 该维度确有选中值：让「全部」选项顶格显示「维度：选中值」（语义=仍按该值筛选，只是没列在下拉里）
-      // 注意点：这里只动显示文案，不动 data-v；data-v 永远存"本次选中值的原始文本"，
-      // 下次重建 restoreOptionLabels 会把它恢复成原始文本，避免残留"维度：全部"。
-      const real = old && vals.indexOf(old) > -1 ? old : (comboDimVals(k).indexOf(old) > -1 ? old : '');
-      if (real) {
-        sel.options[0].setAttribute('data-v', sel.options[0].textContent);
-        sel.options[0].textContent = k + '：' + real;
-        sel.title = k + '：' + real;
-      } else {
-        resetUnselectedLabel(sel, k);   // 值不在可选范围内（联动后已不可选）→ 显示还原为"全部"（值仍在 comboState）
-      }
-    } else {
-      syncComboSelLabel(sel, k);
-    }
+    sel.classList.toggle('has-val', !!comboState[k]);
+    sel.title = sel.value ? (k + '：' + sel.value) : (k + '：全部');   // 维度标签已固化在框外，此处只设 title 悬停提示
   });
   // 课程→学段 自动联动：选中课程时，若学段为空则锁定为课程前2字
   if (comboState['课程'] && !comboState['学段']) {
     const st = comboState['课程'].slice(0, 2);
     comboState['学段'] = st;
     const selSt = document.getElementById('cf-学段');
-    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); syncComboSelLabel(selSt, '学段'); }
+    if (selSt) { selSt.value = st; selSt.classList.add('has-val'); selSt.title = '学段：' + st; }
   }
 }
-// 下拉显示文案：未选=「学段：全部」；选中=「学段：选中的值」（title 悬停+选中文字均按此）
-// 重置时把非选中项 label 恢复为原始值：它们被 sync 时曾存到 data-v（`品牌：全部`），
-// 若不恢复，后续再次读到这些旧 data-v 会把"选中的品牌"误显示成"全部"（历史 bug，2026-08-27 修）
-// 2026-08-27 再修：联动收缩时其它维度若之前选中过，其下拉显示保持旧的「维度：选中值」，
-// 不再变成"全部"（选中态由 data-v + 值保持，仅其它维度缩到该值可选范围）
+// 维度下拉简化（2026-08-27）：维度名"学段/品牌/场景/类型/课程"已用 .dim-tag 固化在 select 左侧，
+// 不再往 option 里塞"学段：小学"，彻底消灭"数据-v 残留/重复项/显示与选中脱节"这类历史 bug。
+// 这里只做两件事：①重建时把被 old-option 改过的 label 还原；②设 title 悬停提示。
 function restoreOptionLabels(sel) {
   [...sel.options].forEach(opt => {
     const raw = opt.getAttribute('data-v');
     if (raw != null) { opt.textContent = raw; opt.removeAttribute('data-v'); }
   });
-}
-// 恢复"未选中"下拉的显示文案：它的"全部"项曾被改成「维度：值」，现在还原成"全部"（值仍在 comboState，选中态由值保持）
-function resetUnselectedLabel(sel, k) {
-  const opt = sel.options[0];
-  if (!opt) return;
-  const raw = opt.getAttribute('data-v');
-  opt.textContent = raw != null ? raw : ('全部');
-  opt.removeAttribute('data-v');
-  sel.title = k + '：全部';
-}
-function syncComboSelLabel(sel, k) {
-  const v = comboState[k];
-  const txt = v ? (k + '：' + v) : (k + '：全部');
-  if (sel.selectedIndex > -1) {
-    const opt = sel.options[sel.selectedIndex];
-    if (opt) {
-      const was = opt.getAttribute('data-v');
-      if (was == null) opt.setAttribute('data-v', opt.textContent);
-      opt.textContent = txt;
-    }
-  }
-  sel.title = txt;
 }
 
 function initComboTable() {
