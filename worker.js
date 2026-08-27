@@ -54,11 +54,13 @@ function start() {
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(edet => (async () => {
       const det = await parseDetail(edet.enc, decKey);
-      const total = det.length;
+      // detail.json 现在结构为 {detail, comboDims, comboStats}（第七块 comboStats 也装在这里懒加载）；兼容旧纯数组格式
+      const rows = det.detail || det;
+      const total = rows.length;
       self.postMessage({ type: 'start', total });
       const out = new Array(total);
       for (let i = 0; i < total; i++) {
-        out[i] = Object.assign({}, det[i]);
+        out[i] = Object.assign({}, rows[i]);
         if ((i + 1) % 2000 === 0) self.postMessage({ type: 'progress', done: i + 1, total });
       }
       const BATCH = 800;   // 分批回传，避免一次性克隆大对象卡顿
