@@ -216,18 +216,26 @@
      灰色右边框补充：资源数量_all 的 all(第5列)、资源数量_超过15天 的 B端0下载(第10列)、消费数据_all 的 B端下载(第14列) */
   .combo-table thead tr:first-child th:first-child,
   .combo-table tbody td:first-child { border-right: none !important; }
+  /* 合计行用 16 列普通格（无 colspan）时，边线规则用 tbody td:nth-child 才会命中；
+     表头吸顶 + 合计吸底两个 sticky 区域都吃同一套 nth-child 边线 → 线对齐（2026-08-27） */
   .combo-table thead tr:nth-child(2) th:nth-child(4),
-  .combo-table tbody td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table tbody td:nth-child(4),
+  .combo-table .combo-total td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(8),
-  .combo-table tbody td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table tbody td:nth-child(8),
+  .combo-table .combo-total td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(12),
-  .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table tbody td:nth-child(12),
+  .combo-table .combo-total td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(5),
   .combo-table tbody td:nth-child(5),
+  .combo-table .combo-total td:nth-child(5),
   .combo-table thead tr:nth-child(2) th:nth-child(10),
   .combo-table tbody td:nth-child(10),
+  .combo-table .combo-total td:nth-child(10),
   .combo-table thead tr:nth-child(2) th:nth-child(14),
-  .combo-table tbody td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
+  .combo-table tbody td:nth-child(14),
+  .combo-table .combo-total td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
@@ -255,9 +263,7 @@
   /* 二、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
-  .combo-table .combo-total td:nth-child(4),
-  .combo-table .combo-total td:nth-child(8),
-  .combo-table .combo-total td:nth-child(12) { border-right: none !important; }
+  /* 合计行原 4/8/12 列去右线规则已废弃（改为 16 列普通格 + 统一 nth-child 边线，见上方） */
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
   .days-table tr.total-row td { font-weight: 700; }
   /* 各表子级行(第4行起，为各子类的"已超过 15 天"展开)数据灰色（含第一列，不额外加粗） */
@@ -516,7 +522,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v41</b></footer>
+  <footer class="footer-version">看板版本 <b>v42</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -1046,10 +1052,11 @@ function renderComboTable() {
     acc[8] += A.frontSum; acc[9] += A.bSum; acc[10] += A.cSum;
     return acc;
   }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  // 合计行：数值格带 data-k 序号，与表体同款 nth-child 边线规则对齐（见 .combo-table thead tr:nth-child(2) th:nth-child(n)）
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead" colspan="4" style="text-align:center;font-weight:700">合计</td>' +
-    ttl.map(v => '<td class="num" style="font-weight:700">' + fmt(v) + '</td>').join('') +
-    '<td class="num" style="font-weight:700">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
+    ttl.map((v, i) => '<td class="num" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
+    '<td class="num" style="font-weight:700" data-k="t:12">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
   // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
   const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
