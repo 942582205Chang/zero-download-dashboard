@@ -242,19 +242,25 @@
   /* 七、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
   .combo-scroll { width: 88%; margin: 0 auto; }
   .combo-scroll .combo-table { width: 100% !important; table-layout: auto; }
-  /* 表头两行整体吸顶 + 首列固定；合计行吸底（表内 sticky bottom） */
+  /* 后12列固定宽 88px；前4列(学段/品牌/场景/类型)由内容自适应（JS 里 colgroup 已写死后12列宽） */
+  /* 表头两行整体吸顶 + 前4列固定；合计行吸底（表内 sticky bottom） */
   .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
   /* 七、学段/品牌/场景/类型 表头（含首列）浅蓝 #e3f2fd */
   .combo-scroll .combo-table thead th { background: #e3f2fd; }
-  .combo-scroll .combo-table thead th:first-child,
-  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
-  .combo-scroll .combo-table thead th:first-child { z-index: 4; background: #e3f2fd; }
-  /* 覆盖通用 .days-table 首列表头灰色规则（特异性更高）：第七块组合表首列表头也浅蓝 */
-  .combo-scroll .combo-table.days-table thead tr:first-child th:first-child { background: #e3f2fd; }
-  .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
+  /* 前4列(学段/品牌/场景/类型)固定不随横向滚动：表头+数据行对应列 sticky（left 偏移由 JS applyComboFrozen 按列宽累计注入） */
+  .combo-scroll .combo-table thead th:nth-child(-n+4),
+  .combo-scroll .combo-table tbody td:nth-child(-n+4) { position: sticky; }
+  .combo-scroll .combo-table thead th:nth-child(-n+4) { z-index: 5; }
+  /* 覆盖通用 .days-table 首列表头灰色规则（特异性更高）：第七块组合表表头（含前4列）也浅蓝 */
+  .combo-scroll .combo-table.days-table thead tr:first-child th:first-child,
+  .combo-scroll .combo-table.days-table thead th:nth-child(-n+4) { background: #e3f2fd; }
+  .combo-scroll .combo-table tbody td:nth-child(-n+4) { z-index: 2; background: var(--surface-solid); }
+  /* 数据行 hover 时固定列保持不透明底（渐变层+不透明底双层，盖住横向滚动内容），同时保留悬停色 */
+  .combo-scroll .combo-table tbody tr:hover td:nth-child(-n+4) { background: linear-gradient(rgba(0,122,255,0.06), rgba(0,122,255,0.06)), var(--surface-solid); }
   /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
+  /* 合计行前4列合并(1格)：吸底时同时吸左，盖住横向滚动内容 */
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
   /* 七、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
@@ -982,10 +988,34 @@ function renderComboTable() {
     '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
-  wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
-    '<colgroup><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
+  // 前4列(学段/品牌/场景/类型)固定不随横向滚动（sticky left，见 CSS），其余列随容器滚动
+  wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto;table-layout:auto">' +
+    '<colgroup><col><col><col><col><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"><col style="width:88px"></colgroup>' +
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
+  applyComboFrozen(wrap);
+}
+
+// 七、前4列固定：按实际列宽累计注入 sticky left 偏移（表头+数据行+合计行），列宽随内容变化自动适配
+function applyComboFrozen(wrap) {
+  const table = wrap.querySelector('table');
+  if (!table) return;
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  if (!thead || !tbody) return;
+  const N = 4;   // 固定列数
+  const firstRow = thead.querySelectorAll('tr')[1] || thead.querySelector('tr');
+  const cells = firstRow ? [...firstRow.children] : [];
+  let acc = 0;
+  for (let i = 0; i < N && i < cells.length; i++) {
+    cells[i].style.left = acc + 'px';
+    acc += cells[i].offsetWidth;
+  }
+  tbody.querySelectorAll('tr').forEach(r => {
+    const c = [...r.children];
+    let a = 0;
+    for (let i = 0; i < N && i < c.length; i++) { c[i].style.left = a + 'px'; a += c[i].offsetWidth; }
+  });
 }
 
 // 七、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
