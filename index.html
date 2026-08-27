@@ -216,26 +216,36 @@
      灰色右边框补充：资源数量_all 的 all(第5列)、资源数量_超过15天 的 B端0下载(第10列)、消费数据_all 的 B端下载(第14列) */
   .combo-table thead tr:first-child th:first-child,
   .combo-table tbody td:first-child { border-right: none !important; }
-  /* 合计行用 16 列普通格（无 colspan）时，边线规则用 tbody td:nth-child 才会命中；
-     表头吸顶 + 合计吸底两个 sticky 区域都吃同一套 nth-child 边线 → 线对齐（2026-08-27） */
+  // 合计行：首格 colspan=4（占第1~4列），后续 11 个数值格 + 1 个"率"格 = 13 格；
+  // 视觉列→DOM 列映射：视觉第n列 = DOM 第 (n-3) 格（n≥5）。因此：
+  //   视觉第5列(资源数量_all·all) = DOM第2格 → nth-child(2)
+  //   视觉第8列(资源数量_all·C端0消费,紫) = DOM第5格 → nth-child(5)
+  //   视觉第9列(资源数量_超过15天·all) = DOM第6格 → nth-child(6)
+  //   视觉第12列(资源数量_超过15天·C端0消费,紫) = DOM第9格 → nth-child(9)
+  //   视觉第14列(消费数据_all·B端下载) = DOM第11格 → nth-child(11)
+  //   视觉第15列(消费数据_all·C端消费,紫) = DOM第12格 → nth-child(12)
+  //   视觉第16列(C端单份消费,最右) = DOM第13格 → nth-child(13)
   .combo-table thead tr:nth-child(2) th:nth-child(4),
-  .combo-table tbody td:nth-child(4),
-  .combo-table .combo-total td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table tbody td:nth-child(4) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(8),
-  .combo-table tbody td:nth-child(8),
-  .combo-table .combo-total td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table tbody td:nth-child(8) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(12),
-  .combo-table tbody td:nth-child(12),
-  .combo-table .combo-total td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
+  .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table thead tr:nth-child(2) th:nth-child(5),
   .combo-table tbody td:nth-child(5),
-  .combo-table .combo-total td:nth-child(5),
   .combo-table thead tr:nth-child(2) th:nth-child(10),
   .combo-table tbody td:nth-child(10),
-  .combo-table .combo-total td:nth-child(10),
   .combo-table thead tr:nth-child(2) th:nth-child(14),
-  .combo-table tbody td:nth-child(14),
-  .combo-table .combo-total td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
+  .combo-table tbody td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
+  /* 合计行（首格 colspan=4，视觉列→DOM 列偏移 +3）专属边线 */
+  .combo-table .combo-total td:first-child { border-right: 1px solid var(--separator) !important; }   /* 合计格右侧（视觉第4列右） */
+  .combo-table .combo-total td:nth-child(2) { border-right: 1px solid var(--separator) !important; }  /* 视觉第5列 all */
+  .combo-table .combo-total td:nth-child(5) { border-right: 1px solid var(--purple-soft) !important; } /* 视觉第8列 C端0消费(紫) */
+  .combo-table .combo-total td:nth-child(6) { border-right: 1px solid var(--separator) !important; }  /* 视觉第9列 超过15天 all */
+  .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; } /* 视觉第12列 C端0消费(紫) */
+  .combo-table .combo-total td:nth-child(11) { border-right: 1px solid var(--separator) !important; } /* 视觉第14列 B端下载 */
+  .combo-table .combo-total td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }/* 视觉第15列 C端消费(紫) */
+  .combo-table .combo-total td:nth-child(13) { border-right: none !important; }                        /* 视觉第16列 C端单份消费(最右) */
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框：选"全部"用默认(黑色/ink)；设置了筛选值 → 文字蓝色 */
@@ -522,7 +532,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v43</b></footer>
+  <footer class="footer-version">看板版本 <b>v44</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
