@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>0 下载 · 预警看板</title>
-<!-- 第三方库懒加载（2026-08-27）：echarts 已无图表使用、exceljs 仅导出时用，均不再首屏同步阻塞。
+<!-- 第三方库懒加载（2026-08-27）：echarts 已无图表使用（2026-08-28 已移除图表相关 JS）、exceljs 仅导出时用，均不再首屏同步阻塞。
      避免 jsdelivr 卡顿拖慢首屏；导出 Excel 时按需动态注入脚本。 -->
 <style>
   :root {
@@ -541,7 +541,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v52</b></footer>
+  <footer class="footer-version">看板版本 <b>v54</b></footer>
 </div>
 <!-- 顶部加载进度条：数据加载/解密期间显示，避免白屏让人以为页面卡死 -->
 <div id="pageLoading" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;background:transparent">
@@ -575,7 +575,7 @@ function loadExcelJS() {
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v36';
+const PAGE_VERSION = 'v37';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -668,63 +668,15 @@ document.getElementById('loginBtn').addEventListener('click', handleLogin);
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
-// ===== Charts & data =====
-const THEME = {
-  light: { surface: 'transparent', ink: '#1c1c1e', muted: '#8e8e93', grid: '#e5e5ea', blue: '#007aff', orange: '#ff9500', green: '#34c759', yellow: '#ffcc00', purple: '#af52de' },
-  dark:  { surface: 'transparent', ink: '#ffffff', muted: '#8e8e93', grid: '#38383a', blue: '#0a84ff', orange: '#ff9f0a', green: '#30d158', yellow: '#ffd60a', purple: '#bf5af2' }
-};
-let charts = [], allData = null, allDetail = [], detailLoaded = false;
-function isDark() { return matchMedia('(prefers-color-scheme: dark)').matches; }
-function T() { return THEME[isDark() && document.documentElement.getAttribute('data-theme') !== 'light' ? 'dark' : 'light']; }
+// ===== Data & helpers =====
+// 2026-08-28：删除 ECharts 死代码（THEME / makeOption / disposeAll / drawCharts 已空转，分布分析模块 2026-08-26 移除）
+// 仅保留仍在使用的 fmt；isDark/T 只被图表函数引用，一并清除
+let allData = null, allDetail = [], detailLoaded = false;
 function fmt(n) { return n == null ? '--' : Number(n).toLocaleString('zh-CN'); }
-function disposeAll() { charts.forEach(c => c.dispose()); charts = []; }
-
-function chartFont(size = 14, weight = 500) { return { fontSize: size, fontWeight: weight, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Microsoft YaHei", sans-serif' }; }
-function commonTooltip() {
-  const t = T();
-  return { trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(128,128,128,.08)' } }, backgroundColor: isDark() ? 'rgba(28,28,30,0.92)' : 'rgba(255,255,255,0.92)', borderColor: t.grid, textStyle: chartFont(14, 500), padding: [10, 14], borderRadius: 12 };
-}
-
-function makeOption(type, data, opts = {}) {
-  const t = T();
-  const labelFont = chartFont(13, 600);
-  const axisFont = chartFont(13, 500);
-  const isRate = opts.isRate;
-  const base = {
-    backgroundColor: 'transparent',
-    grid: { left: 10, right: 24, top: 18, bottom: 10, containLabel: true },
-    tooltip: commonTooltip(),
-    animationDuration: 700,
-    xAxis: { type: 'value', axisLabel: { color: t.muted, ...axisFont }, splitLine: { lineStyle: { color: t.grid, type: 'dashed' } } },
-    yAxis: { type: 'category', inverse: true, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: t.ink, ...axisFont } },
-    series: [{
-      type: 'bar', data: data, barMaxWidth: 20, barGap: 4,
-      itemStyle: { color: opts.color || t.blue, borderRadius: [0, 8, 8, 0] },
-      label: { show: true, position: 'right', color: t.ink, ...labelFont, formatter: isRate ? '{c}%' : '{c}' }
-    }]
-  };
-  if (type === 'vertical') {
-    base.xAxis = { type: 'category', data: data.categories, axisLabel: { color: t.ink, ...axisFont, rotate: 30, interval: 0 }, axisLine: { lineStyle: { color: t.muted } }, axisTick: { show: false } };
-    base.yAxis = { type: 'value', axisLabel: { color: t.muted, ...axisFont }, splitLine: { lineStyle: { color: t.grid, type: 'dashed' } } };
-    base.series[0].data = data.values;
-    base.series[0].itemStyle.borderRadius = [10, 10, 0, 0];
-    base.series[0].label.position = 'top';
-  }
-  return base;
-}
-
-function drawCharts() {
-  disposeAll();
-  const t = T();
-  const d = allData;
-
-  // 分布分析模块已删除（2026-08-26），此函数保留空实现以兼容调用方
-  return;
-}
 
 function updateKPI() {
-  // KPI 永远用 data.json 的 summary（全量真值）；detail.json 只是 0下载明细子集，不参与 KPI 计算
   const s = allData.summary;
+  // KPI 永远用 data.json 的 summary（全量真值）；detail.json 只是 0下载明细子集，不参与 KPI 计算
   document.getElementById('kpiTotal').textContent = fmt(s.total);
   document.getElementById('kpiZeroFront').textContent = fmt(s.zeroFront);
   document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
@@ -851,7 +803,6 @@ function loadData() {
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
     allData = JSON.parse(decSens(d.enc, decKey));
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
-    drawCharts();
     updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
     renderDaysTable('daysTable1', allData.byDays, '小初高');   // 发布天数分档统计表（一、小初高整体）
     renderStageTables();
@@ -877,13 +828,18 @@ const COMBO_KEYS = ['学段', '品牌', '场景', '类型', '课程'];
 // comboStatsArr 因此需要 detailData.comboStats；若尚未加载（detail 未到），返回空，renderComboTable 会显示"加载中"
 let _comboStatsCache = null;                 // detail.json 加载完成后的 comboStats 缓存（含空数组）
 let _detailLoaded = false;                   // detail.json 是否已下载并解密完成
+// 组合池缓存（2026-08-28 性能优化）：课程筛选为空时 comboPool 结果稳定，筛选联动不再每次全量重聚合；
+// detail.json 加载完成或课程变化时失效重建。
+let _comboPoolCache = null;
+let _comboPoolCacheCourse = '';
+function invalidateComboPool() { _comboPoolCache = null; }
 function comboStatsArr() {
   if (_comboStatsCache !== null) return _comboStatsCache;
   const d = window.detailData;
   return (d && d.comboStats) || [];
 }
 // 记录 detail.json 加载完成（在 initComboTable 之前把缓存填上，首次渲染即出全量）
-function setDetailData(d) { _detailLoaded = true; _comboStatsCache = (d && d.comboStats) || []; }
+function setDetailData(d) { _detailLoaded = true; _comboStatsCache = (d && d.comboStats) || []; invalidateComboPool(); }
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
 // ===== 组合统计数据（comboStats）=====
@@ -906,8 +862,10 @@ function aggRow(list) {
   return r;
 }
 // 核心：把五维 comboStats 变成"四列组合一行"的池子；若传了课程过滤，每行数值只统计该课程
+// 课程为空时结果稳定，走缓存避免每次筛选全量重聚合（2026-08-28 性能优化）
 function comboPool() {
   const c = comboState['课程'];
+  if (!c && _comboPoolCache) return _comboPoolCache;
   let rows = comboStatsArr();
   if (c) rows = rows.filter(s => String(s['课程'] || '') === c);
   const map = {};
@@ -915,7 +873,9 @@ function comboPool() {
     const k = dim4Key(s);
     (map[k] = map[k] || []).push(s);
   });
-  return Object.values(map).map(aggRow);
+  const pool = Object.values(map).map(aggRow);
+  if (!c) _comboPoolCache = pool;   // 课程未选 → 缓存全量池
+  return pool;
 }
 
 // 按当前筛选（学段/品牌/场景/类型，不含课程）过滤聚合后的四列组合
@@ -972,6 +932,9 @@ function stageSort(a, b) { return (STAGE_ORDER[a] ?? 99) - (STAGE_ORDER[b] ?? 99
 // 联动：重建 5 个下拉 —— 每个维度可选项 = 当前已选组合下该维度实际出现的值（池空则用全量）
 // 特殊联动：课程自带学段前缀 → 选中课程时自动锁定对应学段；选中学段时课程只列该学段
 function refreshComboOptions(changedKey) {
+  // 课程维度可选项随课程自身筛选收缩，会让当前选中消失；选中课程变化 → 组合池失效重建
+  if (changedKey === '课程' || (changedKey === undefined && comboState['课程'] !== _comboPoolCacheCourse)) invalidateComboPool();
+  _comboPoolCacheCourse = comboState['课程'];
   // 先按"除自身外的其它已选"建立候选池，供每个维度取值收缩
   COMBO_KEYS.forEach(k => {
     const sel = document.getElementById('cf-' + k);
@@ -1021,12 +984,13 @@ function initComboTable() {
     if (!sel) return;
     sel.addEventListener('change', () => {
       comboState[k] = sel.value;
-      refreshComboOptions();   // 联动：其它维度可选项收缩（含课程→学段自动锁定）
+      refreshComboOptions(k);   // 联动：其它维度可选项收缩（含课程→学段自动锁定；课程变化使组合池失效重建）
       renderComboTable();
     });
   });
   document.getElementById('cfClear').addEventListener('click', () => {
     COMBO_KEYS.forEach(k => { comboState[k] = ''; const s = document.getElementById('cf-' + k); if (s) s.value = ''; });
+    invalidateComboPool();
     refreshComboOptions();
     renderComboTable();
   });
@@ -1167,8 +1131,8 @@ function exportComboExcel() {
   }).catch(e => alert(e.message));
 }
 
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (allData) { drawCharts(); } });
-window.addEventListener('resize', () => charts.forEach(c => c.resize()));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { /* 图表已移除（2026-08-26），无需重绘 */ });
+// 2026-08-28：ECharts 图表已全部移除，原 resize 监听（charts.forEach(c => c.resize())）随之删除
 // ===== 左侧简略导航：返回顶部 / 各区块标签 / 返回底部，滚动自动高亮 =====
 (function initSideNav() {
   const box = document.getElementById('sideNav');
