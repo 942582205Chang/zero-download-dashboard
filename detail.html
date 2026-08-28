@@ -56,6 +56,9 @@ function loadExcelJS() {
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); color: var(--ink-2); font-size: 13px; font-weight: 600; }
   .back { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); text-decoration: none; }
+  /* 返回看板 文字：彩色渐变流动（文字不动，仅颜色滚动，1秒一圈；2026-08-28 与预警页查看明细同款） */
+  .back.grad { background: linear-gradient(90deg, #ff3b30, #ff9500, #ffcc00, #34c759, #007aff, #af52de, #ff3b30); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: grad-scroll-d 1s linear infinite; }
+  @keyframes grad-scroll-d { from { background-position: 0% center; } to { background-position: 200% center; } }
   .back:hover, .export-btn:hover { filter: brightness(0.95); }
   .toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
   .search { flex: 0 0 auto; width: 100%; min-width: 0; height: 30px; padding: 0 12px; font-size: 14px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
@@ -135,7 +138,7 @@ function loadExcelJS() {
     <div class="meta">
       <span class="badge" id="timeBadge">更新：--</span>
       <button class="badge export-btn" id="exportBtn" style="display:none;cursor:pointer;">⬇ 导出 Excel</button>
-      <a class="back" href="index.html">← 返回看板</a>
+      <a class="back grad" href="index.html">返回看板</a>
       <span class="back" id="logoutBtn" style="display:none;cursor:pointer;">退出登录</span>
     </div>
   </header>
