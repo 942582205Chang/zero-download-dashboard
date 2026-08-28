@@ -549,7 +549,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v114</b></footer>
+  <footer class="footer-version">看板版本 <b>v116</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -899,6 +899,7 @@ function comboFiltered() {
 }
 
 // 联动候选池：与 comboPool 一致（课程参与数值过滤），供各维度取值收缩；忽略本维度自身筛选
+// 返回 { pool, total }：pool 为过滤后的行集合（含 over15.front0），total 为这些行的 over15.front0 合计（占比分母）
 function comboPoolFor(k) {
   const q = { ...comboState }; q[k] = '';
   const c = q['课程'];
@@ -909,7 +910,9 @@ function comboPoolFor(k) {
   if (act.length) pool = pool.filter(s => act.every(x => String(s[x] || '') === q[x]));
   const map = {};
   pool.forEach(s => { const kk = dim5Key(s); (map[kk] = map[kk] || []).push(s); });
-  return Object.values(map).map(aggRow);
+  const agg = Object.values(map).map(aggRow);
+  const total = agg.reduce((a, s) => a + (s.over15.front0 || 0), 0);   // 当前联动结果"超15天前台0下载"总份数
+  return { pool: agg, total };
 }
 
 // 课程下拉候选（单独逻辑）：课程是"筛选条件"不是表行列，不能用 comboPool（它会按课程过滤后聚合，破坏四列池）。
@@ -917,6 +920,7 @@ function comboPoolFor(k) {
 // 2026-08-27 修正：课程名自带学段前缀，选了某课程后学段被锁定为其前2字 → 课程候选收缩到该学段，
 // 不再出现小学/高中课程（用户明确要求：学段=初中时课程只列初中的）。
 // 课程自身保留全量（忽略自身筛选），但尊重学段锁定。
+// 2026-08-28：返回 { opts, total } —— opts 含每个课程的 over15.front0 份数，total 为当前结果总份数（占比分母）
 function comboCourseOptions() {
   const q = { ...comboState }; q['课程'] = '';
   const st = q['学段'];   // 已含"课程→学段 自动锁定"后的值
@@ -924,7 +928,16 @@ function comboCourseOptions() {
   if (st) rows = rows.filter(s => String(s['学段'] || '') === st);   // 只保留当前学段
   const act = DIM5.filter(x => q[x] && x !== '学段');                 // 其余四维（主版本/品牌/场景/类型）参与过滤
   if (act.length) rows = rows.filter(s => act.every(x => String(s[x] || '') === q[x]));
-  return [...new Set(rows.map(s => String(s['课程'] || '')))].sort(courseSort);
+  const cnt = new Map();
+  let total = 0;
+  for (const s of rows) {
+    const c = String(s['课程'] || '');
+    if (!c) continue;
+    cnt.set(c, (cnt.get(c) || 0) + (s.over15.front0 || 0));
+    total += s.over15.front0 || 0;
+  }
+  const opts = [...cnt.entries()].map(([c, n]) => ({ v: c, n })).sort((a, b) => courseSort(a.v, b.v));
+  return { opts, total };
 }
 
 // 学段排序：小学→初中→高中；课程排序：先学段(小初高)再学科
@@ -952,21 +965,36 @@ function refreshComboOptions(changedKey) {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
     // 候选池：课程维度用 comboCourseOptions（不按五列聚合、不因自身筛选收缩），其它维度用 comboPoolFor
-    const pool = (k === '课程') ? null : comboPoolFor(k);
+    const cpool = (k === '课程') ? comboCourseOptions() : comboPoolFor(k);
+    const pool = (k === '课程') ? null : cpool.pool;
+    const totalN = (k === '课程') ? cpool.total : cpool.total;
     const old = comboState[k];
-    const avail = (k === '课程')
-      ? comboCourseOptions()
-      : [...new Set(pool.map(s => String(s[k] || '')))];
-    // 排序：学段按 小初高；主版本/地区 是→否 固定序；课程按 学段+学科；其余 ASC
-    if (k === '学段') avail.sort(stageSort);
-    else if (k === '主版本/地区') avail.sort((a, b) => (a === '是' ? 0 : 1) - (b === '是' ? 0 : 1));
-    else if (k === '课程') avail.sort(courseSort);
-    else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));;
+    // 选项列表：课程用 comboCourseOptions 的 opts（含份数），其它维度取候选池去重 + 聚合每选项 over15.front0
+    let avail;
+    if (k === '课程') {
+      avail = cpool.opts.map(o => o.v);
+    } else {
+      const seen = new Map();
+      pool.forEach(s => { const v = String(s[k] || ''); if (v !== '') seen.set(v, (seen.get(v) || 0) + (s.over15.front0 || 0)); });
+      avail = [...seen.keys()];
+      // 排序：学段按 小初高；主版本/地区 是→否 固定序；其余 ASC
+      if (k === '学段') avail.sort(stageSort);
+      else if (k === '主版本/地区') avail.sort((a, b) => (a === '是' ? 0 : 1) - (b === '是' ? 0 : 1));
+      else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));
+    }
     const vals = avail.length ? avail : comboDimVals(k);
     restoreOptionLabels(sel);   // 重建前先把 label 恢复为原始值（防止陈旧 data-v 污染选中显示）
     sel.innerHTML = '';
     sel.appendChild(new Option('全部', ''));
-    vals.forEach(v => sel.appendChild(new Option(v, v)));
+    // 选项文本：值 + 超15天前台0下载份数 + 占比（相对当前联动结果总份数，2026-08-28）
+    vals.forEach(v => {
+      const n = (k === '课程')
+        ? (cpool.opts.find(o => o.v === v) || {}).n || 0
+        : (pool || []).filter(s => String(s[k]) === v).reduce((a, s) => a + (s.over15.front0 || 0), 0);
+      const pct = totalN ? (n / totalN * 100).toFixed(1) : '0.0';
+      const opt = new Option(v + '，' + n.toLocaleString('zh-CN') + '，' + pct + '%', v);
+      sel.appendChild(opt);
+    });
     if (old && vals.indexOf(old) > -1) sel.value = old;
     else sel.value = '';
     sel.classList.toggle('has-val', !!comboState[k]);
