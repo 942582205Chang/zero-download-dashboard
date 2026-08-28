@@ -240,8 +240,8 @@
      表头行1 类型格(rowspan2) + 表体 类型格 + 合计行首格(colspan=5) 都打 col5-end → 上下贯通 */
   .combo-table th.col5-end,
   .combo-table td.col5-end { border-right: 1px solid var(--purple-soft) !important; }
-  /* 学段列右无线（视觉1 = 表体/表头第1行第1格） */
-  .combo-table tbody td:first-child,
+  /* 学段列右无线（视觉1 = 表体/表头第1行第1格；合计行首格保留 col5-end，故排除） */
+  .combo-table tbody tr:not(.combo-total) td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
@@ -550,7 +550,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v100</b></footer>
+  <footer class="footer-version">看板版本 <b>v102</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1089,8 +1089,8 @@ function renderComboTable() {
     acc[8] += A.frontSum; acc[9] += A.bSum; acc[10] += A.cSum;
     return acc;
   }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  // 合计行：数值格带 data-k 序号，与表体同款 grp-end 标记（方案A）——首格 colspan=5 占视觉1~5，
-  // 视觉9(C端0消费右)/13(超15·C端0消费右) = DOM 第5/9 格 → 加 grp-end
+  // 合计行：首格 colspan=5 占视觉1~5 → 右缘=视觉5（类型后）→ col5-end；
+  //   视觉9/13（资源数量_all/超15 组右缘）= 数值格 DOM 第5/9 格 → grp-end
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead col5-end" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
     ttl.map((v, i) => '<td class="num' + (i === 4 || i === 8 ? ' grp-end' : '') + '" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
