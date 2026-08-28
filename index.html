@@ -549,7 +549,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v116</b></footer>
+  <footer class="footer-version">看板版本 <b>v118</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -977,6 +977,17 @@ function refreshComboOptions(changedKey) {
       const seen = new Map();
       pool.forEach(s => { const v = String(s[k] || ''); if (v !== '') seen.set(v, (seen.get(v) || 0) + (s.over15.front0 || 0)); });
       avail = [...seen.keys()];
+      // 排序：学段按 小初高；主版本/地区 是→否 固定序；其余 ASC
+      if (k === '学段') avail.sort(stageSort);
+      else if (k === '主版本/地区') avail.sort((a, b) => (a === '是' ? 0 : 1) - (b === '是' ? 0 : 1));
+      else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));
+    }
+    // 过滤超15天前台0下载份数为 0 的选项（2026-08-28 用户要求：0 结果不展示）
+    if (k === '课程') avail = cpool.opts.filter(o => (o.n || 0) > 0).map(o => o.v);
+    else {
+      const seen = new Map();
+      pool.forEach(s => { const v = String(s[k] || ''); if (v !== '') seen.set(v, (seen.get(v) || 0) + (s.over15.front0 || 0)); });
+      avail = [...seen.entries()].filter(([, n]) => n > 0).map(([v]) => v);
       // 排序：学段按 小初高；主版本/地区 是→否 固定序；其余 ASC
       if (k === '学段') avail.sort(stageSort);
       else if (k === '主版本/地区') avail.sort((a, b) => (a === '是' ? 0 : 1) - (b === '是' ? 0 : 1));
