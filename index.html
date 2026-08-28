@@ -107,7 +107,7 @@
   .brand { flex: 1 1 auto; min-width: 0; display: flex; align-items: flex-end; }
   .brand h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; flex: 0 0 auto; white-space: nowrap; }
   /* 数据维度说明：紧跟标题胶囊之后（同一行、独立元素，不包在胶囊里），与胶囊底部对齐（2026-08-28） */
-  .brand-sub { align-self: flex-end; padding-bottom: 7px; margin-left: 14px; color: var(--muted); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .brand-sub { align-self: flex-end; padding-bottom: 7px; margin-left: 14px; color: var(--muted); font-size: 14px; font-weight: 400; white-space: nowrap; }
   .brand h1.pill {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 12px; border-radius: 999px;
@@ -560,7 +560,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v138</b></footer>
+  <footer class="footer-version">看板版本 <b>v140</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
