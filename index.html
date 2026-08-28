@@ -223,6 +223,13 @@
      用 box-shadow 内嵌浅蓝（透明渐变）+ 不透明白底叠加，避免纯半透明底在 sticky 固定列上被叠加变重 */
   .combo-scroll .combo-table tbody tr.mv-row td:nth-child(-n+5) { background: var(--surface-solid); box-shadow: inset 2000px 0 0 rgba(0, 122, 255, 0.06); }
   .combo-scroll .combo-table tbody tr.mv-row:hover td:nth-child(-n+5) { background: var(--surface-solid); box-shadow: inset 2000px 0 0 rgba(0, 122, 255, 0.10); }
+  /* 组合表行悬停：整行高亮（含数据区 + 固定列），用浅黄色（2026-08-28 用户要求）；
+     mv-row（是→浅蓝）行悬停时也切浅黄 */
+  .combo-table tbody tr:hover td { background: #fff7d6; }
+  .combo-table tbody tr:hover td.fz,
+  .combo-table tbody tr:hover td:nth-child(-n+5) { background: #fff7d6; }
+  .combo-table tbody tr.mv-row:hover td,
+  .combo-table tbody tr.mv-row:hover td:nth-child(-n+5) { background: #fff7d6; box-shadow: none; }
   /* 二、组合表正文统一 13px + 第一列(学段)全行居中（2026-08-28）：
      覆盖通用分档表两条"连坐"—— tr:nth-child(n+4) td:first-child 的 12px/居左、tr:not(:first-child) td.num 的 14px，
      故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
@@ -573,7 +580,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v92</b></footer>
+  <footer class="footer-version">看板版本 <b>v94</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1215,7 +1222,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { /*
   // ===== 收起/展开逻辑 =====
   let collapsed = false;
   function renderNav() {
-    // 2026-08-28：非全屏默认折叠；折叠/展开按钮始终显示（"折叠导航"/"展开导航"文本切换）
+    // 2026-08-28：默认折叠；按钮始终显示（"展开导航"/"折叠导航"文本切换）
     toggle.textContent = collapsed ? '展开导航' : '折叠导航';
     box.classList.toggle('collapsed', collapsed);
   }
@@ -1224,7 +1231,17 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { /*
   box.addEventListener('click', e => {
     if (collapsed && e.target === box) { collapsed = false; renderNav(); }
   });
-  // 初始状态：始终折叠，显示"展开导航"按钮（2026-08-28 用户要求：导航默认折叠，点按钮展开）
+  // 滚动时自动展开、停止滚动后自动折叠（2026-08-28 用户要求）
+  let scrollTimer = null;
+  function autoNavOnScroll() {
+    if (collapsed) { collapsed = false; renderNav(); }
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      if (!collapsed) { collapsed = true; renderNav(); }   // 停止滚动 600ms → 折叠
+    }, 600);
+  }
+  window.addEventListener('scroll', autoNavOnScroll, { passive: true });
+  // 初始状态：始终折叠，显示"展开导航"按钮
   collapsed = true;
   renderNav();
 
