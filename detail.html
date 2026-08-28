@@ -273,11 +273,12 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if (e.ke
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
 // ===== 列定义（发布天数在审核人前）=====
-const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
+// 主版本/地区（是/否）：判定列，放 版本 后面（2026-08-28 用户定义；值"是/否"）
+const COLS = ['课程','资源id','标题','场景','类型','品牌','年级','版本','主版本/地区','b端下载','c端消费','前台下载','发布天数','审核人','审核时间','学年','年份','学期','地区','等级_状态','作者id','用户名','店铺','提成比例','定价','链接','所属专辑','专辑名称'];
 const COL_LABELS = { 'b端下载': 'B端下载', 'c端消费': 'C端消费' };   // 表头显示文本映射（数据字段 key 仍用小写原名）
 const colLabel = c => COL_LABELS[c] || c;
 const NUM_COLS = new Set(['b端下载','c端消费','前台下载','发布天数','年份','作者id','资源id']);
-const FILTER_COLS = ['课程','品牌','场景','类型','审核人','年级','版本','地区'];   // 下拉筛选列（品牌后接场景/类型；审核人按正序）；全部参与联动
+const FILTER_COLS = ['课程','品牌','场景','类型','审核人','年级','版本','主版本/地区','地区'];   // 下拉筛选列（品牌后接场景/类型；审核人按正序）；全部参与联动
 const DAY_RANGES = [   // 发布天数分段下拉（数据范围 16~232 天，按分布切段）
   { value: '', label: '发布天数：全部' },
   { value: '16-30', label: '16-30 天' },
@@ -651,7 +652,7 @@ document.getElementById('perPage').addEventListener('change', e => { state.per =
 
 // ===== 导出 Excel（复用格式：发布天数在审核人前 + 排序）=====
 // 懒加载 exceljs（2026-08-27）：导出按钮默认隐藏（备用功能），点导出时才动态注入库，避免首屏阻塞
-const EXPORT_WIDTHS = [11, 8, 44.5, 12.875, 11.125, 12.25, 6.875, 11.25, 9, 8.625, 9, 8.625, 14.625, 11.25, 10.75, 6.625, 6.875, 6.75, null, null, 10.375, null, null, null, null, null, 11];
+const EXPORT_WIDTHS = [11, 8, 44.5, 12.875, 11.125, 12.25, 6.875, 11.25, 8, 9, 8.625, 9, 8.625, 14.625, 11.25, 10.75, 6.625, 6.875, 6.75, null, null, 10.375, null, null, null, null, null, 11];
 document.getElementById('exportBtn').addEventListener('click', () => {
   const rows = filtered.slice();
   const btn = document.getElementById('exportBtn');
