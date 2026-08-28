@@ -276,20 +276,32 @@
   .combo-toolbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: center; margin: 4px 0 12px; }
   /* 二、内嵌滚动容器：表太长时内嵌纵向滚动，表头吸顶一直可见；合计行吸附底部常显 */
   .combo-scroll { overflow: auto; max-height: 60vh; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); }
-  /* 二、表格铺满容器（消除右侧大白区），容器宽度受限（不占满全宽，避免表格看着空） */
-  .combo-scroll { width: 88%; margin: 0 auto; }
+  /* 二、表格铺满容器（消除右侧大白区），容器加宽到 96%（2026-08-28 列名一行完整后表更宽） */
+  .combo-scroll { width: 96%; margin: 0 auto; }
   .combo-scroll .combo-table { width: 100% !important; table-layout: auto; }
-  /* 表头两行整体吸顶 + 首列固定；合计行吸底（表内 sticky bottom） */
+  /* 表头两行整体吸顶 + 前5列固定（学段/主版本/品牌/场景/类型，2026-08-28 锁定前5列，横向滚动时保持可见）；
+     合计行吸底（表内 sticky bottom） */
   .combo-scroll .combo-table thead { position: sticky; top: 0; z-index: 3; }
   .combo-scroll .combo-table thead th { background: #FFFBE6; }
-  .combo-scroll .combo-table thead th:first-child,
-  .combo-scroll .combo-table tbody td:first-child { position: sticky; left: 0; }
+  .combo-scroll .combo-table thead th:nth-child(-n+5),
+  .combo-scroll .combo-table tbody td:nth-child(-n+5) { position: sticky; left: 0; }
   .combo-scroll .combo-table thead th:first-child { z-index: 4; background: #FFFBE6; }
   .combo-scroll .combo-table tbody td:first-child { z-index: 2; background: var(--surface-solid); }
+  /* 固定列底不透明（盖住横向滚动内容）；第2~5列在 sticky 下需要不透明底，否则内容透出 */
+  .combo-scroll .combo-table thead th:nth-child(-n+5) { background: #FFFBE6; }
+  .combo-scroll .combo-table tbody td:nth-child(2),
+  .combo-scroll .combo-table tbody td:nth-child(3),
+  .combo-scroll .combo-table tbody td:nth-child(4),
+  .combo-scroll .combo-table tbody td:nth-child(5) { background: var(--surface-solid); }
   /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
   .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
+  /* 合计行首格 colspan=5，横向滚动时前5列底保持一致（sticky 部分透出时用 grid 底兜底） */
+  .combo-scroll .combo-table .combo-total td:nth-child(2),
+  .combo-scroll .combo-table .combo-total td:nth-child(3),
+  .combo-scroll .combo-table .combo-total td:nth-child(4),
+  .combo-scroll .combo-table .combo-total td:nth-child(5) { background: var(--grid); }
   /* 二、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
@@ -419,7 +431,7 @@
   .side-nav .nav-item.active { background: var(--blue); color: #fff; font-weight: 700; }
   .side-nav .nav-top, .side-nav .nav-bottom { font-weight: 700; color: var(--ink); }
   .side-nav .sep { height: 1px; background: var(--separator); margin: 2px 2px; }
-  /* 收起/展开按钮：全屏显示（标题旁小按钮），收起态时导航框收缩为小胶囊按钮 */
+  /* 收起/展开按钮：始终显示（标题旁小按钮），收起态时导航框收缩为小胶囊按钮（2026-08-28 用户要求：无论是否全屏都有折叠/展开按钮） */
   .side-nav .nav-toggle {
     font-size: 11px; font-weight: 700; color: var(--ink-2);
     background: none; border: none; cursor: pointer; padding: 2px 4px;
@@ -552,7 +564,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v77</b></footer>
+  <footer class="footer-version">看板版本 <b>v80</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1200,26 +1212,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { /*
   box.addEventListener('click', e => {
     if (collapsed && e.target === box) { collapsed = false; renderNav(); }
   });
-  // 是否与正文重叠：导航框右边界 > 正文容器(或视口)左边 + 8px
-  function overlapping() {
-    const r = box.getBoundingClientRect();
-    const contentLeft = Math.max(document.body.getBoundingClientRect().left + 14, 0);
-    return r.left + r.width > contentLeft;
-  }
-  // 检测全屏：正文容器宽度 ≥ 视口宽 × 0.92（近似全屏态）
-  function isFullscreen() {
-    const page = document.querySelector('.page') || document.body;
-    const w = page.getBoundingClientRect().width;
-    return w >= window.innerWidth * 0.92;
-  }
-  // 全屏默认展开，非全屏默认折叠；无论是否全屏都允许手动展开/折叠
-  function autoCollapse() {
-    const want = isFullscreen() ? false : true;   // 全屏→展开(false)，非全屏→折叠(true)
-    if (collapsed !== want) { collapsed = want; renderNav(); }
-  }
-  window.addEventListener('resize', autoCollapse);
-  window.addEventListener('scroll', autoCollapse, { passive: true });
-  autoCollapse();   // 初始按当前屏宽设定默认状态
+  // 初始状态：始终展开（用户手动折叠后才收起）；折叠/展开按钮始终可用（2026-08-28）
+  collapsed = false;
   renderNav();
 
   // 滚动监听：找到当前视口最顶的区块 → 高亮
