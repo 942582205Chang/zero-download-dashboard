@@ -85,10 +85,12 @@ function loadExcelJS() {
   thead th[data-col="版本"] { width: 126px; }   /* 版本列固定：约容8个汉字 */
   thead th[data-col="所属专辑"] { width: 142px; }   /* 所属专辑固定：约容16个数字 */
   thead th[data-col="专辑名称"] { width: 412px; }   /* 专辑名称固定：约容30个汉字 */
+  thead th[data-col="主版本/地区"] { width: 96px; } /* 主版本/地区：是/否 短列，表头完整显示 */
   tbody td.w152 { max-width: 152px; }
   tbody td.w126 { max-width: 126px; }
   tbody td.w142 { max-width: 142px; }
   tbody td.w412 { max-width: 412px; }
+  tbody td.mv { max-width: 96px; }   /* 主版本/地区 列：是/否 短值，不加宽不截断 */
   .pager { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
   .pager .info { color: var(--muted); font-size: 14px; }
   .pager button, .ios-btn { padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; background: var(--blue); color: #fff; }
@@ -500,6 +502,7 @@ function render() {
     else if (c === '版本') cls = (cls ? cls + ' ' : '') + 'w126';
     else if (c === '所属专辑') cls = (cls ? cls + ' ' : '') + 'w142';
     else if (c === '专辑名称') cls = (cls ? cls + ' ' : '') + 'w412';
+    else if (c === '主版本/地区') { cls = (cls ? cls + ' ' : '') + 'mv'; }
     const text = (v === '' || v == null) ? '' : esc(v);
     return '<td class="' + cls + '"' + (text ? ' title="' + text + '"' : '') + '>' + text + '</td>';
   }).join('') + '</tr>').join('');
