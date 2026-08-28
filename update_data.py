@@ -76,17 +76,6 @@ def load_csv(path):
     raise ValueError(f"无法识别 CSV 编码：{path}")
 
 
-def group_rate(df, zero_df, col, topn=None):
-    """按列分组：零下载数 + 总资源数 + 占比"""
-    zero = zero_df.groupby(col).size().reset_index(name="零下载数")
-    tot = df.groupby(col).size().reset_index(name="总资源数")
-    merged = zero.merge(tot, on=col, how="right").fillna(0)
-    merged["零下载数"] = merged["零下载数"].astype(int)
-    merged["占比"] = (merged["零下载数"] / merged["总资源数"] * 100).round(1)
-    merged = merged.sort_values("零下载数", ascending=False)
-    return merged.head(topn) if topn else merged
-
-
 def build_day_table(df, overall_label):
     """发布天数分档统计表（8行：整体/不超过15天/已超过15天/16-30/31-60/61-90/91-180/超过180天）。
     overall_label 为表格第一行名称（小初高整体 / 小学整体 / 初中整体 / 高中整体）。"""
@@ -284,36 +273,6 @@ def main():
             "zeroC": int((over15["c端消费"] == 0).sum()),
             "thresholdDays": 15
         },
-        "byCourse": {
-            "categories": group_rate(df, zero_df, "课程")["课程"].tolist(),
-            "zero": group_rate(df, zero_df, "课程")["零下载数"].tolist(),
-            "rate": group_rate(df, zero_df, "课程")["占比"].tolist()
-        },
-        "byGrade": {
-            "categories": group_rate(df, zero_df, "年级")["年级"].tolist(),
-            "zero": group_rate(df, zero_df, "年级")["零下载数"].tolist(),
-            "rate": group_rate(df, zero_df, "年级")["占比"].tolist()
-        },
-        "byBrand": {
-            "categories": group_rate(df, zero_df, "品牌", 15)["品牌"].tolist(),
-            "zero": group_rate(df, zero_df, "品牌", 15)["零下载数"].tolist(),
-            "rate": group_rate(df, zero_df, "品牌", 15)["占比"].tolist()
-        },
-        "byRegion": {
-            "categories": group_rate(df, zero_df, "地区", 15)["地区"].tolist(),
-            "zero": group_rate(df, zero_df, "地区", 15)["零下载数"].tolist(),
-            "rate": group_rate(df, zero_df, "地区", 15)["占比"].tolist()
-        },
-        "byVersion": {
-            "categories": group_rate(df, zero_df, "版本", 15)["版本"].tolist(),
-            "zero": group_rate(df, zero_df, "版本", 15)["零下载数"].tolist(),
-            "rate": group_rate(df, zero_df, "版本", 15)["占比"].tolist()
-        },
-        # 发布天数分档统计表（表格区块数据，占比前端计算）
-        "byDays": by_days,
-        # 各学段发布天数分档表（二、各学段数据）：小学整体/初中整体/高中整体
-        "byDaysStages": stages,
-        # 三、各课程数据：每学段一张表，前三行同分档表，其后每行 = 课程"已超过 15 天"子集
         "byCourseStages": course_stages,
         # 四、各项目数据（品牌系列）：每学段一张表，其后每行 = 品牌"已超过 15 天"子集
         "byBrandStages": brand_stages,
