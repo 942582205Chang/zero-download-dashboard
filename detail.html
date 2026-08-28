@@ -294,6 +294,8 @@ const state = {
   sortCol: null, sortDir: 1,   // null = 默认多级排序
   page: 1, per: 50
 };
+// 首行可访问时缓存固定列宽（left 偏移），之后不再每次 render 重测（2026-08-28 性能优化）
+let stickyLefts = null;
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -323,7 +325,7 @@ function comparator(a, b) {
 function searchOk(r) {   // 模糊搜索：覆盖全部字段（COLS 全列），多关键词空格/逗号分隔，全部命中才匹配
   const s = state.search.trim().toLowerCase();
   if (!s) return true;
-  const hay = COLS.map(c => String(r[c]||'')).join(' ').toLowerCase();
+  const hay = (r._hay != null) ? r._hay : (r._hay = COLS.map(c => String(r[c]||'')).join(' ').toLowerCase());   // 每行搜索串只算一次，后续复用（2026-08-28 性能优化）
   const words = s.split(/[\s,，]+/).filter(Boolean);
   return words.every(w => hay.includes(w));
 }
@@ -484,26 +486,6 @@ function render() {
   document.getElementById('prevBtn').disabled = state.page <= 1;
   document.getElementById('nextBtn').disabled = state.page >= pages;
 
-  const thead = document.getElementById('thead');
-  thead.innerHTML = '<tr>' + DISPLAY_COLS.map(c => {
-    let arr = '';
-    if (state.sortCol === c) arr = state.sortDir === 1 ? '↑' : '↓';
-    else if (!state.sortCol && c === '课程') arr = '↑';
-    return '<th data-col="' + c + '">' + esc(colLabel(c)) + '<span class="arr">' + arr + '</span></th>';
-  }).join('') + '</tr>';
-  thead.querySelectorAll('th').forEach(th => {
-    th.addEventListener('click', () => {
-      const c = th.getAttribute('data-col');
-      if (state.sortCol === c) {
-        if (state.sortDir === 1) state.sortDir = -1;
-        else { state.sortCol = null; state.sortDir = 1; }
-      } else { state.sortCol = c; state.sortDir = 1; }
-      state.page = 1;
-      filtered.sort(comparator);   // 真正按当前排序列重排，箭头才反映实际效果
-      render();
-    });
-  });
-
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = rows.map((r, i) => '<tr' + ((i + 1) % 5 === 0 ? ' class="band"' : '') + '>' + DISPLAY_COLS.map(c => {
     const v = r[c];
@@ -521,22 +503,60 @@ function render() {
     return '<td class="' + cls + '"' + (text ? ' title="' + text + '"' : '') + '>' + text + '</td>';
   }).join('') + '</tr>').join('');
   applySticky();
+  updateSortArrows();
+}
+
+// 排序箭头只改 span 文本，不动表头结构（2026-08-28：表头改为只初始化一次，见 done()）
+function updateSortArrows() {
+  document.querySelectorAll('#thead th').forEach(th => {
+    const c = th.getAttribute('data-col');
+    const arr = th.querySelector('.arr');
+    if (!arr) return;
+    if (state.sortCol === c) arr.textContent = state.sortDir === 1 ? '↑' : '↓';
+    else if (!state.sortCol && c === '课程') arr.textContent = '↑';
+    else arr.textContent = '';
+  });
 }
 
 // 固定前 3 列（课程/资源id/标题）：按实际列宽设置 sticky left，横向滚动时保持不动
+// 列宽在数据加载后稳定，首行可访问时量一次缓存，后续 render 直接复用（2026-08-28 性能优化）
 function applySticky() {
   const FROZEN = 3;
   const ths = document.querySelectorAll('#thead th');
   const first = document.querySelector('#tbody tr');
   if (!first || ths.length < FROZEN) return;
-  const firstTds = first.querySelectorAll('td');
-  const lefts = [];
-  let acc = 0;
-  for (let i = 0; i < FROZEN && i < firstTds.length; i++) { lefts.push(acc); acc += firstTds[i].offsetWidth; }
-  for (let i = 0; i < FROZEN; i++) { ths[i].classList.add('fz'); ths[i].style.left = lefts[i] + 'px'; }
+  if (!stickyLefts) {
+    const firstTds = first.querySelectorAll('td');
+    const lefts = [];
+    let acc = 0;
+    for (let i = 0; i < FROZEN && i < firstTds.length; i++) { lefts.push(acc); acc += firstTds[i].offsetWidth; }
+    stickyLefts = lefts;
+  }
+  for (let i = 0; i < FROZEN; i++) { ths[i].classList.add('fz'); ths[i].style.left = stickyLefts[i] + 'px'; }
   document.querySelectorAll('#tbody tr').forEach(tr => {
     const cs = tr.querySelectorAll('td');
-    for (let i = 0; i < FROZEN && i < cs.length; i++) { cs[i].classList.add('fz'); cs[i].style.left = lefts[i] + 'px'; }
+    for (let i = 0; i < FROZEN && i < cs.length; i++) { cs[i].classList.add('fz'); cs[i].style.left = stickyLefts[i] + 'px'; }
+  });
+}
+
+// 表头只初始化一次（2026-08-28 性能优化）：render() 里不再重建表头/重复绑定事件，
+// 排序用 thead 事件委托，箭头由 updateSortArrows() 单独更新。
+function initHeader() {
+  const thead = document.getElementById('thead');
+  thead.innerHTML = '<tr>' + DISPLAY_COLS.map(c =>
+    '<th data-col="' + c + '">' + esc(colLabel(c)) + '<span class="arr"></span></th>'
+  ).join('') + '</tr>';
+  thead.addEventListener('click', e => {
+    const th = e.target.closest('th');
+    if (!th) return;
+    const c = th.getAttribute('data-col');
+    if (state.sortCol === c) {
+      if (state.sortDir === 1) state.sortDir = -1;
+      else { state.sortCol = null; state.sortDir = 1; }
+    } else { state.sortCol = c; state.sortDir = 1; }
+    state.page = 1;
+    filtered.sort(comparator);   // 真正按当前排序列重排，箭头才反映实际效果
+    render();
   });
 }
 
@@ -546,6 +566,7 @@ function done() {
   // 导出Excel按钮：暂停展示（备用，需要时放开此行即可恢复显示）
   // document.getElementById('exportBtn').style.display = '';
   buildFilterOptions();
+  initHeader();      // 表头只初始化一次（含事件委托），后续 render 只更新排序箭头
   apply();
 }
 function loadData() {
@@ -593,6 +614,12 @@ function fallbackLoad() {
       for (; i < end; i++) {
         allDetail.push(Object.assign({}, det[i]));
       }
+      // 预计算每行搜索串（COLS 全列小写），避免搜索时每次全量拼接（2026-08-28 性能优化）
+      for (let j = i - step; j < end; j++) {
+        if (j >= 0 && allDetail[j] && allDetail[j]._hay === undefined) {
+          allDetail[j]._hay = COLS.map(c => String(allDetail[j][c] || '')).join(' ').toLowerCase();
+        }
+      }
       loading.textContent = '数据解密中 ' + Math.round(end / det.length * 100) + '%…';
       if (end < det.length) { setTimeout(() => batch(end), 0); }
       else { done(); }
@@ -601,7 +628,23 @@ function fallbackLoad() {
   }).catch(e => { loading.textContent = '加载失败：' + e.message; });
 }
 
-document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value.trim(); state.page = 1; apply(); });
+// ===== 搜索防抖（2026-08-28）：高频输入时合并 apply，避免 8k+ 行全量过滤/联动/渲染反复执行 =====
+const DEBOUNCE_MS = 250;
+let searchTimer = null;
+let searchCompLocked = false;   // 中文输入法组合阶段（composition）不触发搜索
+document.getElementById('searchInput').addEventListener('input', e => {
+  if (searchCompLocked) return;   // 组合中：待 compositionend 统一触发
+  state.search = e.target.value.trim(); state.page = 1;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(apply, DEBOUNCE_MS);
+});
+document.getElementById('searchInput').addEventListener('compositionstart', () => { searchCompLocked = true; });
+document.getElementById('searchInput').addEventListener('compositionend', e => {
+  searchCompLocked = false;
+  state.search = e.target.value.trim(); state.page = 1;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(apply, DEBOUNCE_MS);
+});
 document.getElementById('prevBtn').addEventListener('click', () => { if (state.page > 1) { state.page--; render(); } });
 document.getElementById('nextBtn').addEventListener('click', () => { if (state.page < Math.ceil(filtered.length / state.per)) { state.page++; render(); } });
 document.getElementById('perPage').addEventListener('change', e => { state.per = Number(e.target.value); state.page = 1; render(); });
