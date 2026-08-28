@@ -258,18 +258,21 @@ def main():
     # 七、组合筛选表：维度取值（动态取自数据表，不写死）
     # 学段 = 课程前2字；品牌/场景/类型 = 对应列去重（非空，升序）；课程 = 课程列去重（自带学段前缀）
     df["学段"] = df["课程"].astype(str).str[:2]
+    # 主版本/地区（是/否）参与组合维度（2026-08-28）：每条资源先算判定列，再进六维 groupby
+    df["主版本/地区"] = df.apply(lambda r: "是" if is_main_version(r["课程"], r["版本"], r["场景"], r["地区"]) else "否", axis=1)
     combo_dims = {
         "学段": sorted(df["学段"].unique().tolist()),
+        "主版本/地区": ["是", "否"],
         "品牌": [str(v) for v in sorted(df["品牌"].astype(str).unique()) if str(v) != "nan"],
         "场景": [str(v) for v in sorted(df["场景"].astype(str).unique()) if str(v) != "nan"],
         "类型": [str(v) for v in sorted(df["类型"].astype(str).unique()) if str(v) != "nan"],
         "课程": [str(v) for v in sorted(df["课程"].astype(str).unique()) if str(v) != "nan"],
     }
-    # 按 (学段,品牌,场景,类型,课程) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
+    # 按 (学段,主版本/地区,品牌,场景,类型,课程) 组合预聚合（整体 + 超过15天 两组 9 个统计值）。
     # 只传聚合结果，不传全量行 → data.json 保持 KB/MB 级，30万+ 行也扛得住（重活在 pandas 后端完成）
     # 金额求和用 round(sum)（比 int() 截断更接近真实，见 C端消费 int=2082444 → round=2082548 的口径差）
     combo_stats = []
-    for (st, brand, scene, typ, course), g in df.groupby(["学段", "品牌", "场景", "类型", "课程"], dropna=False):
+    for (st, mv, brand, scene, typ, course), g in df.groupby(["学段", "主版本/地区", "品牌", "场景", "类型", "课程"], dropna=False):
         def agg(sub):
             return {
                 "all": int(len(sub)),
@@ -283,7 +286,7 @@ def main():
         a_all = agg(g)
         a_over = agg(g[g["发布天数"] > 15])
         combo_stats.append({
-            "学段": str(st), "品牌": str(brand), "场景": str(scene), "类型": str(typ), "课程": str(course),
+            "学段": str(st), "主版本/地区": str(mv), "品牌": str(brand), "场景": str(scene), "类型": str(typ), "课程": str(course),
             "all": a_all, "over15": a_over,
         })
     # 让"全部组合之和"与一/二的全量口径对齐：round 逐组进位可能造成±几元的偏差，
@@ -331,9 +334,10 @@ def main():
     for r in detail:
         r["主版本/地区"] = main_version_col(r)
     # 全量数据备用副本：同一判定列（主版本/地区，版本后面），本地留存 CSV，不进公开仓库
+    # df 已含 主版本/地区 列（上面六维聚合前算好），直接移到版本后即可
     full_out = df.copy()
-    full_out.insert(full_out.columns.get_loc("版本") + 1, "主版本/地区",
-                    full_out.apply(lambda r: "是" if is_main_version(r["课程"], r["版本"], r["场景"], r["地区"]) else "否", axis=1))
+    mv_col = full_out.pop("主版本/地区")
+    full_out.insert(full_out.columns.get_loc("版本") + 1, "主版本/地区", mv_col)
     full_csv = os.path.join(BASE_DIR, "csv", "全量数据_主版本地区_" + datetime.now().strftime("%Y%m%d") + ".csv")
     full_out.to_csv(full_csv, index=False, encoding="gb18030")
     print("已生成全量备用：", os.path.basename(full_csv))
