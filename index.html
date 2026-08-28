@@ -228,37 +228,39 @@
      学段列(视觉1)右无线、最右列(视觉16)右无线 */
   .combo-table thead tr:first-child th:first-child,
   .combo-table tbody td:first-child { border-right: none !important; }   /* 学段列右无线 */
-  /* 表头行1 紫色（类型 + 资源数量_all/超15 组右缘） */
-  .combo-table thead tr:first-child th:nth-child(4),
+  /* 表头行1 紫色（主版本/地区 + 资源数量_all/超15 组右缘）——主版本/地区列已插入(第2列)，组右缘顺延到 5/6/7 */
   .combo-table thead tr:first-child th:nth-child(5),
-  .combo-table thead tr:first-child th:nth-child(6) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 表头行2 + 表体 紫色（vis8/vis12 的 C端0消费） */
+  .combo-table thead tr:first-child th:nth-child(6),
+  .combo-table thead tr:first-child th:nth-child(7) { border-right: 1px solid var(--purple-soft) !important; }
+  /* 表头行2 + 表体 紫色（资源数量_all/超15 组右缘 = 第5、9、13 列右，上下贯通） */
+  .combo-table thead tr:nth-child(2) th:nth-child(5),
+  .combo-table thead tr:nth-child(2) th:nth-child(9),
+  .combo-table thead tr:nth-child(2) th:nth-child(13),
+  .combo-table tbody td:nth-child(5),
+  .combo-table tbody td:nth-child(9),
+  .combo-table tbody td:nth-child(13) { border-right: 1px solid var(--purple-soft) !important; }
+  /* 表头行2 + 表体 灰色（all 列右缘 = 第4、8、12 列右） */
   .combo-table thead tr:nth-child(2) th:nth-child(4),
   .combo-table thead tr:nth-child(2) th:nth-child(8),
+  .combo-table thead tr:nth-child(2) th:nth-child(12),
   .combo-table tbody td:nth-child(4),
   .combo-table tbody td:nth-child(8),
-  .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 表头行2 + 表体 灰色（vis5 all / vis10 前台0 / vis14 B端下载） */
-  .combo-table thead tr:nth-child(2) th:nth-child(1),
-  .combo-table thead tr:nth-child(2) th:nth-child(6),
-  .combo-table thead tr:nth-child(2) th:nth-child(10),
-  .combo-table tbody td:nth-child(5),
-  .combo-table tbody td:nth-child(10),
-  .combo-table tbody td:nth-child(14) { border-right: 1px solid var(--separator) !important; }
-  /* 合计行（首格 colspan=4 占视觉1~4，其余 12 格 = 视觉5~16）紫色 + 灰色
-     表头/表体：紫色 vis4/8/12、灰色 vis5/10/14
-     合计行首格 colspan=4 → 视觉第 n 列 = DOM 第 n-3 格：
-       紫色：视觉4(合计右) = DOM1；视觉8(C端0消费) = DOM5；视觉12(超15·C端0消费) = DOM9
-       灰色：视觉5(all) = DOM2；视觉9(超15·all) = DOM6；视觉13(前台下载) = DOM10
-     —— 视觉7/11/15 均无独立分隔线（前次把 7/11 误写成紫色/灰色，已修正） */
+  .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--separator) !important; }
+  /* 合计行（首格 colspan=5 占视觉1~5，其余 12 格 = 视觉6~17）紫色/灰色
+     表头/表体：紫色 第5/9/13 列右、灰色 第4/8/12 列右
+     合计行首格 colspan=5 → 视觉第 n 列 = DOM 第 n-4 格：
+       紫色：视觉5(首格右) = DOM1；视觉9(C端0消费) = DOM5；视觉13(超15·C端0消费) = DOM9
+       灰色：视觉4(all) = DOM0（无）；视觉8(C端0消费右) = DOM4；视觉12(超15·all右) = DOM8
+     —— 合计行只有首格+数值 12 格：紫色 DOM1/5/9，灰色 DOM4/8 */
   .combo-table .combo-total td:first-child,
   .combo-table .combo-total td:nth-child(5),
   .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; }
-  .combo-table .combo-total td:nth-child(2),
-  .combo-table .combo-total td:nth-child(6),
-  .combo-table .combo-total td:nth-child(10) { border-right: 1px solid var(--separator) !important; }
+  .combo-table .combo-total td:nth-child(4),
+  .combo-table .combo-total td:nth-child(8) { border-right: 1px solid var(--separator) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
+  /* 筛选框长度：前2个（学段、主版本/地区）改为 50%（75px），其余保持 160px（2026-08-28） */
+  .combo-toolbar .combo-dim:nth-child(-n+2) select { width: 75px; }
   /* 维度下拉标签固化（2026-08-27 简化）：标签用纯文本 span 固定在 select 左侧，
      不再依赖"改 option 文本"显示"学段：小学"（那个方案越修越复杂、易残留脏状态）。
      选中值直接在下拉里选，option 永远是"全部/值"原样，联动只收缩候选、不碰文本 */
@@ -550,7 +552,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v74</b></footer>
+  <footer class="footer-version">看板版本 <b>v76</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1100,8 +1102,9 @@ function renderComboTable() {
     '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
-  // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
-  wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
+  // 表头第二行数值列名一行显示完整：列宽自适应，th 不换行、不截断（2026-08-28）
+  wrap.innerHTML = '<style>.combo-table thead tr:nth-child(2) th { white-space: nowrap; overflow: visible; }</style>' +
+    '<table class="days-table combo-table combo-auto" style="width:auto">' +
     '<colgroup><col><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="17" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
