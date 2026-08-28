@@ -47,7 +47,8 @@ self.onmessage = e => {
 
 function start() {
   // 先取 data.json 拿版本号（内容不变则版本不变，命中浏览器缓存秒开；数据更新版本变化自动取新）
-  fetch('data.json?v=' + Date.now())
+  // 2026-08-28：data.json 体积小（几KB），去掉 Date.now() 强刷，走浏览器默认缓存（内容哈希在 summary.version 里）
+  fetch('data.json')
     .then(r => r.json())
     .then(d => {
       const d2 = JSON.parse(decSens(d.enc, decKey));
@@ -69,6 +70,7 @@ function start() {
       for (let i = 0; i < total; i += BATCH) {
         self.postMessage({ type: 'batch', data: out.slice(i, i + BATCH) });
       }
-      self.postMessage({ type: 'done', total });
+      // 让浏览器有至少一帧处理 batch 消息并渲染"解密完成"状态，再发 done
+      setTimeout(() => self.postMessage({ type: 'done', total }), 0);
     })().catch(e => self.postMessage({ type: 'error', message: e.message })))
 }
