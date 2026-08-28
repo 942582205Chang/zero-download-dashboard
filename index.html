@@ -560,7 +560,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v136</b></footer>
+  <footer class="footer-version">看板版本 <b>v138</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1161,9 +1161,10 @@ function renderComboTable() {
     '<th>all</th><th class="sep-end">前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
     '<th class="sep-end">前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 表头第二行数值列名一行显示完整：列宽自适应，th 不换行、不截断（2026-08-28）
+  // 主版本/地区 列(第2列)锁定列宽 96px（2026-08-28 用户要求），其余列自适应
   wrap.innerHTML = '<style>.combo-table thead tr:nth-child(2) th { white-space: nowrap; overflow: visible; }</style>' +
     '<table class="days-table combo-table combo-auto" style="width:auto">' +
-    '<colgroup><col><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
+    '<colgroup><col><col style="width:96px"><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="17" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
 }
