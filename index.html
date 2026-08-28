@@ -217,6 +217,11 @@
   /* 第4行起的灰色规则（.combo-table tbody tr:nth-child(n+4) td 带 !important）会压过 mv-yes，
      需同优先级且更靠后覆盖 → 让"是"在任意行都标红（2026-08-28 修正） */
   .combo-table tbody tr:nth-child(n+4) td.mv-yes { color: var(--red) !important; }
+  /* 组合表"是"的行整行加浅蓝底纹（2026-08-28）：主版本/地区=是 → 整行浅蓝，醒目区分 */
+  .combo-table tbody tr.mv-row { background: rgba(0, 122, 255, 0.06); }
+  /* 浅蓝行的固定列（前5列 sticky）底要与行色一致，避免滚动时透出 */
+  .combo-scroll .combo-table tbody tr.mv-row td:nth-child(-n+5) { background: rgba(0, 122, 255, 0.06); }
+  .combo-scroll .combo-table tbody tr.mv-row:hover td:nth-child(-n+5) { background: rgba(0, 122, 255, 0.10); }
   /* 二、组合表正文统一 13px + 第一列(学段)全行居中（2026-08-28）：
      覆盖通用分档表两条"连坐"—— tr:nth-child(n+4) td:first-child 的 12px/居左、tr:not(:first-child) td.num 的 14px，
      故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
@@ -565,7 +570,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v82</b></footer>
+  <footer class="footer-version">看板版本 <b>v84</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1076,7 +1081,7 @@ function renderComboTable() {
     const ca = cAvg(e);
     // 给本行数值单元格打 data-k="行号:列名"（供气泡按 data-a/data-b 精确定位高亮）
     const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
-    return '<tr>' +
+    return '<tr' + (e['主版本/地区'] === '是' ? ' class="mv-row"' : '') + '>' +
       '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
       '<td class="rowhead combo-dim mv' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
