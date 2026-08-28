@@ -282,10 +282,13 @@
   .combo-scroll .combo-table tbody td:nth-child(3),
   .combo-scroll .combo-table tbody td:nth-child(4),
   .combo-scroll .combo-table tbody td:nth-child(5) { background: var(--surface-solid); }
-  /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致） */
-  .combo-scroll .combo-table .combo-total { position: sticky; bottom: 0; z-index: 3; background: var(--grid); }
+  /* 合计行吸附在滚动容器底部（sticky bottom），始终可见；合计单元格带底纹（与数值格一致）。
+     2026-08-28：bottom 用 -1px 多贴1px，压掉底部 1px 细缝（滚动时数据行文本残影透出） */
+  .combo-scroll .combo-table .combo-total { position: sticky; bottom: -1px; z-index: 3; background: var(--grid); }
   .combo-scroll .combo-table .combo-total td { background: var(--grid); }
   .combo-scroll .combo-table .combo-total td:first-child { position: sticky; left: 0; z-index: 4; background: var(--grid); }
+  /* 最右格也盖住（横向滚动到底时，右缘不留缝） */
+  .combo-scroll .combo-table .combo-total td:last-child { background: var(--grid); }
   /* 合计行首格 colspan=5，横向滚动时前5列底保持一致（sticky 部分透出时用 grid 底兜底） */
   .combo-scroll .combo-table .combo-total td:nth-child(2),
   .combo-scroll .combo-table .combo-total td:nth-child(3),
@@ -549,7 +552,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v118</b></footer>
+  <footer class="footer-version">看板版本 <b>v120</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
