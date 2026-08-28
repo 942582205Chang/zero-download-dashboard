@@ -214,6 +214,9 @@
   /* 二、组合表 主版本/地区 列（学段后、品牌前）：是→红色、否→默认，文本居中 */
   .combo-table td.mv { text-align: center; }
   .combo-table td.mv-yes { color: var(--red); }
+  /* 第4行起的灰色规则（.combo-table tbody tr:nth-child(n+4) td 带 !important）会压过 mv-yes，
+     需同优先级且更靠后覆盖 → 让"是"在任意行都标红（2026-08-28 修正） */
+  .combo-table tbody tr:nth-child(n+4) td.mv-yes { color: var(--red) !important; }
   /* 二、组合表正文统一 13px + 第一列(学段)全行居中（2026-08-28）：
      覆盖通用分档表两条"连坐"—— tr:nth-child(n+4) td:first-child 的 12px/居左、tr:not(:first-child) td.num 的 14px，
      故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
@@ -232,27 +235,25 @@
   .combo-table thead tr:first-child th:nth-child(5),
   .combo-table thead tr:first-child th:nth-child(6),
   .combo-table thead tr:first-child th:nth-child(7) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 表头行2 + 表体 紫色（资源数量_all/超15 组右缘 = 第5、9、13 列右，上下贯通） */
-  .combo-table thead tr:nth-child(2) th:nth-child(5),
+  /* 表头行2 + 表体 紫色（资源数量_all/超15 组右缘 = 第5、9、13 列右，上下贯通）
+     2026-08-28 修正：行2的表头与表体同列对齐，且与行1的组右缘(5/6/7)对应——
+       行1 资源数量_all 组(占第6~9格)右缘=第9格、超15组(占10~13)右缘=第13格、消费组右缘=第17格(最右，无紫线)
+       行2/表体 12 个明细列 = 第6~17格：紫线在 第9、13 格右（组右缘），灰线在 第8、12 格右（all 右缘）
+       第5格右(资源数量_all 左缘，行1组左缘) → 不画紫线 */
   .combo-table thead tr:nth-child(2) th:nth-child(9),
   .combo-table thead tr:nth-child(2) th:nth-child(13),
-  .combo-table tbody td:nth-child(5),
   .combo-table tbody td:nth-child(9),
   .combo-table tbody td:nth-child(13) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 表头行2 + 表体 灰色（all 列右缘 = 第4、8、12 列右） */
-  .combo-table thead tr:nth-child(2) th:nth-child(4),
+  /* 表头行2 + 表体 灰色（all 列右缘 = 第8、12 列右） */
   .combo-table thead tr:nth-child(2) th:nth-child(8),
   .combo-table thead tr:nth-child(2) th:nth-child(12),
-  .combo-table tbody td:nth-child(4),
   .combo-table tbody td:nth-child(8),
   .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--separator) !important; }
   /* 合计行（首格 colspan=5 占视觉1~5，其余 12 格 = 视觉6~17）紫色/灰色
-     表头/表体：紫色 第5/9/13 列右、灰色 第4/8/12 列右
+     表头/表体：紫色 第9/13 列右、灰色 第8/12 列右
      合计行首格 colspan=5 → 视觉第 n 列 = DOM 第 n-4 格：
-       紫色：视觉5(首格右) = DOM1；视觉9(C端0消费) = DOM5；视觉13(超15·C端0消费) = DOM9
-       灰色：视觉4(all) = DOM0（无）；视觉8(C端0消费右) = DOM4；视觉12(超15·all右) = DOM8
-     —— 合计行只有首格+数值 12 格：紫色 DOM1/5/9，灰色 DOM4/8 */
-  .combo-table .combo-total td:first-child,
+       紫色：视觉9(C端0消费) = DOM5；视觉13(超15·C端0消费) = DOM9
+       灰色：视觉8(C端0消费右) = DOM4；视觉12(超15·all右) = DOM8 */
   .combo-table .combo-total td:nth-child(5),
   .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; }
   .combo-table .combo-total td:nth-child(4),
@@ -564,7 +565,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v80</b></footer>
+  <footer class="footer-version">看板版本 <b>v82</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
