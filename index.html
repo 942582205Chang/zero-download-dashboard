@@ -211,6 +211,9 @@
   .combo-table.combo-auto td.combo-dim-l { font-weight: 400; }
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
+  /* 二、组合表 主版本/地区 列（学段后、品牌前）：是→红色、否→默认，文本居中 */
+  .combo-table td.mv { text-align: center; }
+  .combo-table td.mv-yes { color: var(--red); }
   /* 二、组合表正文统一 13px + 第一列(学段)全行居中（2026-08-28）：
      覆盖通用分档表两条"连坐"—— tr:nth-child(n+4) td:first-child 的 12px/居左、tr:not(:first-child) td.num 的 14px，
      故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
@@ -546,7 +549,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v68</b></footer>
+  <footer class="footer-version">看板版本 <b>v70</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -577,7 +580,7 @@ function loadExcelJS() {
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v40';
+const PAGE_VERSION = 'v41';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
@@ -824,8 +827,8 @@ function loadData() {
 // 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(3列)|资源数量_超过15天(3列)|消费数据_all(3列)；
 // 第二行列：学段|品牌|场景|类型 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；5 个下拉联动（选中某维后其它维可选项收缩）
-let comboState = { '学段': '', '品牌': '', '场景': '', '类型': '', '课程': '' };
-const COMBO_KEYS = ['学段', '品牌', '场景', '类型', '课程'];
+let comboState = { '学段': '', '主版本/地区': '', '品牌': '', '场景': '', '类型': '', '课程': '' };
+const COMBO_KEYS = ['学段', '主版本/地区', '品牌', '场景', '类型', '课程'];
 // 组合统计（comboStats）不在 data.json 首屏，而在 detail.json 里（登录后随明细懒加载，2026-08-27）
 // comboStatsArr 因此需要 detailData.comboStats；若尚未加载（detail 未到），返回空，renderComboTable 会显示"加载中"
 let _comboStatsCache = null;                 // detail.json 加载完成后的 comboStats 缓存（含空数组）
@@ -845,25 +848,26 @@ function setDetailData(d) { _detailLoaded = true; _comboStatsCache = (d && d.com
 function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) || []; }
 
 // ===== 组合统计数据（comboStats）=====
-// 数据源是"学段/品牌/场景/类型/课程"五维预聚合（comboStats 每行带 course 字段，同四列会有多行按课程拆）。
-// 展示语义（2026-08-27 用户定）：课程是"筛选条件"不是"表行列"——
-//   · 未选课程：一个四列组合显示一行（= 该组合下全部课程的数值合计）
-//   · 选了课程：行数不变（仍是四维组合），每行数值 = 只统计所选课程
-// 因此所有取数/去重/联动都基于"四列组合聚合后"的池子，课程只参与数值过滤。
-const DIM4 = ['学段', '品牌', '场景', '类型'];   // 展示维度（表行维度）
-function dim4Key(s) { return DIM4.map(k => String(s[k] || '')).join(''); }
+// 数据源是"学段/主版本·地区/品牌/场景/类型/课程"六维预聚合（comboStats 每行带 course 字段，同五列会有多行按课程拆）。
+// 展示语义（2026-08-27 用户定，2026-08-28 加入主版本/地区）：课程是"筛选条件"不是"表行列"——
+//   · 未选课程：一个五列组合显示一行（= 该组合下全部课程的数值合计）
+//   · 选了课程：行数不变（仍是五维组合），每行数值 = 只统计所选课程
+// 主版本/地区 是行维度（学段 | 主版本/地区 | 品牌 | 场景 | 类型），参与联动（选课程后收缩到实际存在的值）。
+// 因此所有取数/去重/联动都基于"五列组合聚合后"的池子，课程只参与数值过滤。
+const DIM5 = ['学段', '主版本/地区', '品牌', '场景', '类型'];   // 展示维度（表行维度）；主版本/地区在品牌前
+function dim5Key(s) { return DIM5.map(k => String(s[k] || '')).join(''); }
 function aggRow(list) {
-  // 把同四列的多行（按课程拆）聚合为一行：数值逐字段求和
+  // 把同五列的多行（按课程拆）聚合为一行：数值逐字段求和
   const mk = () => ({ all: 0, front0: 0, b0: 0, c0: 0, frontSum: 0, bSum: 0, cSum: 0 });
   const A = mk(), O = mk();
   for (const s of list) {
     for (const f in A) A[f] += s.all[f] || 0;
     for (const f in O) O[f] += s.over15[f] || 0;
   }
-  const r = { 学段: list[0]['学段'], 品牌: list[0]['品牌'], 场景: list[0]['场景'], 类型: list[0]['类型'], all: A, over15: O };
+  const r = { 学段: list[0]['学段'], '主版本/地区': list[0]['主版本/地区'], 品牌: list[0]['品牌'], 场景: list[0]['场景'], 类型: list[0]['类型'], all: A, over15: O };
   return r;
 }
-// 核心：把五维 comboStats 变成"四列组合一行"的池子；若传了课程过滤，每行数值只统计该课程
+// 核心：把六维 comboStats 变成"五列组合一行"的池子；若传了课程过滤，每行数值只统计该课程
 // 课程为空时结果稳定，走缓存避免每次筛选全量重聚合（2026-08-28 性能优化）
 function comboPool() {
   const c = comboState['课程'];
@@ -872,7 +876,7 @@ function comboPool() {
   if (c) rows = rows.filter(s => String(s['课程'] || '') === c);
   const map = {};
   rows.forEach(s => {
-    const k = dim4Key(s);
+    const k = dim5Key(s);
     (map[k] = map[k] || []).push(s);
   });
   const pool = Object.values(map).map(aggRow);
@@ -880,10 +884,10 @@ function comboPool() {
   return pool;
 }
 
-// 按当前筛选（学段/品牌/场景/类型，不含课程）过滤聚合后的四列组合
+// 按当前筛选（学段/主版本·地区/品牌/场景/类型，不含课程）过滤聚合后的五列组合
 function comboFiltered() {
   const q = comboState;
-  const act = DIM4.filter(k => q[k]);
+  const act = DIM5.filter(k => q[k]);
   const pool = comboPool();
   if (!act.length) return pool;
   return pool.filter(s => act.every(k => String(s[k] || '') === q[k]));
@@ -895,11 +899,11 @@ function comboPoolFor(k) {
   const c = q['课程'];
   let rows = comboStatsArr();
   if (c) rows = rows.filter(s => String(s['课程'] || '') === c);
-  const act = DIM4.filter(x => q[x]);
+  const act = DIM5.filter(x => q[x]);
   let pool = rows;
   if (act.length) pool = pool.filter(s => act.every(x => String(s[x] || '') === q[x]));
   const map = {};
-  pool.forEach(s => { const kk = dim4Key(s); (map[kk] = map[kk] || []).push(s); });
+  pool.forEach(s => { const kk = dim5Key(s); (map[kk] = map[kk] || []).push(s); });
   return Object.values(map).map(aggRow);
 }
 
@@ -913,7 +917,7 @@ function comboCourseOptions() {
   const st = q['学段'];   // 已含"课程→学段 自动锁定"后的值
   let rows = comboStatsArr();
   if (st) rows = rows.filter(s => String(s['学段'] || '') === st);   // 只保留当前学段
-  const act = DIM4.filter(x => q[x] && x !== '学段');                 // 其余三维（品牌/场景/类型）参与过滤
+  const act = DIM5.filter(x => q[x] && x !== '学段');                 // 其余四维（主版本/品牌/场景/类型）参与过滤
   if (act.length) rows = rows.filter(s => act.every(x => String(s[x] || '') === q[x]));
   return [...new Set(rows.map(s => String(s['课程'] || '')))].sort(courseSort);
 }
@@ -931,8 +935,9 @@ function courseSort(a, b) {
 }
 function stageSort(a, b) { return (STAGE_ORDER[a] ?? 99) - (STAGE_ORDER[b] ?? 99); }
 
-// 联动：重建 5 个下拉 —— 每个维度可选项 = 当前已选组合下该维度实际出现的值（池空则用全量）
+// 联动：重建 6 个下拉 —— 每个维度可选项 = 当前已选组合下该维度实际出现的值（池空则用全量）
 // 特殊联动：课程自带学段前缀 → 选中课程时自动锁定对应学段；选中学段时课程只列该学段
+// 主版本/地区 参与联动（2026-08-28）：选课程后收缩到该课程下实际存在的 是/否，无空组合
 function refreshComboOptions(changedKey) {
   // 课程维度可选项随课程自身筛选收缩，会让当前选中消失；选中课程变化 → 组合池失效重建
   if (changedKey === '课程' || (changedKey === undefined && comboState['课程'] !== _comboPoolCacheCourse)) invalidateComboPool();
@@ -941,16 +946,17 @@ function refreshComboOptions(changedKey) {
   COMBO_KEYS.forEach(k => {
     const sel = document.getElementById('cf-' + k);
     if (!sel) return;
-    // 候选池：课程维度用 comboCourseOptions（不按四列聚合、不因自身筛选收缩），其它维度用 comboPoolFor
+    // 候选池：课程维度用 comboCourseOptions（不按五列聚合、不因自身筛选收缩），其它维度用 comboPoolFor
     const pool = (k === '课程') ? null : comboPoolFor(k);
     const old = comboState[k];
     const avail = (k === '课程')
       ? comboCourseOptions()
       : [...new Set(pool.map(s => String(s[k] || '')))];
-    // 排序：学段按 小初高；课程按 学段+学科；其余 ASC
+    // 排序：学段按 小初高；主版本/地区 是→否 固定序；课程按 学段+学科；其余 ASC
     if (k === '学段') avail.sort(stageSort);
+    else if (k === '主版本/地区') avail.sort((a, b) => (a === '是' ? 0 : 1) - (b === '是' ? 0 : 1));
     else if (k === '课程') avail.sort(courseSort);
-    else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));
+    else avail.sort((a, b) => String(a).localeCompare(String(b), 'zh-Hans-CN'));;
     const vals = avail.length ? avail : comboDimVals(k);
     restoreOptionLabels(sel);   // 重建前先把 label 恢复为原始值（防止陈旧 data-v 污染选中显示）
     sel.innerHTML = '';
@@ -1033,12 +1039,13 @@ function renderComboTable() {
   const list = comboFiltered();   // 四列组合聚合后的行（课程只是数值过滤条件，不进表）
   if (!list || !list.length) {
     // 未加载完成（detail.json 未到）或空结果：区分"加载中"与"无匹配"，避免误显示空表
-    wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto"><thead><tr><th>学段</th><th>品牌</th><th>场景</th><th>类型</th><th colspan="12">…</th></tr></thead><tbody><tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">' +
+    wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto"><thead><tr><th>学段</th><th>主版本/地区</th><th>品牌</th><th>场景</th><th>类型</th><th colspan="12">…</th></tr></thead><tbody><tr><td class="rowhead" colspan="17" style="text-align:center;color:var(--muted)">' +
       (_detailLoaded ? '无匹配组合' : '组合统计加载中…') + '</td></tr></tbody></table>';
     return;
   }
   const cmp = (a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
+    (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1) ||
     String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
     String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN');
@@ -1052,6 +1059,7 @@ function renderComboTable() {
     const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
     return '<tr>' +
       '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
+      '<td class="rowhead combo-dim mv' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['类型']) + '</td>' +
@@ -1076,22 +1084,23 @@ function renderComboTable() {
     return acc;
   }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   // 合计行：数值格带 data-k 序号，与表体同款 nth-child 边线规则对齐（见 .combo-table thead tr:nth-child(2) th:nth-child(n)）
+  // 首格 colspan=5（学段/主版本/品牌/场景/类型），数值 12 格
   const totalRow = '<tr class="combo-total">' +
-    '<td class="rowhead" colspan="4" style="text-align:center;font-weight:700">合计</td>' +
+    '<td class="rowhead" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
     ttl.map((v, i) => '<td class="num" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
     '<td class="num" style="font-weight:700" data-k="t:12">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
-  // 表头：第一行 学段|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
-  const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
+  // 表头：第一行 学段|主版本/地区|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
+  const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
     '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
     '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 自适应列宽：不写死列宽，由内容撑开（table-layout 需 auto）
   wrap.innerHTML = '<table class="days-table combo-table combo-auto" style="width:auto">' +
-    '<colgroup><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
+    '<colgroup><col><col><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
-    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="16" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
+    '<tbody>' + (tr || '<tr><td class="rowhead" colspan="17" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
 }
 
 // 二、导出 Excel：把当前筛选结果导出（表头两行：分组+列名），按钮在筛选行右侧
@@ -1101,14 +1110,15 @@ function exportComboExcel() {
   loadExcelJS().then(() => {
   const rows = [...list].sort((a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
+    (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1) ||
     String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
     String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN'));
-  const head1 = ['学段', '品牌', '场景', '类型', '资源数量_all', '', '', '', '资源数量_超过15天', '', '', '', '消费数据_all', '', ''];
-  const head2 = ['学段', '品牌', '场景', '类型', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', '前台下载', 'B 端下载', 'C 端消费'];
+  const head1 = ['学段', '主版本/地区', '品牌', '场景', '类型', '资源数量_all', '', '', '', '资源数量_超过15天', '', '', '', '消费数据_all', '', ''];
+  const head2 = ['学段', '主版本/地区', '品牌', '场景', '类型', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', '前台下载', 'B 端下载', 'C 端消费'];
   const body = rows.map(e => {
     const A = e.all, O = e.over15;
-    return [e['学段'], e['品牌'], e['场景'], e['类型'],
+    return [e['学段'], e['主版本/地区'], e['品牌'], e['场景'], e['类型'],
       A.all, A.front0, A.b0, A.c0,
       O.all, O.front0, O.b0, O.c0,
       A.frontSum, A.bSum, A.cSum];
