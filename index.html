@@ -217,14 +217,9 @@
   /* 第4行起的灰色规则（.combo-table tbody tr:nth-child(n+4) td 带 !important）会压过 mv-yes，
      需同优先级且更靠后覆盖 → 让"是"在任意行都标红（2026-08-28 修正） */
   .combo-table tbody tr:nth-child(n+4) td.mv-yes { color: var(--red) !important; }
-  /* 组合表"是"的行整行加浅蓝底纹（2026-08-28）：主版本/地区=是 → 整行浅蓝，醒目区分 */
-  .combo-table tbody tr.mv-row { background: rgba(0, 122, 255, 0.06); }
-  /* 浅蓝行的固定列（前5列 sticky）底要与行色一致，避免滚动时透出。
-     用 box-shadow 内嵌浅蓝（透明渐变）+ 不透明白底叠加，避免纯半透明底在 sticky 固定列上被叠加变重 */
-  .combo-scroll .combo-table tbody tr.mv-row td:nth-child(-n+5) { background: var(--surface-solid); box-shadow: inset 2000px 0 0 rgba(0, 122, 255, 0.06); }
-  .combo-scroll .combo-table tbody tr.mv-row:hover td:nth-child(-n+5) { background: var(--surface-solid); box-shadow: inset 2000px 0 0 rgba(0, 122, 255, 0.10); }
-  /* 组合表行悬停：整行高亮（含数据区 + 固定列），用浅黄色（2026-08-28 用户要求）；
-     mv-row（是→浅蓝）行悬停时也切浅黄 */
+  /* 组合表"是"的行：不再加底纹，只保留"是"字红色（2026-08-28 取消浅蓝底纹，仅悬停高亮） */
+  .combo-table tbody tr.mv-row { background: transparent; }
+  /* 行悬停：整行高亮（含数据区 + 固定列），用浅黄色（2026-08-28 用户要求） */
   .combo-table tbody tr:hover td { background: #fff7d6; }
   .combo-table tbody tr:hover td.fz,
   .combo-table tbody tr:hover td:nth-child(-n+5) { background: #fff7d6; }
@@ -580,7 +575,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v94</b></footer>
+  <footer class="footer-version">看板版本 <b>v96</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
