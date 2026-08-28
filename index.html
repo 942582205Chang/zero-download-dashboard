@@ -552,7 +552,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v76</b></footer>
+  <footer class="footer-version">看板版本 <b>v77</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1051,10 +1051,10 @@ function renderComboTable() {
   }
   const cmp = (a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
-    (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1) ||
     String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
-    String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN');
+    String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN') ||
+    (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1);   // 主版本/地区最后，是→否 ASC
   const rows = [...list].sort(cmp);
   // C端单份消费 = 该组合 C端消费 ÷ 该组合 资源数量_all 的 all 列（保留 1 位小数）
   const cAvg = (e) => e.all.all ? (e.all.cSum / e.all.all) : null;
@@ -1117,10 +1117,10 @@ function exportComboExcel() {
   loadExcelJS().then(() => {
   const rows = [...list].sort((a, b) =>
     (STAGE_ORDER[a['学段']] ?? 99) - (STAGE_ORDER[b['学段']] ?? 99) ||
-    (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1) ||
     String(a['品牌']).localeCompare(String(b['品牌']), 'zh-Hans-CN') ||
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
-    String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN'));
+    String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN') ||
+    (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1));   // 主版本/地区最后，是→否 ASC
   const head1 = ['学段', '主版本/地区', '品牌', '场景', '类型', '资源数量_all', '', '', '', '资源数量_超过15天', '', '', '', '消费数据_all', '', ''];
   const head2 = ['学段', '主版本/地区', '品牌', '场景', '类型', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', '前台下载', 'B 端下载', 'C 端消费'];
   const body = rows.map(e => {
