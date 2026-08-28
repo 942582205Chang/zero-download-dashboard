@@ -230,44 +230,15 @@
      故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
   .combo-table tbody td { font-size: 13px !important; }
   .combo-table tbody td:first-child { text-align: center !important; }
-  /* 二、边线规则（紫色主线：视觉4/8/12 = 组边界；灰色辅线：视觉5/10/14 = 组内分隔）
-     表头行1：学段/品牌/场景/类型(rowspan2) + 资源数量_all + 超15 + 消费 三组
-       紫色在 第4格(类型,vis4) / 第5格(资源数量_all右缘,vis8) / 第6格(超15右缘,vis12)
-     表头行2：12 个明细列(视觉5~16) 紫色在 第4格(vis8) / 第8格(vis12)；灰色在 第1格(vis5) / 第6格(vis10) / 第10格(vis14)
-     表体：16 格 = 视觉列 → 紫色第4/8/12格；灰色第5/10/14格
-     合计行：首格 colspan=4(视觉1~4) + 12格(视觉5~16) → 紫色第1(vis4)/5(vis8)/9(vis12)格；灰色第2(vis5)/7(vis10)/11(vis14)格
-     学段列(视觉1)右无线、最右列(视觉16)右无线 */
-  .combo-table thead tr:first-child th:first-child,
-  .combo-table tbody td:first-child { border-right: none !important; }   /* 学段列右无线 */
-  /* 表头行1 紫色（主版本/地区 + 资源数量_all/超15 组右缘）——主版本/地区列已插入(第2列)，组右缘顺延到 5/6/7
-     第1条紫线在 资源数量_all 组右缘 = 第9格右；第2条紫线在 超15 组右缘 = 第13格右；
-     行1 第5/6/7 格是分组 colspan 的右缘（5=资源数量_all 左缘、6=all 列右缘、7=占比列右缘）——视觉上只有第9/13 需与行2/表体对齐 */
-  .combo-table thead tr:first-child th:nth-child(5),
-  .combo-table thead tr:first-child th:nth-child(6),
-  .combo-table thead tr:first-child th:nth-child(7) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 表头行2 + 表体 紫色（资源数量_all/超15 组右缘 = 第9、13 列右，上下贯通）
-     2026-08-28：行1 分组 th 右缘（第9/13 格）与行2/表体 第9/13 列右 对齐，紫线整列贯通 */
-  .combo-table thead tr:nth-child(2) th:nth-child(9),
-  .combo-table thead tr:nth-child(2) th:nth-child(13),
-  .combo-table tbody td:nth-child(9),
-  .combo-table tbody td:nth-child(13) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 表头行2 + 表体 灰色（all 列右缘 = 第8、12 列右） */
-  .combo-table thead tr:nth-child(2) th:nth-child(8),
-  .combo-table thead tr:nth-child(2) th:nth-child(12),
-  .combo-table tbody td:nth-child(8),
-  .combo-table tbody td:nth-child(12) { border-right: 1px solid var(--separator) !important; }
-  /* 行1 分组标题格：资源数量_all(第6格)/超15(第10格) 的右缘紫线 = 该组右缘（第9/13列右）上方 */
-  .combo-table thead tr:first-child th:nth-child(9),
-  .combo-table thead tr:first-child th:nth-child(13) { border-right: 1px solid var(--purple-soft) !important; }
-  /* 合计行（首格 colspan=5 占视觉1~5，其余 12 格 = 视觉6~17）紫色/灰色
-     表头/表体：紫色 第9/13 列右、灰色 第8/12 列右
-     合计行首格 colspan=5 → 视觉第 n 列 = DOM 第 n-4 格：
-       紫色：视觉9(C端0消费) = DOM5；视觉13(超15·C端0消费) = DOM9
-       灰色：视觉8(C端0消费右) = DOM4；视觉12(超15·all右) = DOM8 */
-  .combo-table .combo-total td:nth-child(5),
-  .combo-table .combo-total td:nth-child(9) { border-right: 1px solid var(--purple-soft) !important; }
-  .combo-table .combo-total td:nth-child(4),
-  .combo-table .combo-total td:nth-child(8) { border-right: 1px solid var(--separator) !important; }
+  /* 二、边线规则 —— 方案A（2026-08-28）：放弃 nth-child 推断，改用显式 class「grp-end」标记组右缘。
+     表头行1：资源数量_all/超15 两个分组标题格(视觉9/13右缘) 带 grp-end
+     表头行2 + 表体 + 合计行：视觉9/13 的右缘格 带 grp-end
+     → 同一根紫线在所有行都由 grp-end 驱动，天然上下贯通，加列/改结构不再错位 */
+  .combo-table th.grp-end,
+  .combo-table td.grp-end { border-right: 1px solid var(--purple-soft) !important; }
+  /* 学段列右无线（视觉1 = 表体/表头第1行第1格） */
+  .combo-table tbody td:first-child,
+  .combo-table thead tr:first-child th:first-child { border-right: none !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框长度：前2个（学段、主版本/地区）改为 50%（75px），其余保持 160px（2026-08-28） */
@@ -575,7 +546,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v96</b></footer>
+  <footer class="footer-version">看板版本 <b>v98</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1086,17 +1057,19 @@ function renderComboTable() {
     const ca = cAvg(e);
     // 给本行数值单元格打 data-k="行号:列名"（供气泡按 data-a/data-b 精确定位高亮）
     const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
+    // 组右缘单元格（视觉9/13）：加 grp-end 标记，紫线显式标记（方案A，2026-08-28）
+    const ncellG = (v, k) => '<td class="num grp-end" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
     return '<tr' + (e['主版本/地区'] === '是' ? ' class="mv-row"' : '') + '>' +
       '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
       '<td class="rowhead combo-dim mv' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['类型']) + '</td>' +
-      // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费
-      ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncell(A.b0, 'b0') + ncell(A.c0, 'c0') +
-      // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费
-      ncell(O.all, 'oall') + ncell(O.front0, 'ofront0') + ncell(O.b0, 'ob0') + ncell(O.c0, 'oc0') +
-      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费（带气泡公式）
+      // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费 —— 组右缘格(第4格)加 grp-end
+      ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncell(A.b0, 'b0') + ncellG(A.c0, 'c0') +
+      // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费 —— 组右缘格(第8格)加 grp-end
+      ncell(O.all, 'oall') + ncell(O.front0, 'ofront0') + ncell(O.b0, 'ob0') + ncellG(O.c0, 'oc0') +
+      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费（带气泡公式）——消费组右缘=最右列，无线
       ncell(A.frontSum, 'frontSum') + ncell(A.bSum, 'bSum') + ncell(A.cSum, 'cSum') +
       '<td class="num pct cavg" data-a="' + i + ':cSum" data-b="' + i + ':all">' + (ca === null ? '-' : ca.toFixed(1)) + '</td>' +
       '</tr>';
@@ -1112,20 +1085,22 @@ function renderComboTable() {
     acc[8] += A.frontSum; acc[9] += A.bSum; acc[10] += A.cSum;
     return acc;
   }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  // 合计行：数值格带 data-k 序号，与表体同款 nth-child 边线规则对齐（见 .combo-table thead tr:nth-child(2) th:nth-child(n)）
-  // 首格 colspan=5（学段/主版本/品牌/场景/类型），数值 12 格
+  // 合计行：数值格带 data-k 序号，与表体同款 grp-end 标记（方案A）——首格 colspan=5 占视觉1~5，
+  // 视觉9(C端0消费右)/13(超15·C端0消费右) = DOM 第5/9 格 → 加 grp-end
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
-    ttl.map((v, i) => '<td class="num" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
+    ttl.map((v, i) => '<td class="num' + (i === 4 || i === 8 ? ' grp-end' : '') + '" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
     '<td class="num" style="font-weight:700" data-k="t:12">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
   // 表头：第一行 学段|主版本/地区|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
-  // 2026-08-28：把 资源数量_all/超15天/消费数据 三组标题各自拆成 第6/10/14 格的 colspan=4 独立 th，
-  //   让每组的右缘格（9/13/17 前的 9/13）与行2/表体对齐，紫线能上下贯通
+  // 2026-08-28 方案A：放弃 nth-child 推断边界，改用显式 class 标记"组右缘"（grp-end）——
+  //   视觉列 9、13 的右缘 = 资源数量_all/超15 组的右缘，紫线要在 表头行1/行2/表体 都对齐；
+  //   表头行1 的第9/13视觉列正好是分组标题格(第6/10格)的右缘 → 给那两个分组 th 加 grp-end
   const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
-    '<th class="grp" colspan="4">资源数量_all</th><th class="grp" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
-    '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
-    '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th>C端 0 消费</th>' +
+    '<th class="grp grp-end" colspan="4">资源数量_all</th><th class="grp grp-end" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
+    // 行2：12 个明细列 = 视觉 6~17；视觉9(C端0消费右)/13(超15·C端0消费右) = 组右缘 → 加 grp-end
+    '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
+    '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
     '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 表头第二行数值列名一行显示完整：列宽自适应，th 不换行、不截断（2026-08-28）
   wrap.innerHTML = '<style>.combo-table thead tr:nth-child(2) th { white-space: nowrap; overflow: visible; }</style>' +
