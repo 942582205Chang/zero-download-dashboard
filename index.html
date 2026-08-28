@@ -267,8 +267,10 @@
   .combo-table thead tr:first-child th:first-child:not(.sep-end) { border-right: none !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
-  /* 筛选框长度：前2个（学段、主版本/地区）改为 50%（75px），其余保持 160px（2026-08-28） */
-  .combo-toolbar .combo-dim:nth-child(-n+2) select { width: 75px; }
+  /* 筛选框长度（2026-08-28 列序调整后修正）：学段(第1)、主版本/地区(第5) 用短款 75px（值短），
+     品牌/场景/类型/课程 用长款 160px。此前 nth-child(-n+2) 误把品牌算成短款，已修正为按明确位置。 */
+  .combo-toolbar .combo-dim:nth-child(1) select,
+  .combo-toolbar .combo-dim:nth-child(5) select { width: 75px; }
   /* 维度下拉标签固化（2026-08-27 简化）：标签用纯文本 span 固定在 select 左侧，
      不再依赖"改 option 文本"显示"学段：小学"（那个方案越修越复杂、易残留脏状态）。
      选中值直接在下拉里选，option 永远是"全部/值"原样，联动只收缩候选、不碰文本 */
@@ -594,7 +596,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v158</b></footer>
+  <footer class="footer-version">看板版本 <b>v160</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
