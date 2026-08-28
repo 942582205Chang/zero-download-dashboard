@@ -57,10 +57,10 @@ function loadExcelJS() {
   .badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); color: var(--ink-2); font-size: 13px; font-weight: 600; }
   .back { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); text-decoration: none; }
   .back:hover, .export-btn:hover { filter: brightness(0.95); }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; }
-  .search { flex: 1; min-width: 220px; height: 44px; padding: 10px 14px; font-size: 15px; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); color: var(--ink); outline: none; }
-  .filters { display: flex; flex-wrap: nowrap; gap: 8px; }
-  .filters select, .filters input[type=number] { width: 134px; padding: 9px 10px; font-size: 14px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
+  .toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .search { flex: 0 0 auto; width: 100%; min-width: 0; height: 44px; padding: 10px 14px; font-size: 15px; border: 1px solid var(--separator); border-radius: 12px; background: var(--surface-solid); color: var(--ink); outline: none; }
+  .filters { display: flex; flex-wrap: nowrap; gap: 8px; width: 100%; }
+  .filters select, .filters input[type=number] { flex: 1 1 0; min-width: 0; width: auto; padding: 9px 10px; font-size: 14px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   .filters label { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 8px; }
   .tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; }
@@ -91,7 +91,7 @@ function loadExcelJS() {
   tbody td.w142 { max-width: 142px; }
   tbody td.w412 { max-width: 412px; }
   tbody td.mv { max-width: 110px; }   /* 主版本/地区 列：是/否 短值，不加宽不截断 */
-  tbody td.mv-yes { color: var(--red); font-weight: 700; }   /* 主版本/地区=是 → 红色加粗突出 */
+  tbody td.mv-yes { color: var(--red); }   /* 主版本/地区=是 → 红色突出（不加粗） */
   .pager { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
   .pager .info { color: var(--muted); font-size: 14px; }
   .pager button, .ios-btn { padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; background: var(--blue); color: #fff; }
