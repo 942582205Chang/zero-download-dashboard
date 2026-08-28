@@ -274,6 +274,9 @@ def main():
             "thresholdDays": 15
         },
         "byCourseStages": course_stages,
+        # 发布天数分档统计表（一、小初高整体；三、各学段数据复用）
+        "byDays": by_days,
+        "byDaysStages": stages,
         # 四、各项目数据（品牌系列）：每学段一张表，其后每行 = 品牌"已超过 15 天"子集
         "byBrandStages": brand_stages,
         # 五、各场景数据：每学段一张表，其后每行 = 场景"已超过 15 天"子集
