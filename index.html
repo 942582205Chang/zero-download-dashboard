@@ -535,13 +535,13 @@
   </div>
 
   <!-- 一、学段/品牌/场景/类型 组合筛选表 -->
-  <div class="section"><h2>一、学段/品牌/场景/类型</h2><p>  --按 学段/主版本/地区/品牌/场景/类型/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
+  <div class="section"><h2>一、学段/品牌/场景/类型</h2><p>  --按 学段/品牌/场景/类型/主版本/地区/课程 筛选后汇总（默认全部；课程仅影响数据，表格不展示）</p></div>
   <div class="combo-toolbar" id="comboFilters">
     <span class="combo-dim"><span class="dim-tag">学段</span><select id="cf-学段"></select></span>
-    <span class="combo-dim"><span class="dim-tag">主版本/地区</span><select id="cf-主版本/地区"></select></span>
     <span class="combo-dim"><span class="dim-tag">品牌</span><select id="cf-品牌"></select></span>
     <span class="combo-dim"><span class="dim-tag">场景</span><select id="cf-场景"></select></span>
     <span class="combo-dim"><span class="dim-tag">类型</span><select id="cf-类型"></select></span>
+    <span class="combo-dim"><span class="dim-tag">主版本/地区</span><select id="cf-主版本/地区"></select></span>
     <span class="combo-dim"><span class="dim-tag">课程</span><select id="cf-课程"></select></span>
     <button type="button" id="cfClear" class="combo-clear">✕ 清除</button>
     <button type="button" id="cfExport" class="combo-export">⬇ 导出 Excel</button>
@@ -594,7 +594,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v156</b></footer>
+  <footer class="footer-version">看板版本 <b>v158</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -877,8 +877,8 @@ function loadData() {
 // 结构（参考 123.xlsx Sheet1）：第一行分组 资源数量_all(3列)|资源数量_超过15天(3列)|消费数据_all(3列)；
 // 第二行列：学段|品牌|场景|类型 | 前台0下载|B端0下载|C端0消费(×2组) | 前台下载|B端下载|C端消费
 // 无筛选 → 列出全部组合；有筛选 → 只显示匹配组合；5 个下拉联动（选中某维后其它维可选项收缩）
-let comboState = { '学段': '', '主版本/地区': '', '品牌': '', '场景': '', '类型': '', '课程': '' };
-const COMBO_KEYS = ['学段', '主版本/地区', '品牌', '场景', '类型', '课程'];
+let comboState = { '学段': '', '品牌': '', '场景': '', '类型': '', '主版本/地区': '', '课程': '' };
+const COMBO_KEYS = ['学段', '品牌', '场景', '类型', '主版本/地区', '课程'];
 // 组合统计（comboStats）不在 data.json 首屏，而在 detail.json 里（登录后随明细懒加载，2026-08-27）
 // comboStatsArr 因此需要 detailData.comboStats；若尚未加载（detail 未到），返回空，renderComboTable 会显示"加载中"
 let _comboStatsCache = null;                 // detail.json 加载完成后的 comboStats 缓存（含空数组）
@@ -902,9 +902,10 @@ function comboDimVals(k) { return (allData.comboDims && allData.comboDims[k]) ||
 // 展示语义（2026-08-27 用户定，2026-08-28 加入主版本/地区）：课程是"筛选条件"不是"表行列"——
 //   · 未选课程：一个五列组合显示一行（= 该组合下全部课程的数值合计）
 //   · 选了课程：行数不变（仍是五维组合），每行数值 = 只统计所选课程
-// 主版本/地区 是行维度（学段 | 主版本/地区 | 品牌 | 场景 | 类型），参与联动（选课程后收缩到实际存在的值）。
+// 主版本/地区 是行维度（学段 | 品牌 | 场景 | 类型 | 主版本/地区），参与联动（选课程后收缩到实际存在的值）。
 // 因此所有取数/去重/联动都基于"五列组合聚合后"的池子，课程只参与数值过滤。
-const DIM5 = ['学段', '主版本/地区', '品牌', '场景', '类型'];   // 展示维度（表行维度）；主版本/地区在品牌前
+// 2026-08-28：主版本/地区 列位置移到第5列（类型后）；dim5Key 仍用固定顺序做 key，不受显示位置影响
+const DIM5 = ['学段', '品牌', '场景', '类型', '主版本/地区'];   // 展示维度（表行维度）；主版本/地区在类型后（第5列）
 function dim5Key(s) { return DIM5.map(k => String(s[k] || '')).join(''); }
 function aggRow(list) {
   // 把同五列的多行（按课程拆）聚合为一行：数值逐字段求和
@@ -914,7 +915,7 @@ function aggRow(list) {
     for (const f in A) A[f] += s.all[f] || 0;
     for (const f in O) O[f] += s.over15[f] || 0;
   }
-  const r = { 学段: list[0]['学段'], '主版本/地区': list[0]['主版本/地区'], 品牌: list[0]['品牌'], 场景: list[0]['场景'], 类型: list[0]['类型'], all: A, over15: O };
+  const r = { 学段: list[0]['学段'], 品牌: list[0]['品牌'], 场景: list[0]['场景'], 类型: list[0]['类型'], '主版本/地区': list[0]['主版本/地区'], all: A, over15: O };
   return r;
 }
 // 核心：把六维 comboStats 变成"五列组合一行"的池子；若传了课程过滤，每行数值只统计该课程
@@ -1154,10 +1155,10 @@ function renderComboTable() {
     const ncellS = (v, k) => '<td class="num sep-end" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
     return '<tr' + (e['主版本/地区'] === '是' ? ' class="mv-row"' : '') + '>' +
       '<td class="rowhead combo-dim sep-end">' + esc(e['学段']) + '</td>' +
-      '<td class="rowhead combo-dim mv' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
-      '<td class="rowhead combo-dim-l col5-end">' + esc(e['类型']) + '</td>' +
+      '<td class="rowhead combo-dim-l">' + esc(e['类型']) + '</td>' +
+      '<td class="rowhead combo-dim mv col5-end' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费 —— 第8列(B端0)右缘加 sep-end，组右缘格(第4格)加 grp-end
       ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncellS(A.b0, 'b0') + ncellG(A.c0, 'c0') +
       // 资源数量_超过15天：all / 前台0 / B端0 / C端0消费 —— 第11列(前台0)右缘加 sep-end，组右缘格(第8格)加 grp-end
@@ -1178,29 +1179,29 @@ function renderComboTable() {
     acc[8] += A.frontSum; acc[9] += A.bSum; acc[10] += A.cSum;
     return acc;
   }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  // 合计行：首格 colspan=5 占视觉1~5 → 右缘=视觉5（类型后）→ col5-end；
+  // 合计行：首格 colspan=5 占视觉1~5 → 右缘=视觉5（主版本/地区，第5列）→ col5-end；
   //   ttl 数值格从视觉6起：灰线 第8/11/14 右缘 = i2/i5/i8；紫线 第9/13 右缘 = i3/i7
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead col5-end" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
     ttl.map((v, i) => '<td class="num' + (i === 2 || i === 5 || i === 8 ? ' sep-end' : '') + (i === 3 || i === 7 ? ' grp-end' : '') + '" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
     '<td class="num" style="font-weight:700" data-k="t:12">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
-  // 表头：第一行 学段|主版本/地区|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
+  // 表头：第一行 学段|品牌|场景|类型|主版本/地区(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
   // 2026-08-28 方案A：放弃 nth-child 推断边界，改用显式 class 标记"组右缘"（grp-end）——
   //   视觉列 9、13 的右缘 = 资源数量_all/超15 组的右缘，紫线要在 表头行1/行2/表体 都对齐；
   //   表头行1 的第9/13视觉列正好是分组标题格(第6/10格)的右缘 → 给那两个分组 th 加 grp-end；
-  //   类型列(视觉5)右缘 = 维度列结束 → 加 col5-end
-  const head = '<tr><th class="grp sep-end" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp col5-end" rowspan="2">类型</th>' +
+  //   主版本/地区列(视觉5)右缘 = 维度列结束 → 加 col5-end
+  const head = '<tr><th class="grp sep-end" rowspan="2">学段</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th><th class="grp col5-end" rowspan="2">主版本/地区</th>' +
     '<th class="grp grp-end" colspan="4">资源数量_all</th><th class="grp grp-end" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
     // 行2：12 个明细列 = 视觉 6~17；灰线 第8(B端0)/第11(前台0)/第14(前台下载) 右缘；紫线 第9/13
     '<tr><th>all</th><th>前台 0 下载</th><th class="sep-end">B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
     '<th>all</th><th class="sep-end">前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
     '<th class="sep-end">前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 表头第二行数值列名一行显示完整：列宽自适应，th 不换行、不截断（2026-08-28）
-  // 主版本/地区 列(第2列)锁定列宽 96px（2026-08-28 用户要求），其余列自适应
+  // 主版本/地区 列(第5列)锁定列宽 96px（2026-08-28 用户要求），其余列自适应
   wrap.innerHTML = '<style>.combo-table thead tr:nth-child(2) th { white-space: nowrap; overflow: visible; }</style>' +
     '<table class="days-table combo-table combo-auto" style="width:auto">' +
-    '<colgroup><col><col style="width:96px"><col><col><col>' + Array(12).fill('<col>').join('') + '</colgroup>' +
+    '<colgroup><col><col><col><col><col style="width:96px">' + Array(12).fill('<col>').join('') + '</colgroup>' +
     '<thead>' + head + '</thead>' +
     '<tbody>' + (tr || '<tr><td class="rowhead" colspan="17" style="text-align:center;color:var(--muted)">无匹配组合</td></tr>') + totalRow + '</tbody></table>';
 }
@@ -1216,11 +1217,11 @@ function exportComboExcel() {
     String(a['场景']).localeCompare(String(b['场景']), 'zh-Hans-CN') ||
     String(a['类型']).localeCompare(String(b['类型']), 'zh-Hans-CN') ||
     (String(a['主版本/地区']) === '是' ? 0 : 1) - (String(b['主版本/地区']) === '是' ? 0 : 1));   // 主版本/地区最后，是→否 ASC
-  const head1 = ['学段', '主版本/地区', '品牌', '场景', '类型', '资源数量_all', '', '', '', '资源数量_超过15天', '', '', '', '消费数据_all', '', ''];
-  const head2 = ['学段', '主版本/地区', '品牌', '场景', '类型', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', '前台下载', 'B 端下载', 'C 端消费'];
+  const head1 = ['学段', '品牌', '场景', '类型', '主版本/地区', '资源数量_all', '', '', '', '资源数量_超过15天', '', '', '', '消费数据_all', '', ''];
+  const head2 = ['学段', '品牌', '场景', '类型', '主版本/地区', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', 'all', '前台 0 下载', 'B端 0 下载', 'C端 0 消费', '前台下载', 'B 端下载', 'C 端消费'];
   const body = rows.map(e => {
     const A = e.all, O = e.over15;
-    return [e['学段'], e['主版本/地区'], e['品牌'], e['场景'], e['类型'],
+    return [e['学段'], e['品牌'], e['场景'], e['类型'], e['主版本/地区'],
       A.all, A.front0, A.b0, A.c0,
       O.all, O.front0, O.b0, O.c0,
       A.frontSum, A.bSum, A.cSum];
