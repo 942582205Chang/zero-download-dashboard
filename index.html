@@ -219,12 +219,12 @@
   .combo-table tbody tr:nth-child(n+4) td.mv-yes { color: var(--red) !important; }
   /* 组合表"是"的行：不再加底纹，只保留"是"字红色（2026-08-28 取消浅蓝底纹，仅悬停高亮） */
   .combo-table tbody tr.mv-row { background: transparent; }
-  /* 行悬停：整行高亮（含数据区 + 固定列），用浅黄色（2026-08-28 用户要求） */
-  .combo-table tbody tr:hover td { background: #fff7d6; }
+  /* 行悬停：整行高亮（含数据区 + 固定列），用浅黄色（2026-08-28 用户要求，色值调浅） */
+  .combo-table tbody tr:hover td { background: #fffbe6; }
   .combo-table tbody tr:hover td.fz,
-  .combo-table tbody tr:hover td:nth-child(-n+5) { background: #fff7d6; }
+  .combo-table tbody tr:hover td:nth-child(-n+5) { background: #fffbe6; }
   .combo-table tbody tr.mv-row:hover td,
-  .combo-table tbody tr.mv-row:hover td:nth-child(-n+5) { background: #fff7d6; box-shadow: none; }
+  .combo-table tbody tr.mv-row:hover td:nth-child(-n+5) { background: #fffbe6; box-shadow: none; }
   /* 二、组合表正文统一 13px + 第一列(学段)全行居中（2026-08-28）：
      覆盖通用分档表两条"连坐"—— tr:nth-child(n+4) td:first-child 的 12px/居左、tr:not(:first-child) td.num 的 14px，
      故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
@@ -236,6 +236,10 @@
      → 同一根紫线在所有行都由 grp-end 驱动，天然上下贯通，加列/改结构不再错位 */
   .combo-table th.grp-end,
   .combo-table td.grp-end { border-right: 1px solid var(--purple-soft) !important; }
+  /* 第5列（类型列）右侧淡紫线：维度列结束、数值列开始的边界（2026-08-28 用户要求）。
+     表头行1 类型格(rowspan2) + 表体 类型格 + 合计行首格(colspan=5) 都打 col5-end → 上下贯通 */
+  .combo-table th.col5-end,
+  .combo-table td.col5-end { border-right: 1px solid var(--purple-soft) !important; }
   /* 学段列右无线（视觉1 = 表体/表头第1行第1格） */
   .combo-table tbody td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
@@ -546,7 +550,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v98</b></footer>
+  <footer class="footer-version">看板版本 <b>v100</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1064,7 +1068,7 @@ function renderComboTable() {
       '<td class="rowhead combo-dim mv' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
-      '<td class="rowhead combo-dim-l">' + esc(e['类型']) + '</td>' +
+      '<td class="rowhead combo-dim-l col5-end">' + esc(e['类型']) + '</td>' +
       // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费 —— 组右缘格(第4格)加 grp-end
       ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncell(A.b0, 'b0') + ncellG(A.c0, 'c0') +
       // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费 —— 组右缘格(第8格)加 grp-end
@@ -1088,15 +1092,16 @@ function renderComboTable() {
   // 合计行：数值格带 data-k 序号，与表体同款 grp-end 标记（方案A）——首格 colspan=5 占视觉1~5，
   // 视觉9(C端0消费右)/13(超15·C端0消费右) = DOM 第5/9 格 → 加 grp-end
   const totalRow = '<tr class="combo-total">' +
-    '<td class="rowhead" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
+    '<td class="rowhead col5-end" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
     ttl.map((v, i) => '<td class="num' + (i === 4 || i === 8 ? ' grp-end' : '') + '" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
     '<td class="num" style="font-weight:700" data-k="t:12">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
   // 表头：第一行 学段|主版本/地区|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
   // 2026-08-28 方案A：放弃 nth-child 推断边界，改用显式 class 标记"组右缘"（grp-end）——
   //   视觉列 9、13 的右缘 = 资源数量_all/超15 组的右缘，紫线要在 表头行1/行2/表体 都对齐；
-  //   表头行1 的第9/13视觉列正好是分组标题格(第6/10格)的右缘 → 给那两个分组 th 加 grp-end
-  const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp" rowspan="2">类型</th>' +
+  //   表头行1 的第9/13视觉列正好是分组标题格(第6/10格)的右缘 → 给那两个分组 th 加 grp-end；
+  //   类型列(视觉5)右缘 = 维度列结束 → 加 col5-end
+  const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp col5-end" rowspan="2">类型</th>' +
     '<th class="grp grp-end" colspan="4">资源数量_all</th><th class="grp grp-end" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
     // 行2：12 个明细列 = 视觉 6~17；视觉9(C端0消费右)/13(超15·C端0消费右) = 组右缘 → 加 grp-end
     '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
