@@ -167,6 +167,20 @@
   /* 查看明细 胶囊：与其它胶囊同款式，整体作为链接跳转（2026-08-28） */
   .capsule.kpi-link { display: inline-flex; cursor: pointer; color: inherit; transition: filter .15s; }
   .capsule.kpi-link:hover { filter: brightness(0.95); }
+  /* 「📊 点击查看明细」标题：彩色渐变流动（文字不动，仅颜色滚动，2026-08-28） */
+  .capsule.kpi-link .c-head {
+    background: linear-gradient(90deg, #ff3b30, #ff9500, #ffcc00, #34c759, #007aff, #af52de, #ff3b30);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: grad-scroll 3s linear infinite;
+  }
+  @keyframes grad-scroll {
+    from { background-position: 0% center; }
+    to   { background-position: 200% center; }
+  }
 
   /* 发布天数分档统计表 — 整体居中、内容居中、涉及数字居右 */
   .days-wrap { display: flex; justify-content: center; overflow-x: auto; overflow-y: hidden; margin-top: 4px; }
@@ -570,7 +584,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v150</b></footer>
+  <footer class="footer-version">看板版本 <b>v151</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
