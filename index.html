@@ -240,11 +240,12 @@
      表头行1 类型格(rowspan2) + 表体 类型格 + 合计行首格(colspan=5) 都打 col5-end → 上下贯通 */
   .combo-table th.col5-end,
   .combo-table td.col5-end { border-right: 1px solid var(--purple-soft) !important; }
-  /* 学段列右无线（视觉1 = 表体/表头第1行第1格；合计行首格保留 col5-end，故排除） */
-  .combo-table tbody tr:not(.combo-total) td:first-child,
-  .combo-table thead tr:first-child th:first-child { border-right: none !important; }
-  /* 合计行首格(colspan=5)：col5-end 紫线需压过一切 first-child 打线规则 */
-  .combo-table .combo-total td.col5-end { border-right: 1px solid var(--purple-soft) !important; }
+  /* 灰色辅线（方案A，2026-08-28 用户指定）：第1列(学段)、第8列(B端0)、第11列(前台0)、第14列(前台下载) 右缘 */
+  .combo-table th.sep-end,
+  .combo-table td.sep-end { border-right: 1px solid var(--separator) !important; }
+  /* 学段列右无线（视觉1 = 表体/表头第1行第1格；合计行首格保留 col5-end，故排除；带 sep-end 的学段列除外） */
+  .combo-table tbody tr:not(.combo-total) td:first-child:not(.sep-end),
+  .combo-table thead tr:first-child th:first-child:not(.sep-end) { border-right: none !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框长度：前2个（学段、主版本/地区）改为 50%（75px），其余保持 160px（2026-08-28） */
@@ -552,7 +553,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v106</b></footer>
+  <footer class="footer-version">看板版本 <b>v107</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1065,18 +1066,20 @@ function renderComboTable() {
     const ncell = (v, k) => '<td class="num" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
     // 组右缘单元格（视觉9/13）：加 grp-end 标记，紫线显式标记（方案A，2026-08-28）
     const ncellG = (v, k) => '<td class="num grp-end" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
+    // 灰色辅线单元格（第8/11/14列右缘）：加 sep-end 标记（2026-08-28 用户指定）
+    const ncellS = (v, k) => '<td class="num sep-end" data-k="' + i + ':' + k + '" data-num="' + fmt(v) + '">' + fmt(v) + '</td>';
     return '<tr' + (e['主版本/地区'] === '是' ? ' class="mv-row"' : '') + '>' +
-      '<td class="rowhead combo-dim">' + esc(e['学段']) + '</td>' +
+      '<td class="rowhead combo-dim sep-end">' + esc(e['学段']) + '</td>' +
       '<td class="rowhead combo-dim mv' + (e['主版本/地区'] === '是' ? ' mv-yes' : '') + '">' + esc(e['主版本/地区']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['品牌']) + '</td>' +
       '<td class="rowhead combo-dim-l">' + esc(e['场景']) + '</td>' +
       '<td class="rowhead combo-dim-l col5-end">' + esc(e['类型']) + '</td>' +
-      // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费 —— 组右缘格(第4格)加 grp-end
-      ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncell(A.b0, 'b0') + ncellG(A.c0, 'c0') +
-      // 资源数量_超过15天：all(超15天全部) / 前台0 / B端0 / C端0消费 —— 组右缘格(第8格)加 grp-end
-      ncell(O.all, 'oall') + ncell(O.front0, 'ofront0') + ncell(O.b0, 'ob0') + ncellG(O.c0, 'oc0') +
-      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费（带气泡公式）——消费组右缘=最右列，无线
-      ncell(A.frontSum, 'frontSum') + ncell(A.bSum, 'bSum') + ncell(A.cSum, 'cSum') +
+      // 资源数量_all：all(该组合全部资料) / 前台0 / B端0 / C端0消费 —— 第8列(B端0)右缘加 sep-end，组右缘格(第4格)加 grp-end
+      ncell(A.all, 'all') + ncell(A.front0, 'front0') + ncellS(A.b0, 'b0') + ncellG(A.c0, 'c0') +
+      // 资源数量_超过15天：all / 前台0 / B端0 / C端0消费 —— 第11列(前台0)右缘加 sep-end，组右缘格(第8格)加 grp-end
+      ncell(O.all, 'oall') + ncellS(O.front0, 'ofront0') + ncell(O.b0, 'ob0') + ncellG(O.c0, 'oc0') +
+      // 消费数据_all：前台下载 / B端下载 / C端消费 / C端单份消费 —— 第14列(前台下载)右缘加 sep-end
+      ncellS(A.frontSum, 'frontSum') + ncell(A.bSum, 'bSum') + ncell(A.cSum, 'cSum') +
       '<td class="num pct cavg" data-a="' + i + ':cSum" data-b="' + i + ':all">' + (ca === null ? '-' : ca.toFixed(1)) + '</td>' +
       '</tr>';
   }).join('');
@@ -1092,10 +1095,10 @@ function renderComboTable() {
     return acc;
   }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   // 合计行：首格 colspan=5 占视觉1~5 → 右缘=视觉5（类型后）→ col5-end；
-  //   ttl 数值格从视觉6起：视觉9(资源数量_all组右缘)=i3、视觉13(超15组右缘)=i7 → grp-end
+  //   ttl 数值格从视觉6起：灰线 第8/11/14 右缘 = i2/i5/i8；紫线 第9/13 右缘 = i3/i7
   const totalRow = '<tr class="combo-total">' +
     '<td class="rowhead col5-end" colspan="5" style="text-align:center;font-weight:700">合计</td>' +
-    ttl.map((v, i) => '<td class="num' + (i === 3 || i === 7 ? ' grp-end' : '') + '" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
+    ttl.map((v, i) => '<td class="num' + (i === 2 || i === 5 || i === 8 ? ' sep-end' : '') + (i === 3 || i === 7 ? ' grp-end' : '') + '" style="font-weight:700" data-k="t:' + (i + 1) + '">' + fmt(v) + '</td>').join('') +
     '<td class="num" style="font-weight:700" data-k="t:12">' + (sumAll ? (sumC / sumAll).toFixed(1) : '-') + '</td>' +
     '</tr>';
   // 表头：第一行 学段|主版本/地区|品牌|场景|类型(各1列) + 资源数量_all(4) | 资源数量_超过15天(4) | 消费数据_all(4)
@@ -1103,12 +1106,12 @@ function renderComboTable() {
   //   视觉列 9、13 的右缘 = 资源数量_all/超15 组的右缘，紫线要在 表头行1/行2/表体 都对齐；
   //   表头行1 的第9/13视觉列正好是分组标题格(第6/10格)的右缘 → 给那两个分组 th 加 grp-end；
   //   类型列(视觉5)右缘 = 维度列结束 → 加 col5-end
-  const head = '<tr><th class="grp" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp col5-end" rowspan="2">类型</th>' +
+  const head = '<tr><th class="grp sep-end" rowspan="2">学段</th><th class="grp" rowspan="2">主版本/地区</th><th class="grp" rowspan="2">品牌</th><th class="grp" rowspan="2">场景</th><th class="grp col5-end" rowspan="2">类型</th>' +
     '<th class="grp grp-end" colspan="4">资源数量_all</th><th class="grp grp-end" colspan="4">资源数量_超过15天</th><th class="grp" colspan="4">消费数据_all</th></tr>' +
-    // 行2：12 个明细列 = 视觉 6~17；视觉9(C端0消费右)/13(超15·C端0消费右) = 组右缘 → 加 grp-end
-    '<tr><th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
-    '<th>all</th><th>前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
-    '<th>前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
+    // 行2：12 个明细列 = 视觉 6~17；灰线 第8(B端0)/第11(前台0)/第14(前台下载) 右缘；紫线 第9/13
+    '<tr><th>all</th><th>前台 0 下载</th><th class="sep-end">B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
+    '<th>all</th><th class="sep-end">前台 0 下载</th><th>B端 0 下载</th><th class="grp-end">C端 0 消费</th>' +
+    '<th class="sep-end">前台下载</th><th>B 端下载</th><th>C 端消费</th><th>C端单份消费</th></tr>';
   // 表头第二行数值列名一行显示完整：列宽自适应，th 不换行、不截断（2026-08-28）
   wrap.innerHTML = '<style>.combo-table thead tr:nth-child(2) th { white-space: nowrap; overflow: visible; }</style>' +
     '<table class="days-table combo-table combo-auto" style="width:auto">' +
