@@ -550,7 +550,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v73</b></footer>
+  <footer class="footer-version">看板版本 <b>v74</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -809,7 +809,9 @@ function loadData() {
   fetch('data.json?v=' + Date.now()).then(r => r.json()).then(d => {
     allData = JSON.parse(decSens(d.enc, decKey));
     document.getElementById('timeBadge').textContent = '更新：' + allData.updateTime;
-    document.getElementById('verBadge').textContent = 'v' + PAGE_VERSION.replace('v', '');   // 顶部显示版本号（与底部 footer 同步）
+    // 顶部版本号 = 直接读底部 footer 的版本号（唯一版本源，backup_versions.py 自动递增；顶部无需单独维护）
+    const fv = document.querySelector('.footer-version b');
+    if (fv) document.getElementById('verBadge').textContent = fv.textContent;
     updateKPI();   // 聚合 summary 秒出（KPI 全量真值；detailCount 用 zeroFront）
     renderDaysTable('daysTable1', allData.byDays, '小初高');   // 发布天数分档统计表（二、小初高整体）
     renderStageTables();
