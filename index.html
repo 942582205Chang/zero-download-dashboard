@@ -211,6 +211,11 @@
   .combo-table.combo-auto td.combo-dim-l { font-weight: 400; }
   .combo-table.combo-auto td.combo-dim { text-align: center; }
   .combo-table.combo-auto td.combo-dim-l { text-align: left; }
+  /* 二、组合表正文统一 13px + 第一列(学段)全行居中（2026-08-28）：
+     覆盖通用分档表两条"连坐"—— tr:nth-child(n+4) td:first-child 的 12px/居左、tr:not(:first-child) td.num 的 14px，
+     故用 !important 压过（与本节其它覆盖同手法）；含合计行一并统一 */
+  .combo-table tbody td { font-size: 13px !important; }
+  .combo-table tbody td:first-child { text-align: center !important; }
   /* 二、边线规则（紫色主线：视觉4/8/12 = 组边界；灰色辅线：视觉5/10/14 = 组内分隔）
      表头行1：学段/品牌/场景/类型(rowspan2) + 资源数量_all + 超15 + 消费 三组
        紫色在 第4格(类型,vis4) / 第5格(资源数量_all右缘,vis8) / 第6格(超15右缘,vis12)
@@ -541,7 +546,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v56</b></footer>
+  <footer class="footer-version">看板版本 <b>v57</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -572,7 +577,7 @@ function loadExcelJS() {
   });
 })();
 // ===== 页面版本（每次修改递增，与底部 footer 一致；用于强制刷新缓存）=====
-const PAGE_VERSION = 'v38';
+const PAGE_VERSION = 'v39';
 // 与上次记录的版本不一致 → 说明页面源码已更新，重新加载以避开浏览器旧缓存
 try {
   if (localStorage.getItem('dash_page_ver') && localStorage.getItem('dash_page_ver') !== PAGE_VERSION) {
