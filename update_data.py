@@ -76,6 +76,42 @@ def load_csv(path):
     raise ValueError(f"无法识别 CSV 编码：{path}")
 
 
+# 主版本/地区 判定（2026-08-28 用户定义，与"版本列后面新增列"对应）
+# 返回 "是" / "否"：命中任一规则 → 是（主版本/地区）；否则 → 否（小版本/地区）
+# 优先级从上往下、第一条命中即返回：
+#   1) 场景以 小升初复习/中考复习/高考复习 开头 → 地区=全国 为是，否则 否（一票否决，不再看课程/版本）
+#   2) 课程+版本 精确匹配主版本对照表 → 是
+#   3) 其余 → 否
+MAIN_VERSION_COURSES = {
+    ("小学语文", "统编版"), ("小学数学", "人教版"), ("小学英语", "人教PEP版"),
+    ("初中语文", "统编版"), ("初中数学", "人教版"), ("初中英语", "人教版"),
+    ("初中物理", "人教版"), ("初中化学", "人教版"), ("初中生物", "人教版"),
+    ("初中道法", "统编版"), ("初中历史", "统编版"), ("初中地理", "人教版"),
+    ("初中科学", "浙教版"),
+    ("高中语文", "统编版"), ("高中数学", "人教A版"), ("高中英语", "人教版"),
+    ("高中物理", "人教版"), ("高中化学", "人教版"), ("高中生物", "人教版"),
+    ("高中政治", "统编版"), ("高中历史", "统编版"), ("高中地理", "人教版"),
+}
+REVIEW_PREFIXES = ("小升初复习", "中考复习", "高考复习")
+
+
+def is_main_version(course, ver, scene, region):
+    """单条资源判定：命中主版本规则 → True，否则 False"""
+    course = str(course or "")
+    ver = str(ver or "")
+    scene = str(scene or "")
+    region = str(region or "")
+    for p in REVIEW_PREFIXES:
+        if scene.startswith(p):
+            return region == "全国"
+    return (course, ver) in MAIN_VERSION_COURSES
+
+
+def main_version_col(r):
+    """返回"是/否"文本列（供明细/全量 CSV 用）"""
+    return "是" if is_main_version(r.get("课程"), r.get("版本"), r.get("场景"), r.get("地区")) else "否"
+
+
 def build_day_table(df, overall_label):
     """发布天数分档统计表（8行：整体/不超过15天/已超过15天/16-30/31-60/61-90/91-180/超过180天）。
     overall_label 为表格第一行名称（小初高整体 / 小学整体 / 初中整体 / 高中整体）。"""
@@ -290,7 +326,17 @@ def main():
     # 全量明细 + 第七块组合表数据：整体加密（XOR+base64），登录后前端整体解密展示；未登录/抓包仅见密文
     # 第七块 comboStats 从 data.json 挪到 detail.json 懒加载（前端在登录后拉 detail 时一并取用），
     # data.json 首屏只留维度取值 comboDims（2026-08-27）
+    # 主版本/地区 判定列：加在 版本 后面（明细页新增列，表头"主版本/地区"，值"是/否"）
     detail = zero_df.fillna("").to_dict("records")
+    for r in detail:
+        r["主版本/地区"] = main_version_col(r)
+    # 全量数据备用副本：同一判定列（主版本/地区，版本后面），本地留存 CSV，不进公开仓库
+    full_out = df.copy()
+    full_out.insert(full_out.columns.get_loc("版本") + 1, "主版本/地区",
+                    full_out.apply(lambda r: "是" if is_main_version(r["课程"], r["版本"], r["场景"], r["地区"]) else "否", axis=1))
+    full_csv = os.path.join(BASE_DIR, "csv", "全量数据_主版本地区_" + datetime.now().strftime("%Y%m%d") + ".csv")
+    full_out.to_csv(full_csv, index=False, encoding="gb18030")
+    print("已生成全量备用：", os.path.basename(full_csv))
     detail_json = json.dumps({"detail": detail, "comboDims": combo_dims, "comboStats": combo_stats},
                              ensure_ascii=False)
     detail_bytes = detail_json.encode("utf-8")
