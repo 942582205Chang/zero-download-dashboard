@@ -316,15 +316,25 @@
   /* 二、汇总行样式：整行加粗（含"合计"格与所有数值格，需提升优先级覆盖 combo-dim 的 400），浅色底 */
   .combo-scroll .combo-table .combo-total td,
   .combo-scroll .combo-table .combo-total td.num { font-weight: 700 !important; background: var(--grid); color: var(--ink); border-top: 2px solid var(--separator); }
-  /* 组合统计"加载中"文案：红色 + 上下跳动动画（2026-08-28） */
+  /* 组合统计"加载中"文案：红色 + 上下跳动 + 彩色渐变流动（1秒一圈，2026-08-28） */
   .combo-loading {
-    color: var(--red); font-weight: 700;
+    font-weight: 700;
     display: inline-block;
-    animation: combo-bounce 1s ease-in-out infinite;
+    background: linear-gradient(90deg, #ff3b30, #ff9500, #ffcc00, #34c759, #007aff, #af52de, #ff3b30);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: combo-bounce 1s ease-in-out infinite, combo-grad 1s linear infinite;
   }
   @keyframes combo-bounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
+  }
+  @keyframes combo-grad {
+    from { background-position: 0% center; }
+    to   { background-position: 200% center; }
   }
   /* 合计行原 4/8/12 列去右线规则已废弃（改为 16 列普通格 + 统一 nth-child 边线，见上方） */
   .days-table .pct-note { color: var(--muted); font-size: 10px; }
@@ -584,7 +594,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v154</b></footer>
+  <footer class="footer-version">看板版本 <b>v156</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
