@@ -202,8 +202,8 @@
   /* 高亮必须压过第4行起的 !important 黑色（否则第4行起气泡高亮失效） */
   .combo-table td.num.hl { color: var(--blue) !important; font-weight: 700 !important; }
   .combo-table tbody tr:nth-child(n+4) td:first-child { text-align: left; white-space: normal; font-size: 13px; }
-  /* 学段列右侧无线（覆盖通用 first-child 紫线） */
-  .combo-table tbody td:first-child,
+  /* 学段列右侧无线（覆盖通用 first-child 紫线）；不含合计行（合计行首格要保留 col5-end 紫线） */
+  .combo-table tbody tr:not(.combo-total) td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
 
   /* 二、第一列（学段/品牌/场景/类型）文本居中；第二三四列居左；前4列不加粗（覆盖 rowhead 600） */
@@ -243,6 +243,8 @@
   /* 学段列右无线（视觉1 = 表体/表头第1行第1格；合计行首格保留 col5-end，故排除） */
   .combo-table tbody tr:not(.combo-total) td:first-child,
   .combo-table thead tr:first-child th:first-child { border-right: none !important; }
+  /* 合计行首格(colspan=5)：col5-end 紫线需压过一切 first-child 打线规则 */
+  .combo-table .combo-total td.col5-end { border-right: 1px solid var(--purple-soft) !important; }
   .combo-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .combo-toolbar select { width: 150px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--separator); border-radius: 10px; background: var(--surface-solid); color: var(--ink); outline: none; }
   /* 筛选框长度：前2个（学段、主版本/地区）改为 50%（75px），其余保持 160px（2026-08-28） */
@@ -550,7 +552,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v102</b></footer>
+  <footer class="footer-version">看板版本 <b>v104</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
