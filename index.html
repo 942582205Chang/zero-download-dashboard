@@ -573,7 +573,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v88</b></footer>
+  <footer class="footer-version">看板版本 <b>v90</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -1224,10 +1224,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { /*
   box.addEventListener('click', e => {
     if (collapsed && e.target === box) { collapsed = false; renderNav(); }
   });
-  // 非全屏（窗口较窄）默认折叠；全屏默认展开；无论是否全屏都可用按钮手动切换
+  // 非全屏（窗口较窄）默认折叠；全屏（宽屏）默认展开；无论是否全屏都可用按钮手动切换
+  // 2026-08-28 修复：用视口宽度判断（.page 有 max-width:1600px，用容器宽度会误判全屏/非全屏）
   function isFullscreen() {
-    const page = document.querySelector('.page') || document.body;
-    return (page ? page.getBoundingClientRect().width : window.innerWidth) >= window.innerWidth * 0.92;
+    return window.innerWidth >= 1500;   // 视口 ≥1500px 视为全屏（宽屏展开）
   }
   function autoCollapse() {
     const want = isFullscreen() ? false : true;   // 全屏→展开(false)，非全屏→折叠(true)
