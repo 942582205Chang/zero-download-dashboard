@@ -480,12 +480,12 @@
       <div class="c-sub">资源发布超过 15 天的资源，前台下载 0 次</div>
     </div>
     <div class="capsule">
-      <div class="c-head">B端 0 下载：<span class="c-val" id="kpiZeroB">--</span><span class="c-unit">份</span></div>
-      <div class="c-sub">资源发布超过 15 天的资源，B 端下载 0 次</div>
+      <div class="c-head">主流版本/地区 0 下载资源：<span class="c-val" id="kpiZeroMain">--</span><span class="c-unit">份</span><span style="margin-left:8px">占比：<span class="c-val" id="kpiZeroMainRate">--%</span></span></div>
+      <div class="c-sub">主版本/地区，资源发布超过 15 天的资源，前台下载 0 次</div>
     </div>
     <div class="capsule">
-      <div class="c-head">C端 0 消费：<span class="c-val" id="kpiZeroC">--</span><span class="c-unit">份</span></div>
-      <div class="c-sub">资源发布超过 15 天的资源，C 端消费 0 元</div>
+      <div class="c-head">非主版本/地区 0 下载资源：<span class="c-val" id="kpiZeroNonMain">--</span><span class="c-unit">份</span><span style="margin-left:8px">占比：<span class="c-val" id="kpiZeroNonMainRate">--%</span></span></div>
+      <div class="c-sub">非主版本/地区，资源发布超过 15 天的资源，前台下载 0 次</div>
     </div>
   </div>
 
@@ -549,7 +549,7 @@
   </div>
 
   <!-- 页面底部版本号（每次修改递增，便于比对线上是否已更新） -->
-  <footer class="footer-version">看板版本 <b>v110</b></footer>
+  <footer class="footer-version">看板版本 <b>v112</b></footer>
 </div>
 <!-- 2026-08-28：移除顶部假进度条（pageLoadingBar 无任何 JS 驱动、永远 0%，且首页加载本就秒级，留空条反而制造"卡住"错觉） -->
 <!-- ExcelJS 懒加载：点"导出 Excel"时才动态注入，避免首屏同步阻塞（2026-08-27） -->
@@ -685,8 +685,10 @@ function updateKPI() {
   document.getElementById('kpiTotal').textContent = fmt(s.total);
   document.getElementById('kpiZeroFront').textContent = fmt(s.zeroFront);
   document.getElementById('kpiZeroRate').textContent = s.zeroFrontRate + '%';
-  document.getElementById('kpiZeroB').textContent = fmt(s.zeroB);
-  document.getElementById('kpiZeroC').textContent = fmt(s.zeroC);
+  document.getElementById('kpiZeroMain').textContent = fmt(s.zeroFrontMain);
+  document.getElementById('kpiZeroMainRate').textContent = s.zeroFrontMainRate + '%';
+  document.getElementById('kpiZeroNonMain').textContent = fmt(s.zeroFrontNonMain);
+  document.getElementById('kpiZeroNonMainRate').textContent = s.zeroFrontNonMainRate + '%';
 }
 
 // 表头：第一行首列=学段名（小初高/小学/初中/高中），第二行首列=发布天数（不合并）
