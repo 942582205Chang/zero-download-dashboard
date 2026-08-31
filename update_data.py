@@ -260,6 +260,10 @@ def main():
     df["学段"] = df["课程"].astype(str).str[:2]
     # 主版本/地区（是/否）参与组合维度（2026-08-28）：每条资源先算判定列，再进六维 groupby
     df["主版本/地区"] = df.apply(lambda r: "是" if is_main_version(r["课程"], r["版本"], r["场景"], r["地区"]) else "否", axis=1)
+    # 主版本/地区 summary 统计子集：必须在判定列算好之后再切片（零下载口径与 zero_df 一致，
+    # 但不能复用 157 行的 zero_df —— 它是判定列创建前的 copy，不含该列。2026-08-31 修复：
+    # 输入 CSV 无该列时旧代码 KeyError'主版本/地区'）
+    zero_mv = df[(df["前台下载"] == 0) & (df["发布天数"] > 15)].copy()
     combo_dims = {
         "学段": sorted(df["学段"].unique().tolist()),
         "主版本/地区": ["是", "否"],
@@ -308,11 +312,11 @@ def main():
             # 整体占比 = 0下载资源总数 ÷ 全量资源总数（2026-08-25 口径：分母从 eligible 改为全量 total）
             "zeroFrontRate": round(zero_front / total * 100, 2),
             # 主版本/地区=是 的 0下载资源数（发布>15天 且 前台0下载 且 主版本判定=是）与其占比（÷全量total）
-            "zeroFrontMain": int(len(zero_df[zero_df["主版本/地区"] == "是"])),
-            "zeroFrontMainRate": round(len(zero_df[zero_df["主版本/地区"] == "是"]) / total * 100, 2),
+            "zeroFrontMain": int(len(zero_mv[zero_mv["主版本/地区"] == "是"])),
+            "zeroFrontMainRate": round(len(zero_mv[zero_mv["主版本/地区"] == "是"]) / total * 100, 2),
             # 非主版本/地区（判定=否）的 0下载资源数与占比（÷全量total）
-            "zeroFrontNonMain": int(len(zero_df[zero_df["主版本/地区"] == "否"])),
-            "zeroFrontNonMainRate": round(len(zero_df[zero_df["主版本/地区"] == "否"]) / total * 100, 2),
+            "zeroFrontNonMain": int(len(zero_mv[zero_mv["主版本/地区"] == "否"])),
+            "zeroFrontNonMainRate": round(len(zero_mv[zero_mv["主版本/地区"] == "否"]) / total * 100, 2),
             # B端0下载 / C端0消费：口径 = 发布超15天的资源（与页面备注一致），2026-08-25 修正
             "zeroB": int((over15["b端下载"] == 0).sum()),
             "zeroC": int((over15["c端消费"] == 0).sum()),
