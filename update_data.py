@@ -80,7 +80,8 @@ def load_csv(path):
 # 返回 "是" / "否"：命中任一规则 → 是（主版本/地区）；否则 → 否（小版本/地区）
 # 优先级从上往下、第一条命中即返回：
 #   1) 场景以 小升初复习/中考复习/高考复习 开头 → 地区=全国 为是，否则 否（一票否决，不再看课程/版本）
-#   2) 课程+版本 精确匹配主版本对照表 → 是
+#   2) 非复习类 → 课程+版本 精确匹配主版本对照表 且 地区=全国 → 是
+#      例外：初中科学+浙教版+地区=浙江 → 是（浙江是科学主阵地）
 #   3) 其余 → 否
 MAIN_VERSION_COURSES = {
     ("小学语文", "统编版"), ("小学数学", "人教版"), ("小学英语", "人教PEP版"),
@@ -104,7 +105,13 @@ def is_main_version(course, ver, scene, region):
     for p in REVIEW_PREFIXES:
         if scene.startswith(p):
             return region == "全国"
-    return (course, ver) in MAIN_VERSION_COURSES
+    # 非复习类：课程+版本命中对照表 且 地区=全国
+    if (course, ver) in MAIN_VERSION_COURSES and region == "全国":
+        return True
+    # 例外：初中科学+浙教版+地区=浙江（浙江是科学主阵地）
+    if (course, ver) == ("初中科学", "浙教版") and region == "浙江":
+        return True
+    return False
 
 
 def main_version_col(r):
