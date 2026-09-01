@@ -53,6 +53,8 @@ function loadExcelJS() {
     /* 字体字号保持标题原样，与右侧胶囊仅外观一致 */
   }
   .brand p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .brand .ver-badge { font-weight: 700; color: var(--blue); }
+  .footer-version { margin-top: 28px; padding: 12px 0 20px; text-align: center; font-size: 12px; color: var(--muted); border-top: 1px solid var(--separator); }
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .badge { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); color: var(--ink-2); font-size: 13px; font-weight: 600; }
   .back { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--separator); text-decoration: none; }
@@ -133,7 +135,7 @@ function loadExcelJS() {
   <header>
     <div class="brand">
       <h1 class="pill">0 下载 · 资源明细</h1>
-      <p>数据维度：小初高委托创作 2026-2027 学年发布 15 天后，前台下载次数为 0 的资源（支持搜索 / 筛选，全字段模糊搜索/多关键词空格分隔）</p>
+      <p>数据维度：小初高委托创作 2026-2027 学年发布 15 天后，前台下载次数为 0 的资源（支持搜索 / 筛选，全字段模糊搜索/多关键词空格分隔）。- <span class="ver-badge" id="verBadge">v--</span></p>
     </div>
     <div class="meta">
       <span class="badge" id="timeBadge">更新：--</span>
@@ -579,6 +581,10 @@ function done() {
 }
 function loadData() {
   const loading = document.getElementById('loading');
+  // 副标题版本号 = 读底部 footer（唯一版本源，backup_versions.py 自动递增），与 index.html 顶部 verBadge 同款
+  const vb = document.getElementById('verBadge');
+  const fv = document.querySelector('.footer-version b');
+  if (vb && fv) vb.textContent = fv.textContent;
   if (window.Worker) {
     try {
       const w = new Worker('worker.js'); w.postMessage({ key: decKey });   // 把解密密钥传给后台 worker
@@ -700,5 +706,6 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   }).catch(e => { btn.textContent = '⬇ 导出 Excel'; btn.disabled = false; alert('导出库加载失败：' + e.message); });
 });
 </script>
+<footer class="footer-version">看板版本 <b>v162</b></footer>
 </body>
 </html>
