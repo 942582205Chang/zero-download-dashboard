@@ -66,8 +66,11 @@ def find_latest_csv():
 
 
 def load_csv(path):
-    """读取 CSV，自动处理 gb18030 / utf-8 编码"""
-    for enc in ["gb18030", "utf-8-sig", "utf-8"]:
+    """读取 CSV，自动处理 utf-8-sig / gb18030 编码。
+    utf-8-sig 优先：MCP 导出为 UTF-8 带 BOM；若先试 gb18030 会因中文 UTF-8 字节
+    抛 illegal multibyte（或宽松解码产生乱码），导致看板数据乱码。
+    兼容 DataWorks 历史导出的 GBK（gb18030）。"""
+    for enc in ["utf-8-sig", "gb18030", "utf-8"]:
         try:
             df = pd.read_csv(path, encoding=enc)
             return df
